@@ -1,2 +1,3 @@
-gifplot.java
+*.java
+*.class
 gifplot_wrap.c

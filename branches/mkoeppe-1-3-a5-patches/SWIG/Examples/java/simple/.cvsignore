@@ -1,4 +1,4 @@
-example.class
-example.java
+*.class
+*.java
 example_wrap.c
-main.class
+
