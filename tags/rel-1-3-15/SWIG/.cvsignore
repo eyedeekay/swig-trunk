@@ -1,0 +1,7 @@
+config.*
+Makefile
+swig
+*.tar.gz
+configure
+swig.spec
+autom4te.cache

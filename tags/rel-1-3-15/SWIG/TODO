@@ -1,0 +1,411 @@
+SWIG TO-DO    
+
+Release: SWIG-1.3.15    (Late August, 2002)
+-----------------------------------------------------------------------------
+
+****    = High Priority
+***     = Implement if possible.
+**      = Will implement if time. 
+*       = Implement if bored (or deemed necessary).
+
+defer   = Implement in 1.3.16
+
+CORE:
+
+****   Add support for nested classes.   The type system should be
+defer  ready to go.  The primary obstacle lies in the target language
+       modules (which were never programmed with nested classes in
+       mind).  There are also issues with nested C structures.  For
+       example:
+
+             struct Foo {
+                 struct {
+                     int x,y;
+                 } z;
+             };
+
+       This is one of the last remaining "hard" problems in the SWIG
+       core, but it is important that we solve it.  
+
+[DONE] Refinement of the overloading dispatch rules.  If you have two
+       classes like this:
+
+           class Foo {
+           };
+
+           class Bar : public Foo {
+           };
+
+       and two overloaded methods:
+
+           void spam(Foo *f);
+           void spam(Bar *b);
+
+       SWIG should make sure that the derived class version is checked
+       first. 
+
+[DONE] Refinement of using directives.  For example:
+
+          namespace foo {
+             int blah(int);
+          }
+
+          namespace bar {
+             double blah(double);
+          }
+
+          using foo::blah;
+          using bar::blah;
+
+       Currently, SWIG reports an error (redefined symbol).  Instead, it should be
+       silent.   
+
+       It's not entirely clear what should happen in terms of overloading.  Currently,
+       the two functions can't be combined into an overloaded method (they are
+       in separate namespaces and the functions don't quite combine like that).
+       
+       One could generate wrappers for the using declarations.  However, this
+       could generate a conflict (if both the namespace and non-namespace version
+       are wrapped).
+
+[DONE] Modify exception handling code not to apply to attribute access.  Should
+       reduce the amount of wrapper code substantially when a global exception
+       handler is used.
+
+****   Typemap environments.  Stay tuned.
+
+[DONE] Implement option to print dependencies.
+
+****   Implement "throw" typemaps for all of the target languages.
+
+[DONE] If a wrapper can't be generated to a function/method for some
+       reason, provide a flag that prevents that function/method from
+       appearing the dispatch function.
+
+       If a language module sets the "error" attribute of a node, it is
+       not included in the dispatch function.
+ 
+[DONE] Investigate the enhancement of exception handling to match against exceptions
+       specified with throw specifiers.
+
+***    Add attributes to the %feature directive. Something like:
+
+       %feature("except", throws="OutOfMemoryException") 
+
+***    Rewrite declaration annotation to better unify %rename and related
+       directives.  Add a selector mechanism that allows specific parse tree
+       nodes to be identified.  For example:
+
+             %feature("foo", nodetype="class") Foo { ... some code ... };
+
+       Also desirable for the Java module to specify the classes to go in the
+       throw clause:
+
+             %feature("except", throws="OutOfMemoryException") Foo { 
+                ... code which throws the OutOfMemoryException ... 
+             };
+
+       Consider use of wildcards.   Namespace/nested scope support in
+       %feature is currently weak.  It works, but is fragile.  Consider
+       an implementation that is better integrated with symbol table
+       management.  Continue to consolidate SWIG directives to %feature.
+
+***    Bring Aquinas' contract/assertion checking code online.
+
+***    Add more intelligent information related to object ownership.
+       SWIG should be able to automatically strip ownership from 
+       objects when they are assigned to pointer variables and structure
+       members as well as stored in a container (i.e., an array of pointers).
+
+       [ Partially finished for Tcl/Python. ]
+
+
+***    Modify smart pointer handling to properly handle inheritance.  For
+       example:
+
+            class Foo {
+            public:
+                Blah *operator->();
+            };
+  
+            class Bar : public Foo {
+            }
+
+       Bar should still allow access to Blah * through operator->().
+
+**     Virtual function optimization.  If you have two classes like this:
+
+          class Foo {
+          public:
+                virtual int blah(int);
+          };
+
+          class Bar : public Foo {
+          public:
+                virtual int blah(int);
+          };
+
+       Then SWIG ought to be able to reuse the wrapper for Foo::blah as
+       Bar::blah.   This should result in much smaller extension modules.
+
+**     Restoration of the documentation system.
+
+**     Restoration of Objective-C support.
+
+**     Unification of symbol tables and type system scopes.  In a sense
+       they capture the same information so it is not necessary to have
+       both.  The existence of two symbol management systems is mostly
+       historical. 
+
+**     Add a warning for uninstantiated templates.  For example, if a function
+       using a template type, but that type hasn't been instantiated using
+       %template.
+
+[DONE] Fix build problems on 64-bit platforms.   We need to replace
+       NULL by (char *) NULL in most modules.
+
+       Defined NIL as (char *) NULL.  Used that in most modules--especially
+       with functions like Printv().
+
+*      Fix template partial specialization matching rules.   SWIG does not
+       implement the proper C++ type deduction rules, but it does handle
+       the most common cases.   This is likely to be hard and implementing
+       it would really only be for completeness.
+
+Build
+-----
+[DONE] Fix Python Windows examples.
+
+****   Upgrade libtool to a more recent version.  Might fix linking on OS-X
+       but should definitely help on Cygwin.
+
+****   Make sure there are tests for *ALL* library files in the test-suite.
+       A number of files appear to be broken in SWIG-1.3.13.
+
+***    Move the Source/Modules1.1 directory into the Source/Modules directory and
+       deprecate Modules1.1.
+
+*      Upgrade autoconf? This will definitely help for Windows. The later the
+       version the better.
+ 
+Library
+-------
+
+****   Add more support for the C++ standard library.  std::complex and other
+       core datatypes.   Refine support for STL vector.   Add more STL objects.
+
+****   Continue to expand the set of recognized typemaps.
+
+All language modules
+--------------------
+[DONE] Convert use of char * to String *.   Suggest using Replaceall()
+       instead of Replace(..., DOH_REPLACE_ANY);
+
+Python
+------
+
+****   Ability to wrap certain classes as Python built-in types.
+
+Perl
+----
+
+****   Rewrite runtime pointer type checking to better integrate
+       shadow classes.   Creation of shadow classes should be done
+       in C instead of Perl.   This will fix a number of problems
+       related to typemaps and reduce the amount of Perl wrapper code.
+
+****   Create tests for existing support for operator overloading
+
+Tcl
+---
+
+Ruby
+----
+
+****   Investigate the new object allocation framework that has been
+       implemented for Ruby 1.8 and determine what (if anything) needs
+       to be changed for the wrapper code generated by SWIG. For background
+       see ruby-talk messages 23358 and 38856 (and related threads).
+
+
+**     In a post to the SWIG users' mailing list (June 5: "Multiple Inheritance
+       and Ruby"), Brett Williams suggested a workaround for supporting
+       multiple inheritance in the Ruby module. I'm quoting it here since
+       the idea may be best implemented at the core level for reuse by other
+       language modules that have limited support for MI:
+
+       """
+       While it makes for longer generated wrapper code, you can easily
+       generate wrappers as Ruby methods on the derived class in these cases,
+       i.e.:
+
+	   class Base1;
+	   class Base2;
+	   class Derived : public Base1, public Base2;
+	   class OtherDerived : public Base2;
+
+       This would mean that for class Derived, the methods for Base2 would be
+       generated as methods on class Derived as opposed to a superclass. For
+       class OtherDerived, things work as normal, and any other derived class
+       from Base2 would still work as they currently are, unless other derived
+       classes also use MI. The exception and extra wrapper generation would
+       only kick in with the use of multiple inheritance where the base class
+       information is available to SWIG. 
+
+       The feature could be turned on and off, and doesn't have to be default
+       if necessary. 
+
+       I was under the impression that the Tcl module, until a few releases ago,
+       did all inheritance this way (generating wrappers for superclass methods
+       in all derived classes). It does bloat the wrapper code, but in this case
+       it would only be causing more bloat in cases where the alternative is
+       no support.
+
+       What is missing with this? Hmmmm... if Base2 implements a method that is
+       overridden by Derived, then you could not get at Base2::Method() via the
+       super keyword... what else am I missing? Again, the alternative is no
+       support for MI at all unless you want to get fancy with mixins. I'm not
+       sure how good of an idea that is or even if it is workable.
+       """
+       
+       Another problem (which we can't really get around anyways) is that
+       basic inheritance relationships wouldn't be true at the Ruby level,
+       e.g. Derived#is_a?(Base1) would return true but Derived#is_a?(Base2)
+       would return false.
+       
+**     A related suggestion from Brett Williams (and perhaps an alternative
+       to the previously described workaround for MI) is to provide a
+       variant of the %extend directive that allows you to pretend that these
+       functions should be treated as if they were in the class definition,
+       i.e.:
+
+	   %define ADD_ART_PROP_METHODS(classname)
+	   %extend classname {
+	     void AddArtProperty(const String &key, const String &val);
+	     String GetArtProperty(const String &key) const;
+	     const PropertyVector *GetArtProperties() const;
+	   };
+	   %enddef
+
+       As written, SWIG would expect you to have provided functions with
+       names classname_AddArtProperty(), etc. somewhere else in the wrapper
+       code. We'd prefer that it somehow knew to call the function directly.
+       
+*      Consider adding a switch to define everything in the global (Kernel)
+       module instead of nested in a user-defined module, but only if
+       it comes up.
+
+Java
+----
+
+*      Consider using typemaps for proxy class code generation. [partially
+       implemented]
+
+PHP
+---
+
+**     When returning wrapped objects via alternate constructors if that
+       pointer value already exists "out there" as a resource we should
+       use the same resource, we can't have multiple ref-counted resources
+       mapping to the same object in case it gets twice destroyed.  And check
+       if ref count destroying is even working, see smart_pointer_rename
+
+*      Work out how classes without even inherited constructors should
+       interact with the php "new <class>" notation.
+       See: abstract_inherit_wrap.cpptest
+
+[DONE] Work out when we can but shouldn't dispose of objects because the
+       creator will.  See %newobject in the docs.  Works automatically for
+       constructors and return-by-value.
+
+[DONE] Got class properties to work, and global vars to work both ways 
+       with _set and _get accessors
+
+**     Look at pass by point and passby ref,
+       Make sometype** to be auto allocated
+       Make sometype& and sometype* to be autoallocated IF THEY ARE NOT
+       ALREADY swigtype wrapped.
+
+*      Overloading, callbacks, really review to see what else is missed
+
+Guile
+-----
+
+**     Rename slot setters from CLASS-SLOT-set to CLASS-SLOT-set!
+       to match Scheme convention for naming of mutators.
+
+**     Support keyword args.
+
+**     Support GOOPS shadow classes.
+
+**     Support garbage collection.  Here is a possible design:
+
+       -- %new annotation decides whether a pointer smob can be gc'ed.
+
+       -- New smob type `swig-gc'; instances created with
+          SWIG_Guile_MakeCollectablePtr.  %new versions of the pointer
+          typemaps use this function rather than SWIG_Guile_MakePtr.
+
+       -- New typemaps "destructor", "gcmarker".  Their values are taken
+          as identifiers for functions taking one argument: a pointer to
+          the object to be destroyed, or whose SCM-valued subobjects are
+          to be marked.  After creating the pointer equivalence table,
+          we iterate again over the remembered pointer types, emitting
+          code that puts the functions into our type table.  No
+          additional functions are generated.
+
+       -- The default for all pointer types would be: 
+          %typemap(destructor) SWIGPOINTER * "free";
+	  (or "delete" for C++)
+
+       -- A special annotation, e.g. FREED, can be attached to the
+          arguments of destructor functions, so that explicitly freed
+          structs won't be collected by the GC again. Like this:
+
+	   %typemap(argout) SWIGPOINTER *FREED {
+	     smob-tag($source) = swig; /* non-gc */
+	     smob-data($source) = NULL;
+	   }
+	   void free_foo(struct foo *FREED);
+
+**     Make SWIG's types first-class by using a separate smob type for
+       SWIG type descriptors; enable reflection on types.  (Maybe
+       GOOPS metaclasses?)
+
+**     Maybe communicate the type system between object modules via Scheme
+       variables, rather than a shared object.
+
+Mzscheme
+--------
+
+Pike
+----
+
+*      Decide how to handle global variables (probably using something
+       like the Python module's cvar). Affects Examples/pike/simple.
+
+*      Decide how to handle static class member functions and member
+       variables.
+
+*      Should investigate the possibility of generating .cmod files
+       in addition to straight C/C++ code for extensions.
+
+Documentation
+-------------
+
+****   Extending SWIG (and internals).
+
+***    Perl, Python, Tcl modules.
+
+***    add section for Perl module support for operator overloading
+
+**     Add section on WAD.
+
+Other
+-----
+
+****   Bring Tiger's .NET/CLR module online.
+
+****   Learn more wicked Jazz chords.
+
+

@@ -1,0 +1,125 @@
+*** ANNOUNCE: SWIG 1.3.15 ***
+
+http://www.swig.org
+
+September 9, 2002
+
+We're pleased to announce SWIG 1.3.15, the latest installment in the
+SWIG development effort.  SWIG-1.3.15 is mostly a bug-fix release to
+SWIG-1.3.14.  The release includes a number of minor enhancements to
+overloading, template handling, and C++ exception handling.
+
+What is SWIG?
+-------------
+SWIG is a software development tool that reads C/C++ header files and
+generates the wrapper code needed to make C and C++ code accessible
+from other languages including Perl, Python, Tcl, Ruby, PHP, Java,
+Guile, Mzscheme, and Ocaml.  Major applications of SWIG include
+generation of scripting language extension modules, rapid prototyping,
+testing, and user interface development for large C/C++ systems. 
+
+New Features in 1.3.15
+----------------------
+* C++ overloading support *
+
+Several enhancements to overloading. SWIG can now properly dispatch
+functions like this:
+
+    class Foo { };
+    class Bar : public Foo { };
+
+    void spam(Foo *f);      /* Function involving base class */
+    void spam(Bar *b);      /* Function involving derived class */
+
+SWIG also no longer issues a warning message for methods that
+differ only by 'const'.  Instead, the non-const method is always
+preferred.
+
+The dispatch code should be a little more efficient.
+
+Overloading is now also supported by the Guile module.
+
+* Automatic wrapping of exception specifiers *
+
+SWIG is now able to automatically catch exceptions included in
+C++ exception specifiers.  For example:
+
+   void spam(int x) throw(MemoryError, IndexError);
+
+The default behavior is to simply return with an error that
+indicates the type of C++ exception that occurred.  However,
+the behavior can be redefined using a special "throws" typemap.
+
+* Bug fixes *
+
+Numerous bug fixes in many parts of SWIG.  A large number of
+template-typedef related bugs have been fixed in this release.  See
+the CHANGES file for details.
+
+Some words on backwards compatibility
+-------------------------------------
+SWIG-1.3.15 is pushing SWIG development in some exciting new directions.
+Support for overloading, smart pointers, and other long requested
+features have been added.  A large number of enhancements to existing
+language modules have also been included.
+
+That said, this release represents work in progress and is not
+guaranteed to be backwards compatible with older SWIG versions.
+However, we hope that people will try the release and give us feedback
+on the new additions.
+
+Availability:
+-------------
+The release is available for download on Sourceforge at
+
+     http://prdownloads.sourceforge.net/swig/swig-1.3.15.tar.gz
+
+Within the next day, a Windows version will also be made available at
+
+     http://prdownloads.sourceforge.net/swig/swigwin-1.3.15.zip
+
+Release numbers
+---------------
+With SWIG1.3, we are adopting an odd/even version numbering scheme for
+SWIG.  Odd version numbers (1.3, 1.5, 1.7, etc...) are considered to
+be development releases.  Even numbers (1.4,1.6,1.8) are stable
+releases.  The current 1.3 effort is working to produce a stable 2.0
+release.  A stable 2.0 release will not be made until it can
+accompanied by fully updated documentation.  In the meantime, we will
+continue to make periodic 1.3.x releases.
+
+We need your help!
+------------------
+Even if you are perfectly happy with SWIG1.1, we can still use your
+feedback.  First, we like to know about compilation problems and other
+issues concerning the building of SWIG.  Second, if SWIG1.3 is unable
+to compile your old interface files, we would like to get information
+about the features you are using.  This information will help us find
+bugs in the SWIG1.3 release, develop techniques for supporting
+backwards compatibility, and write documentation that addresses
+specific issues related to migrating from SWIG1.1 to SWIG1.3.
+
+We are also looking for volunteers who would like to work on various
+aspects of SWIG development.  SWIG is an unfunded project that would
+not exist without volunteers.  We are also looking for the developers
+of other SWIG language modules.  If you have developed a SWIG module
+and would like to see it incorporated into the new release, please
+contact us to obtain SWIG-CVS access.  We are also more than willing
+to help port your module from SWIG1.1 to SWIG1.3.  Please send email
+to beazley@cs.uchicago.edu for further information.
+
+Please report problems with this release to swig-dev@cs.uchicago.edu.
+
+--- The SWIG Developers
+
+
+
+
+
+
+
+
+
+
+
+
