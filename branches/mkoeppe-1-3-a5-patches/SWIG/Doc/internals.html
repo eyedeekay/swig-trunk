@@ -1106,7 +1106,20 @@ See Lib/exception.i for details.
 <p>If invoked with the command-line option <code>-procdoc
 <var>file</var></code>, SWIG creates documentation strings for the
 generated wrapper functions, describing the procedure signature and
-return value, and writes them to <var>file</var>.
+return value, and writes them to <var>file</var>. You need Guile 1.4
+or later to make use of the documentation files.
+
+<p>SWIG can generate documentation strings in three formats, which are
+selected via the command-line option <code>-procdocformat
+<var>format</var></code>:
+<ul>
+<li><code>guile-1.4</code> (default): Generates a format suitable for Guile 1.4.
+<li><code>plain</code>: Generates a format suitable for Guile 1.4.1 and
+later.
+<li><code>texinfo</code>: Generates texinfo source, which must be run
+through texinfo in order to get a format suitable for Guile 1.4.1 and
+later.
+</ul>
 
 <p>You need to register the generated documentation file with Guile
 like this:
@@ -1115,7 +1128,6 @@ like this:
 (set! documentation-files 
       (cons "<var>file</var>" documentation-files))
 </pre>
-This requires Guile 1.4 or later.
 
 <p>Documentation strings can be configured using the Guile-specific
 typemaps <code>indoc</code>, <code>outdoc</code>,

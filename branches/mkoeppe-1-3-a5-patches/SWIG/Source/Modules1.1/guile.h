@@ -36,10 +36,17 @@ private:
     GUILE_LSTYLE_HOBBIT                 // use (hobbit4d link)
   } linkage;
   File  *procdoc;
+  enum {
+    GUILE_1_4,
+    PLAIN,
+    TEXINFO
+  } docformat;
   int	 emit_setters;
   int    struct_member;
   void   emit_linkage(char *module_name);
-
+  void   write_doc(const String *proc_name,
+		   const String *signature,
+		   const String *doc);
 public :
   GUILE ();
   void parse_args (int, char *argv[]);

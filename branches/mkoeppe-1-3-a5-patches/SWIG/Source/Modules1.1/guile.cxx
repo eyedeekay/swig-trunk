@@ -32,8 +32,10 @@ Guile Options (available with -guile)\n\
      -prefix name    - Use NAME as prefix [default \"gswig_\"]\n\
      -package name   - Set the path of the module [default NULL]\n\
      -Linkage lstyle - Use linkage protocol LSTYLE [default `ltdlmod']\n\
-     -procdoc file   - Output procedure documentation to file\n\
+     -procdoc file   - Output procedure documentation to FILE\n\
 \n\
+     -procdocformat format - Output procedure documentation in FORMAT;\n\
+                             one of `guile-1.4', `plain', `texinfo'\n\
   The module option does not create a guile module with a separate name\n\
   space.  It specifies the name of the initialization function and is\n\
   called a module here so that it is compadible with the rest of SWIG.\n\
@@ -59,6 +61,7 @@ GUILE::GUILE ()
   package = NULL;
   linkage = GUILE_LSTYLE_SIMPLE;
   procdoc = NULL;
+  docformat = GUILE_1_4;
   emit_setters = 0;
   struct_member = 0;
 }
@@ -142,6 +145,18 @@ GUILE::parse_args (int argc, char *argv[])
 	} else {
 	  Swig_arg_error();
         }
+      }
+      else if (strcmp (argv[i], "-procdocformat") == 0) {
+	if (strcmp(argv[i+1], "guile-1.4") == 0)
+	  docformat = GUILE_1_4;
+	else if (strcmp(argv[i+1], "plain") == 0)
+	  docformat = PLAIN;
+	else if (strcmp(argv[i+1], "texinfo") == 0)
+	  docformat = TEXINFO;
+	else Swig_arg_error();
+	Swig_mark_arg(i);
+	Swig_mark_arg(i+1);
+	i++;
       }
       else if (strcmp (argv[i], "-emit-setters") == 0) {
 	emit_setters = 1;
@@ -466,6 +481,35 @@ throw_unhandled_guile_type_error (SwigType *d)
   error_count++;
 }
 
+
+/* Write out procedure documentation */
+
+void
+GUILE::write_doc(const String *proc_name,
+		 const String *signature,
+		 const String *doc)
+{
+  switch (docformat) {
+  case GUILE_1_4:
+    Printv(procdoc, "\f\n", 0);
+    Printv(procdoc, "(", signature, ")\n", 0);
+    Printv(procdoc, doc, "\n", 0);
+    break;
+  case PLAIN:
+    Printv(procdoc, "\f", proc_name, "\n\n", 0);
+    Printv(procdoc, "(", signature, ")\n", 0);
+    Printv(procdoc, doc, "\n\n", 0);
+    break;
+  case TEXINFO:
+    Printv(procdoc, "\f", proc_name, "\n", 0);
+    Printv(procdoc, "@deffn primitive ", signature, "\n", 0);
+    Printv(procdoc, doc, "\n", 0);
+    Printv(procdoc, "@end deffn\n\n", 0);
+    break;
+  }
+}
+
+
 // ----------------------------------------------------------------------
 // GUILE::create_function(char *name, char *iname, SwigType *d,
 //                             ParmList *l)
@@ -512,7 +556,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   /* Open prototype and signature */
 
   Printv(f->def, "static SCM\n", wname," (", 0);
-  Printv(signature, "(", proc_name, 0);
+  Printv(signature, proc_name, 0);
 
   /* Now write code to extract the parameters */
 
@@ -589,9 +633,8 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 		     source, target, numargs, proc_name, f, 0);
   }
 
-  /* Close prototype and signature */
+  /* Close prototype */
 
-  Printv(signature, ")\n", 0);
   Printf(f->def, ")\n{\n");
 
   /* Define the scheme name in C. This define is used by several Guile
@@ -708,13 +751,13 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 	    proc_name, wname, numargs-numopt, numopt);
   }
   if (procdoc) {
-    /* Write out procedure documentation */
-    Printv(signature, "Returns ", 0);
-    if (Len(returns)==0) Printv(signature, "unspecified", 0);
-    else if (returns_list) Printv(signature, "list (", returns, ")", 0);
-    else Printv(signature, returns, 0);
-    Printv(signature, "\n", 0);
-    Printv(procdoc, "\f\n", signature, 0);
+    String *returns_text = NewString("");
+    Printv(returns_text, "Returns ", 0);
+    if (Len(returns)==0) Printv(returns_text, "unspecified", 0);
+    else if (returns_list) Printv(returns_text, "list (", returns, ")", 0);
+    else Printv(returns_text, returns, 0);
+    write_doc(proc_name, signature, returns_text);
+    Delete(returns_text);
   }
 
   Delete(proc_name);
@@ -850,29 +893,28 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
     if (procdoc) {
       /* Compute documentation */
       String *signature = NewString("");
+      String *doc = NewString("");
 
       if (Status & STAT_READONLY) {
-	Printv(signature, "(", proc_name, ")\n", 0);
-	Printv(signature, "Returns constant ", 0);
-	guile_do_doc_typemap(signature, "varoutdoc", t, NULL,
+	Printv(signature, proc_name, 0);
+	Printv(doc, "Returns constant ", 0);
+	guile_do_doc_typemap(doc, "varoutdoc", t, NULL,
 			     0, proc_name, f);
-	Printv(signature, "\n", 0);
       }
       else {
-	Printv(signature, "(", proc_name,
+	Printv(signature, proc_name,
 	       " #:optional ", 0);
 	guile_do_doc_typemap(signature, "varindoc", t, "new-value",
 			     1, proc_name, f);
-	Printv(signature, ")\n", 0);
-	Printv(signature, "If NEW-VALUE is provided, "
+	Printv(doc, "If NEW-VALUE is provided, "
 	       "set C variable to this value.\n", 0);
-	Printv(signature, "Returns variable value ", 0);
-	guile_do_doc_typemap(signature, "varoutdoc", t, NULL,
+	Printv(doc, "Returns variable value ", 0);
+	guile_do_doc_typemap(doc, "varoutdoc", t, NULL,
 			     0, proc_name, f);
-	Printv(signature, "\n", 0);
       }
-      Printv(procdoc, "\f\n", signature, 0);
+      write_doc(proc_name, signature, doc);
       Delete(signature);
+      Delete(doc);
     }
 
   } else {
