@@ -28,10 +28,10 @@ static char cvsroot[] = "$Header$";
 
 static char *guile_usage = (char*)"\
 Guile Options (available with -guile)\n\
-     -module name    - Set base name of module\n\
+     -module name    - Set name of module [default \"swig\"]\n\
      -prefix name    - Use NAME as prefix [default \"gswig_\"]\n\
      -package name   - Set the path of the module [default NULL]\n\
-     -Linkage lstyle - Use linkage protocol LSTYLE [default `ltdlmod']\n\
+     -Linkage lstyle - Use linkage protocol LSTYLE [default `module']\n\
      -procdoc file   - Output procedure documentation to FILE\n\
 \n\
      -procdocformat format - Output procedure documentation in FORMAT;\n\
@@ -40,8 +40,10 @@ Guile Options (available with -guile)\n\
   space.  It specifies the name of the initialization function and is\n\
   called a module here so that it is compadible with the rest of SWIG.\n\
 \n\
-  When unspecified, the default LSTYLE is `ltdlmod' for libtool ltdl\n\
-  modules.  Other LSTYLE values are: `hobbit' for hobbit modules.\n\
+  When unspecified, the default LSTYLE is `simple'.  For native Guile\n\
+  module linking (for Guile versions >=1.5.0), use `module'.  Other\n\
+  LSTYLE values are: `ltdlmod' for Guile's old dynamic module convention\n\
+  (versions <= 1.4), or `hobbit' for hobbit modules.\n\
 \n";
 
 // ---------------------------------------------------------------------
@@ -65,6 +67,7 @@ GUILE::GUILE ()
   emit_setters = 0;
   struct_member = 0;
   before_return = NULL;
+  exported_symbols = NewString("");
 }
 
 // ---------------------------------------------------------------------
@@ -125,9 +128,13 @@ GUILE::parse_args (int argc, char *argv[])
       else if (strcmp (argv[i], "-Linkage") == 0) {
         if (argv[i + 1]) {
           if (0 == strcmp (argv[i + 1], "ltdlmod"))
-            linkage = GUILE_LSTYLE_LTDLMOD;
+            linkage = GUILE_LSTYLE_LTDLMOD_1_4;
           else if (0 == strcmp (argv[i + 1], "hobbit"))
             linkage = GUILE_LSTYLE_HOBBIT;
+	  else if (0 == strcmp (argv[i + 1], "simple"))
+	    linkage = GUILE_LSTYLE_SIMPLE;
+	  else if (0 == strcmp (argv[i + 1], "module"))
+	    linkage = GUILE_LSTYLE_MODULE;
           else
             Swig_arg_error ();
           Swig_mark_arg (i);
@@ -299,7 +306,7 @@ GUILE::emit_linkage (char *module_name)
   case GUILE_LSTYLE_SIMPLE:
     Printf (f_init, "\n/* Linkage: simple */\n");
     break;
-  case GUILE_LSTYLE_LTDLMOD:
+  case GUILE_LSTYLE_LTDLMOD_1_4:
     Printf (f_init, "\n/* Linkage: ltdlmod */\n");
     Replace(module_func,"/", "_", DOH_REPLACE_ANY);
     Insert(module_func,0, "scm_init_");
@@ -312,6 +319,27 @@ GUILE::emit_linkage (char *module_name)
                mod);
       Printf (f_init, "    return SCM_UNSPECIFIED;\n");
       Delete(mod);
+    }
+    Printf (f_init, "}\n");
+    break;
+  case GUILE_LSTYLE_MODULE:
+    Printf (f_init, "\n/* Linkage: module */\n");
+    Replace(module_func,"/", "_", DOH_REPLACE_ANY);
+    Insert(module_func,0, "scm_init_");
+    Append(module_func,"_module");
+
+    Printf (f_init, "static void SWIG_init_helper(void *data)\n");
+    Printf (f_init, "{\n    SWIG_init();\n");
+    Printf (f_init, "    scm_c_export(%sNULL);\n}\n\n",
+	    exported_symbols);
+    
+    Printf (f_init, "SCM\n%s (void)\n{\n", module_func);
+    {
+      DOHString *mod = NewString(module_name);
+      Replace(mod,"/", " ", DOH_REPLACE_ANY);
+      Printf(f_init, "    SCM module = scm_c_define_module(\"%s\",\n", mod);
+      Printf(f_init, "      SWIG_init_helper, NULL);\n");
+      Printf(f_init, "    return SCM_UNSPECIFIED;\n");
     }
     Printf (f_init, "}\n");
     break;
@@ -746,6 +774,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 	Printf (f_init, "gh_define(\"%s\", getter);\n",
 		pws_name);
       }
+      Printf (exported_symbols, "\"%s\", ", pws_name);
       free(pws_name);
     }
   }
@@ -754,6 +783,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
     Printf (f_init, "gh_new_procedure(\"%s\", (SCM (*) ()) %s, %d, %d, 0);\n",
 	    proc_name, wname, numargs-numopt, numopt);
   }
+  Printf (exported_symbols, "\"%s\", ", proc_name);
   if (procdoc) {
     String *returns_text = NewString("");
     Printv(returns_text, "Returns ", 0);
@@ -893,6 +923,7 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
 	      "scm_make_procedure_with_setter(p, p)); }\n",
 	      proc_name);
     }
+    Printf (exported_symbols, "\"%s\", ", proc_name);
 
     if (procdoc) {
       /* Compute documentation */

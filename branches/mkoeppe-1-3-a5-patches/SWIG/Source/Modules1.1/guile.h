@@ -32,7 +32,8 @@ private:
   char   *package;
   enum {
     GUILE_LSTYLE_SIMPLE,                // call `SWIG_init()'
-    GUILE_LSTYLE_LTDLMOD,               // "native" guile?
+    GUILE_LSTYLE_MODULE,                // native guile module linking (Guile >= 1.4.1)
+    GUILE_LSTYLE_LTDLMOD_1_4,		// old (Guile <= 1.4) dynamic module convention
     GUILE_LSTYLE_HOBBIT                 // use (hobbit4d link)
   } linkage;
   File  *procdoc;
@@ -44,6 +45,7 @@ private:
   int	 emit_setters;
   int    struct_member;
   String *before_return;
+  String *exported_symbols;
   void   emit_linkage(char *module_name);
   void   write_doc(const String *proc_name,
 		   const String *signature,
