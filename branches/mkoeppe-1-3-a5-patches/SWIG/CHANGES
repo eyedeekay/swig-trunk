@@ -1,7 +1,20 @@
 SWIG (Simplified Wrapper and Interface Generator)
 
-The Guile Support Patch for 1.3a5
-=================================
+The Guile/MzScheme Support Patch for 1.3a5
+==========================================
+
+4/18/2001: mkoeppe
+	   [MzScheme] Added typemaps for passing through Scheme_Object
+	   pointers. 
+
+4/9/2001 : mkoeppe 
+	   [MzScheme] Added typemaps for `bool'.  Inclusion of headers
+	   and support routines is now data-driven via mzscheme.i.
+	   Headers come from the new file mzschemdec.swg.  Don't abort
+	   immediately when a type-handling error is reported.  When
+	   searching for typemaps for enums, fall back to using int,
+	   like the Guile backend does.  Support char constants.  Emit
+	   correct wrapper code for variables.
 
 3/12/2001: mkoeppe
 	   [Guile] Fixed typemaps for char **OUTPUT, char **BOTH.
