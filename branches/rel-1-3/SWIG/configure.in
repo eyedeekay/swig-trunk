@@ -7,7 +7,7 @@ dnl   to nothing) and `test -z "$VAR"' or `test -n "$VAR"' as the
 dnl   case may be.  --ttn, 2000/08/04 12:11:26
 
 AC_INIT(Source/Swig/swig.h)
-AC_PREREQ(2.0)
+AC_PREREQ(2.53)
 . $srcdir/VERSION
 AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
@@ -88,7 +88,18 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
-	CYGWIN*) LDSHARED="gcc -shared";;
+        CYGWIN*) 
+            if test "$GCC" = yes; then
+                LDSHARED="$CC -shared"
+            else
+                if test "cl" = $CC ;  then
+                    # Microsoft Visual C++ (MSVC)
+                    LDSHARED="$CC -nologo -LD"
+                else
+                    # Unknown compiler try gcc approach
+                    LDSHARED="$CC -shared"
+                fi
+            fi ;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
@@ -120,6 +131,7 @@ then
 	*)	LDSHARED="ld";;
 	esac
 fi
+
 AC_MSG_RESULT($LDSHARED)
 # CXXSHARED is the ld *command* used to create C++ shared library
 # -- "ld" on SunOS 4.x.x, "ld -G" on SunOS 5.x, "ld -shared" on IRIX 5
@@ -142,7 +154,18 @@ then
              else TRYLINKINGWITHCXX="CXXSHARED= $CXX -G -L/opt/SUNWspro/lib -lCrun";
              fi;;
         Darwin*) TRYLINKINGWITHCXX="CXXSHARED= $CXX -bundle -undefined suppress -flat_namespace";;
-        *)       TRYLINKINGWITHCXX="CXXSHARED=      $CXX -shared ";;
+        CYGWIN*)
+            if test "$GCC" = yes; then
+                TRYLINKINGWITHCXX="CXXSHARED= $CXX -shared "
+            else
+                if test "cl" = $CXX ;  then
+                    # Microsoft Visual C++ (MSVC)
+                    TRYLINKINGWITHCXX="CXXSHARED= $CXX -nologo -LD"
+                else
+                    TRYLINKINGWITHCXX="#unknown Windows compiler"
+                fi
+            fi ;;
+        *)       TRYLINKINGWITHCXX="CXXSHARED= $CXX -shared ";;
         esac
 fi
 AC_MSG_RESULT($TRYLINKINGWITHCXX)
@@ -424,7 +447,7 @@ else
 AC_MSG_RESULT($TCLLIB)
 fi
 
-# Only cygwin (Windows) needs the library for dynamic linking
+# Only Cygwin (Windows) needs the library for dynamic linking
 case $ac_sys_system/$ac_sys_release in
 CYGWIN*) TCLDYNAMICLINKING="$TCLLIB";;
 *)TCLDYNAMICLINKING="";;
@@ -530,7 +553,7 @@ if test -n "$PYTHON"; then
     fi
 fi
 
-# Only cygwin (Windows) needs the library for dynamic linking
+# Only Cygwin (Windows) needs the library for dynamic linking
 case $ac_sys_system/$ac_sys_release in
 CYGWIN*) PYTHONDYNAMICLINKING="-L$PYLIB $PYLINK"
          PYINCLUDE="-DUSE_DL_IMPORT $PYINCLUDE"
@@ -595,7 +618,7 @@ else
 #	PERL5EXT="/usr/local/lib/perl/archname/5.003/CORE"
 fi
 
-# Only cygwin (Windows) needs the library for dynamic linking
+# Only Cygwin (Windows) needs the library for dynamic linking
 case $ac_sys_system/$ac_sys_release in
 CYGWIN*) PERL5DYNAMICLINKING="-L$PERL5EXT -l$PERL5LIB";;
 *)PERL5DYNAMICLINKING="";;
@@ -635,7 +658,7 @@ AC_ARG_WITH(javaincl, [  --with-javaincl=path    Set location of Java include di
 if test -z "$JAVAINCDIR"; then
   JAVAINCDIR="/usr/j2sdk*/include /usr/local/j2sdk*/include /usr/jdk*/include /usr/local/jdk*/include /opt/j2sdk*/include /opt/jdk*/include /usr/java/include /usr/local/java/include /opt/java/include /usr/include/java /usr/local/include/java /usr/include/kaffe /usr/local/include/kaffe /usr/include /usr/local/include"
 
-  # Add in default installation directory on Windows for cygwin
+  # Add in default installation directory on Windows for Cygwin
   case $ac_sys_system/$ac_sys_release in
   CYGWIN*) JAVAINCDIR="c:/j2sdk*/include d:/j2sdk*/include c:/jdk*/include d:/jdk*/include $JAVAINCDIR";;
   *);;
@@ -667,13 +690,18 @@ else
   fi
 fi
 
-# java.exe on Cygwin requires the Windows standard (Pascal) calling convention as it is a normal Windows executable and not a cygwin built executable
+# java.exe on Cygwin requires the Windows standard (Pascal) calling convention as it is a normal Windows executable and not a Cygwin built executable
 case $ac_sys_system/$ac_sys_release in
-CYGWIN*) JAVADYNAMICLINKING=" -Wl,--add-stdcall-alias";;
+CYGWIN*) 
+    if test "$GCC" = yes; then
+        JAVADYNAMICLINKING=" -Wl,--add-stdcall-alias"
+    else
+        JAVADYNAMICLINKING=""
+    fi ;;
 *)JAVADYNAMICLINKING="";;
 esac
 
-# Java on windows platforms including cygwin doesn't use libname.dll, rather name.dll when loading dlls
+# Java on Windows platforms including Cygwin doesn't use libname.dll, rather name.dll when loading dlls
 case $ac_sys_system/$ac_sys_release in
 CYGWIN*) JAVALIBRARYPREFIX="";;
 *)JAVALIBRARYPREFIX="lib";;
