@@ -97,7 +97,7 @@ skip-mzscheme	= [ -z "@MZC@" ]
 skip-ruby	= [ -z "@RUBY@" -o -z "@RUBYINCLUDE@" -o -z "@RUBYLIB@" ]
 
 chk-swiglib = @ROOT_DIR@/Lib
-chk = $(MAKE) -s SWIG_LIB=$(chk-swiglib) SWIG=@ROOT_DIR@/$(TARGET) check
+chk = $(MAKE) -k -s SWIG_LIB=$(chk-swiglib) SWIG=@ROOT_DIR@/$(TARGET) check
 
 check-aliveness:
 	test -x ./$(TARGET)
@@ -111,55 +111,108 @@ check-aliveness:
 	$(skip-mzscheme) || ./$(TARGET) -mzscheme -help
 	$(skip-ruby) || ./$(TARGET) -ruby -help
 
-check-examples:
-#	$(skip-tcl) || (cd Examples/tcl/class && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/constants && $(chk))
-#	$(skip-tcl) || (cd Examples/tcl/enum && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/funcptr && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/pointer && $(chk))
-#	$(skip-tcl) || (cd Examples/tcl/reference && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/simple && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/value && $(chk))
-	$(skip-tcl) || (cd Examples/tcl/variables && $(chk))
-	$(skip-perl) || (cd Examples/perl5/class && $(chk))
-	$(skip-perl) || (cd Examples/perl5/constants && $(chk))
-	$(skip-perl) || (cd Examples/perl5/funcptr && $(chk))
-	$(skip-perl) || (cd Examples/perl5/pointer && $(chk))
-	$(skip-perl) || (cd Examples/perl5/reference && $(chk))
-	$(skip-perl) || (cd Examples/perl5/simple && $(chk))
-	$(skip-perl) || (cd Examples/perl5/value && $(chk))
-	$(skip-perl) || (cd Examples/perl5/variables && $(chk))
-	$(skip-python) || (cd Examples/python/class && $(chk))
-	$(skip-python) || (cd Examples/python/constants && $(chk))
-	$(skip-python) || (cd Examples/python/enum && $(chk))
-	$(skip-python) || (cd Examples/python/funcptr && $(chk))
-	$(skip-python) || (cd Examples/python/pointer && $(chk))
-	$(skip-python) || (cd Examples/python/reference && $(chk))
-	$(skip-python) || (cd Examples/python/shadow && $(chk))
-	$(skip-python) || (cd Examples/python/simple && $(chk))
-	$(skip-python) || (cd Examples/python/value && $(chk))
-	$(skip-python) || (cd Examples/python/variables && $(chk))
-	$(skip-java) || (cd Examples/java/class && $(chk))
-	$(skip-java) || (cd Examples/java/constants && $(chk))
-	$(skip-java) || (cd Examples/java/enum && $(chk))
-	$(skip-java) || (cd Examples/java/native && $(chk))
-	$(skip-java) || (cd Examples/java/reference && $(chk))
-	$(skip-java) || (cd Examples/java/simple && $(chk))
-	$(skip-java) || (cd Examples/java/typemap && $(chk))
-	$(skip-guile) || (cd Examples/guile/matrix && $(chk))
-	$(skip-guile) || (cd Examples/guile/simple && $(chk))
-	$(skip-guile) || (cd Examples/guile/port && $(chk))
-	$(skip-guile) || (cd Examples/guile/test-suite && $(chk))
-	$(skip-mzscheme) || (cd Examples/mzscheme/simple && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/class && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/constants && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/enum && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/funcptr && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/pointer && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/reference && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/simple && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/value && $(chk))
-	$(skip-ruby) || (cd Examples/ruby/variables && $(chk))
+TCL_EXAMPLES = class constants enum funcptr pointer reference simple value variables
+PERL5_EXAMPLES = class constants funcptr pointer reference simple value variables 
+PYTHON_EXAMPLES = class constants enum funcptr pointer reference shadow simple value variables 
+JAVA_EXAMPLES = class constants enum native reference simple typemap
+GUILE_EXAMPLES = matrix simple port test-suite
+MZSCHEME_EXAMPLES = simple
+RUBY_EXAMPLES = class constants enum funcptr pointer reference simple value variables
+
+check-examples: check-tcl-examples check-perl5-examples check-python-examples \
+		check-java-examples check-guile-examples check-mzscheme-examples \
+		check-ruby-examples
+
+check-tcl-examples:
+	@if $(skip-tcl); then			\
+	  echo Skipping Tcl tests;		\
+	else					\
+	  passed=true;				\
+	  for a in $(TCL_EXAMPLES); do		\
+	    echo Checking Examples/tcl/$$a;	\
+	    (cd Examples/tcl/$$a && $(chk))	\
+	    || passed=false;			\
+	  done;					\
+	  test $$passed = true;			\
+	fi
+
+check-perl5-examples:
+	@if $(skip-perl); then			\
+	  echo Skipping Perl tests;		\
+	else					\
+	  passed=true;				\
+	  for a in $(PERL5_EXAMPLES); do	\
+	    echo Checking Examples/perl5/$$a;	\
+	    (cd Examples/perl5/$$a && $(chk))	\
+	    || passed=false;			\
+	  done;					\
+	  test $$passed = true;			\
+	fi
+
+check-python-examples:
+	@if $(skip-python); then			\
+	  echo Skipping Python tests;			\
+	else						\
+	  passed=true;					\
+	  for a in $(PYTHON_EXAMPLES); do		\
+	    echo Checking Examples/python/$$a;		\
+	    (cd Examples/python/$$a && $(chk))		\
+	    || passed=false;				\
+	  done;						\
+	  test $$passed = true;				\
+	fi
+
+check-java-examples:
+	@if $(skip-java); then			\
+	  echo Skipping Java tests;		\
+	else					\
+	  passed=true;				\
+	  for a in $(JAVA_EXAMPLES); do		\
+	    echo Checking Examples/java/$$a;	\
+	    (cd Examples/java/$$a && $(chk))	\
+	    || passed=false;			\
+	  done;					\
+	  test $$passed = true;			\
+	fi
+
+check-guile-examples:
+	@if $(skip-guile); then			\
+	  echo Skipping Guile tests;		\
+	else					\
+	  passed=true;				\
+	  for a in $(GUILE_EXAMPLES); do	\
+	    echo Checking Examples/guile/$$a;	\
+	    (cd Examples/guile/$$a && $(chk))	\
+	    || passed=false;			\
+	  done;					\
+	  test $$passed = true;			\
+	fi
+
+check-mzscheme-examples:
+	@if $(skip-mzscheme); then			\
+	  echo Skipping MzScheme tests;			\
+	else						\
+	  passed=true;					\
+	  for a in $(MZSCHEME_EXAMPLES); do		\
+	    echo Checking Examples/mzscheme/$$a;	\
+	    (cd Examples/mzscheme/$$a && $(chk))	\
+	    || passed=false;				\
+	  done;						\
+	  test $$passed = true;				\
+	fi
+
+check-ruby-examples:
+	@if $(skip-ruby); then			\
+	  echo Skipping Ruby tests;		\
+	else					\
+	  passed=true;				\
+	  for a in $(RUBY_EXAMPLES); do		\
+	    echo Checking Examples/ruby/$$a;	\
+	    (cd Examples/ruby/$$a && $(chk))	\
+	    || passed=false;			\
+	  done;					\
+	  test $$passed = true;			\
+	fi
 
 Examples/GIFPlot/libgifplot.a:
 	cd Examples/GIFPlot/Lib ; $(MAKE)
@@ -185,7 +238,7 @@ check-c++-examples:
 	$(skip-python) || (cd Examples/C++/Python && $(chk))
 	$(skip-java) || (cd Examples/C++/Java && $(chk))
 
-check: check-aliveness check-examples check-gifplot-example #check-c++-examples
+check: check-aliveness check-examples check-gifplot-example check-c++-examples
 
 #####################################################################
 # CLEAN
