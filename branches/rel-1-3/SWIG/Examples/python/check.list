@@ -17,6 +17,7 @@ pointer
 reference
 shadow
 simple
+smartptr
 template
 value
 variables
