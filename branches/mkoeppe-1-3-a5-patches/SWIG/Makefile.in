@@ -97,19 +97,19 @@ skip-mzscheme	= [ -z "@MZC@" ]
 skip-ruby	= [ -z "@RUBY@" -o -z "@RUBYINCLUDE@" -o -z "@RUBYLIB@" ]
 
 chk-swiglib = @ROOT_DIR@/Lib
-chk = $(MAKE) -s SWIG_LIB=$(chk-swiglib) check
+chk = $(MAKE) -s SWIG_LIB=$(chk-swiglib) SWIG=@ROOT_DIR@/$(TARGET) check
 
 check-aliveness:
-	test -x ./swig
-	./swig -version
-	./swig -help
-	$(skip-tcl) || ./swig -tcl -help
-	$(skip-perl) || ./swig -perl -help
-	$(skip-python) || ./swig -python -help
-	$(skip-java) || ./swig -java -help
-	$(skip-guile) || ./swig -guile -help
-	$(skip-mzscheme) || ./swig -mzscheme -help
-	$(skip-ruby) || ./swig -ruby -help
+	test -x ./$(TARGET)
+	./$(TARGET) -version
+	./$(TARGET) -help
+	$(skip-tcl) || ./$(TARGET) -tcl -help
+	$(skip-perl) || ./$(TARGET) -perl -help
+	$(skip-python) || ./$(TARGET) -python -help
+	$(skip-java) || ./$(TARGET) -java -help
+	$(skip-guile) || ./$(TARGET) -guile -help
+	$(skip-mzscheme) || ./$(TARGET) -mzscheme -help
+	$(skip-ruby) || ./$(TARGET) -ruby -help
 
 check-examples:
 #	$(skip-tcl) || (cd Examples/tcl/class && $(chk))
@@ -198,7 +198,7 @@ clean:
 	   fi \
 	done;
 	@cd Runtime clean; $(MAKE)
-	rm -f swig
+	rm -f $(TARGET)
 
 distclean-dead = config.status config.log config.cache \
 		 @configure_substituted_files@
