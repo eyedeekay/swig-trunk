@@ -203,7 +203,7 @@ SWIG_Guile_GetPtr(SCM s, void **result, swig_type_info *type)
 	   && (unsigned long) SCM_TYP16(s) == swig_tag) {
     if (type) 
       return !SWIG_Cast((void *) SCM_CDR(s),
-			(scm_bits_t) SCM_CAR(s) >> 16,
+			(long) SCM_CAR(s) >> 16,
 			result, type->tag);
     else {
       *result = (void *) SCM_CDR(s);
@@ -231,10 +231,10 @@ static int
 print_swig (SCM swig_smob, SCM port, scm_print_state *pstate)
 {
   scm_puts("#<swig ", port);
-  if (SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname != NULL)
-    scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname, port);
-  else scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].name, port);
-  scm_intprint((scm_bits_t) SCM_CDR(swig_smob), 16, port);
+  if (SwigPtrList[(long) SCM_CAR(swig_smob) >> 16].prettyname != NULL)
+    scm_puts(SwigPtrList[(long) SCM_CAR(swig_smob) >> 16].prettyname, port);
+  else scm_puts(SwigPtrList[(long) SCM_CAR(swig_smob) >> 16].name, port);
+  scm_intprint((long) SCM_CDR(swig_smob), 16, port);
   /* non-zero means success */
   return 1;
 }
@@ -282,7 +282,7 @@ SWIG_Guile_GetArgs (SCM *dest, SCM rest,
   int i;
   for (i = 0; i<reqargs; i++) {
     if (!SCM_CONSP(rest))
-      scm_wrong_num_args(gh_str02scm(procname));
+      scm_wrong_num_args(gh_str02scm((char *) procname));
     *dest++ = SCM_CAR(rest);
     rest = SCM_CDR(rest);
   }
@@ -293,7 +293,7 @@ SWIG_Guile_GetArgs (SCM *dest, SCM rest,
   for (; i<optargs; i++)
     *dest++ = GH_NOT_PASSED;
   if (!SCM_NULLP(rest))
-    scm_wrong_num_args(gh_str02scm(procname));
+    scm_wrong_num_args(gh_str02scm((char *) procname));
 }
 
 #ifdef __cplusplus

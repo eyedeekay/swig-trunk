@@ -1,13 +1,24 @@
 SWIG (Simplified Wrapper and Interface Generator)
 
-The Guile/MzScheme/Java Support Branch for 1.3a5
-================================================
+The Stable Development Branch
+=============================
 
-In this CVS branch, fixes in the SWIG core and improvements to the
-language modules take place.  This branch is also the basis for the
-"swig1.3" Debian package (currently unofficial, available from
-http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
-will be merged with the development on the trunk of the CVS tree.
+In this CVS branch "mkoeppe-1-3-a5-patches", fixes in the SWIG core
+and improvements to the language modules take place, starting from the
+relatively stable release 1.3a5.  It works towards the new stable
+release 1.3.6.
+
+This branch is also the basis for the "swig1.3" Debian package
+(currently unofficial, available from
+http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian). 
+
+Eventually this branch will be merged with the development on the
+trunk of the CVS tree.
+
+6/11/2001: mkoeppe
+	   [Guile] Use long instead of scm_bits_t; this makes the
+	   generated wrapper code compatible with Guile 1.3.4
+	   again. Thanks to Masaki Fukushima for pointing this out.
 
 6/11/2001: cheetah (william fulton)
 	   The generic INSTALL file from autoconf added. Few changes to README file.
