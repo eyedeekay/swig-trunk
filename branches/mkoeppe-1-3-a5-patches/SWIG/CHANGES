@@ -3,6 +3,10 @@ SWIG (Simplified Wrapper and Interface Generator)
 The Guile/MzScheme Support Patch for 1.3a5
 ==========================================
 
+5/22/2001: mkoeppe
+	   [Guile] Fixed extern "C" declarations in C++ mode. Thanks
+	   to Greg Troxel <gdt@ir.bbn.com>.
+
 5/21/2001: mkoeppe
 	   [Guile] New linkage "module" for creating Guile modules for
 	   Guile versions >= 1.5.0. 

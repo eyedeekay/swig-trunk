@@ -292,12 +292,19 @@ GUILE::initialize (void)
     break;
   }
   Printf (f_init, "\tSWIG_Guile_Init();\n");
+  if (CPlusPlus) {
+    Printf(f_runtime, "\n}\n");
+  }
 }
 
 void
 GUILE::emit_linkage (char *module_name)
 {
   DOHString *module_func = NewString("");
+
+  if (CPlusPlus) {
+    Printf(f_init, "extern \"C\" {\n\n");
+  }
 
   Printv(module_func,module_name,0);
   Replace(module_func,"-", "_", DOH_REPLACE_ANY);
@@ -362,6 +369,9 @@ GUILE::emit_linkage (char *module_name)
     abort();                            // for now
   }
   Delete(module_func);
+  if (CPlusPlus) {
+    Printf(f_init, "\n}\n");
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -388,9 +398,6 @@ GUILE::close (void)
       strcpy(module_name,module);
   }
   emit_linkage (module_name);
-  if (CPlusPlus) {
-    Printf(f_init, "\n}\n");
-  }
   
   if (procdoc) {
     Delete(procdoc);
