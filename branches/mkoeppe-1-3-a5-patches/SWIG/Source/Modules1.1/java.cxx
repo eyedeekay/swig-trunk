@@ -1190,7 +1190,7 @@ void JAVA::cpp_close_class() {
   if(!shadow_classdef_emitted) emit_shadow_classdef();
 
   if(have_default_constructor == 0) {
-    Printf(f_shadow, "  public %s() {}\n\n", shadow_classname);
+    Printf(f_shadow, "  protected %s() {}\n\n", shadow_classname);
   }
 
   // Write the enum initialisation code in a static block.
@@ -1259,7 +1259,7 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
 
   Printv(nativecall, module, ".", java_function_name, "(", 0);
   if (!static_flag)
-    Printv(nativecall, "_cPtr", 0);
+    Printv(nativecall, "getCPtr()", 0);
 
   int pcount = ParmList_len(l);
 
@@ -1351,7 +1351,7 @@ void JAVA::cpp_constructor(char *name, char *iname, ParmList *l) {
 
   Printf(f_shadow, "  public %s(", shadow_classname);
 
-  Printv(nativecall, "    if(_cPtr == 0 && getCPtr() == 0) {\n", 0);
+  Printv(nativecall, "    if(getCPtr() == 0) {\n", 0);
   if (iname != NULL)
     Printv(nativecall, tab8, " _cPtr = ", module, ".", Swig_name_construct(iname), "(", 0);
   else
@@ -1420,7 +1420,7 @@ void JAVA::cpp_destructor(char *name, char *newname) {
   }
 
   Printf(f_shadow, "  synchronized public void _delete() {\n");
-  Printf(f_shadow, "    if(_cPtr != 0 && _cMemOwn) {\n");
+  Printf(f_shadow, "    if(getCPtr() != 0 && _cMemOwn) {\n");
   Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(shadow_classname));
   Printf(f_shadow, "\t_cPtr = 0;\n");
   Printf(f_shadow, "    }\n");

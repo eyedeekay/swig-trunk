@@ -10,11 +10,15 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
 6/05/2001: cheetah (william fulton)
+	   [Java] Mods for using inherited c++ classes from Java
+	   [Java] New example called class based on the same example from other modules
+
+6/05/2001: cheetah (william fulton)
 	   [Java] destructor (_delete()) was not aware of %name renaming
 	   [Java] extends baseclass did not know about %name renaming
 	   [Java] extends baseclass did extend even when the baseclass was not known to swig
 	   [Java] sometimes enum-declarations occured before the Java class declaration
-	   [Java] unrelated enum initialisations appearing in Java class
+	   [Java] unrelated enum initialisations no longer appear in Java class
 	   [Java] if module ends in '_' correct JNI names are now produced
 
 6/04/2001: cheetah (william fulton)
