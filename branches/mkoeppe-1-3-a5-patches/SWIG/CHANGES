@@ -16,6 +16,14 @@ Eventually this branch will be merged with the development on the
 trunk of the CVS tree.
 
 6/13/2001: mkoeppe
+	   Partial merge from the CVS trunk at tag
+	   "mkoeppe-merge-1". This covers the following changes:
+|
+| 01/16/01: ttn
+|	   Wrote table of contents for Doc/engineering.html.  Added section
+|	   on CVS tagging conventions.  Added copyright to other docs.
+
+6/13/2001: mkoeppe
 	   When configure does not find a language, don't use default
 	   paths like /usr/local/include; this only causes build
 	   problems.
