@@ -282,7 +282,7 @@ install-lib:
 	    done;
 
 install-runtime:
-	@cd Runtime install; $(MAKE)
+	@cd Runtime; $(MAKE) install
 
 ############################################################################
 # DIST and other maintenance
