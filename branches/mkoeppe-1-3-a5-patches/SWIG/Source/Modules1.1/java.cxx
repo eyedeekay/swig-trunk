@@ -1268,12 +1268,23 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
   if (!static_flag)
     Printv(nativecall, "getCPtr()", 0);
 
+  int gencomma = !static_flag;
   int pcount = ParmList_len(l);
 
   /* Output each parameter */
   Parm *p = l;
+
+/* Workaround to overcome Getignore(p) not working - p does not always have the Getignore 
+attribute set. Noticeable when cpp_func is called from cpp_member_func() */
+Wrapper* f = NewWrapper();
+emit_args(NULL, l, f);
+DelWrapper(f);
+/* Workaround end */
+
   for (int i = 0; i < pcount ; i++, p = Getnext(p)) {
-    /* Ignore the 'self' or 'this' argument for variable wrappers */
+    if(Getignore(p)) continue;
+
+    /* Ignore the 'this' argument for variable wrappers */
     if (!(variable_wrapper_flag && i==0)) 
     {
       SwigType *pt = Gettype(p);
@@ -1287,8 +1298,8 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
         sprintf(arg,"arg%d",i);
       }
   
-      if(!(i==0 && (static_flag || variable_wrapper_flag))) 
-        Printv(nativecall, ", ", 0);
+      if (gencomma)
+        Printf(nativecall, ", ");
 
       if(SwigType_type(pt) == T_ARRAY && is_shadow(get_array_type(pt))) {
         Printv(user_arrays, tab4, "long[] $arg_cArray = new long[$arg.length];\n", 0);
@@ -1305,10 +1316,10 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
       SwigToJavaType(pt, pn, javaparamtype, shadow); 
   
       /* Add to java shadow function header */
-      Printf(f_shadow, "%s %s", javaparamtype, arg);
-      if(i != pcount-1) {
+      if (gencomma >= 2)
         Printf(f_shadow, ", ");
-      }
+      gencomma = 2;
+      Printf(f_shadow, "%s %s", javaparamtype, arg);
 
       Delete(javaparamtype);
     }
@@ -1436,7 +1447,7 @@ void JAVA::cpp_destructor(char *name, char *newname) {
     Printf(f_shadow, "  };\n\n");
   }
 
-  Printf(f_shadow, "  synchronized public void _delete() {\n");
+  Printf(f_shadow, "  public void _delete() {\n");
   Printf(f_shadow, "    if(getCPtr() != 0 && _cMemOwn) {\n");
   Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(shadow_classname));
   Printf(f_shadow, "\t_cPtr = 0;\n");
