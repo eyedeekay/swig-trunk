@@ -1343,7 +1343,7 @@ PYTHON::cpp_destructor(char *name, char *newname) {
 
     Printv(pyclass, tab4, "def __del__(self,", module, "=", module, "):\n", 0);
     emitAddPragmas(pyclass,(char*)"__del__",(char*)tab8);
-    Printv(pyclass, tab8, "if self.thisown == 1 :\n",
+    Printv(pyclass, tab8, "if hasattr(self,'thisown') and self.thisown == 1 :\n",
 	   tab8, tab4, module, ".", Swig_name_destroy(realname), "(self)\n", 0);
 
     have_destructor = 1;
