@@ -9,3 +9,5 @@
 ;; that x (an instance of class B) can be passed to methods of class A. 
 
 (A-hello x)				
+
+(exit 0)

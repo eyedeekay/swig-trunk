@@ -1,4 +1,4 @@
-#include <iostream.h> 
+%inline %{
 
 class A { 
  public: 
@@ -8,3 +8,12 @@ class A {
     { 
     } 
 }; 
+
+class B : public A 
+{ 
+ public: 
+  B() {} 
+  
+};
+
+%}

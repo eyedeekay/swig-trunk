@@ -18,6 +18,14 @@ trunk of the CVS tree.
 6/15/2001: mkoeppe
 	   * [Guile]: Fixed printing of smobs (space and angle were
 	     missing). 
+	   * Properly generate type information for base classes
+	     imported with the %import directive.  Thanks to Marcelo
+	     Matus <mmatus@acms.arizona.edu> for the report and the
+	     patch; this closes SF bug #231619; see also
+	     Examples/guile/test-suite/import*. 
+	   * [Guile]: Fix casting between class and base class; the
+	     runtime type system had it the wrong way around; see
+	     Examples/guile/test-suite/casts.i
 
 6/14/2001: beazley
            Made a minor change to the way files are loaded in

@@ -7,7 +7,6 @@ class B : public A
   
   void bye() 
     { 
-      cerr << "bye" << endl; 
     } 
 };
 

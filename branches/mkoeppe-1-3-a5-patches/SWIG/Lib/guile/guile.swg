@@ -160,8 +160,8 @@ SWIG_Cast (void *source, size_t source_type,
        mapping table to figure out whether or not we can accept this
        datatype.  */
     struct SwigCast *c;
-    for (c = SwigPtrList[source_type].cast;
-	 c && c->type!=dest_type; c = c->next) /* nothing */;
+    for (c = SwigPtrList[dest_type].cast;
+	 c && c->type!=source_type; c = c->next) /* nothing */;
     if (c) {
       /* Get pointer value. */
       if (c->cast) *ptr = (*(c->cast))(source);
