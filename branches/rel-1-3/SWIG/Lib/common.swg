@@ -67,6 +67,7 @@ SWIGIMPORT(swig_type_info *) SWIG_TypeRegister(swig_type_info *);
 SWIGIMPORT(swig_type_info *) SWIG_TypeCheck(char *c, swig_type_info *);
 SWIGIMPORT(void *)           SWIG_TypeCast(swig_type_info *, void *);
 SWIGIMPORT(swig_type_info *) SWIG_TypeDynamicCast(swig_type_info *, void **);
+SWIGIMPORT(const char *)     SWIG_TypeName(const swig_type_info *);
 SWIGIMPORT(swig_type_info *) SWIG_TypeQuery(const char *);
 SWIGIMPORT(void)             SWIG_TypeClientData(swig_type_info *, void *);
 
@@ -158,6 +159,12 @@ SWIG_TypeDynamicCast(swig_type_info *ty, void **ptr)
      if (ty) lastty = ty;
   }
   return lastty;
+}
+
+/* Return the name associated with this type */
+SWIGRUNTIME(const char *)
+SWIG_TypeName(const swig_type_info *ty) {
+  return ty->name;
 }
 
 /* Search for a swig_type_info structure */
