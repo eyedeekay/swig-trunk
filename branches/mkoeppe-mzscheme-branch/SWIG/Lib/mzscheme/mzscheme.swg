@@ -210,19 +210,14 @@ SWIG_MustGetPtr_ (Scheme_Object *s,  swig_type_info *type,
   return result;
 }
 
-SWIGSTATIC void
-SWIG_Init (void)
+SWIGSTATIC
+void SWIG_RegisterTypes(swig_type_info **table,
+			swig_type_info **init)
 {
   if (!swig_initialized_p) {
     swig_type = scheme_make_type((char *) "swig");
     swig_initialized_p = 1;
   }
-}
-
-SWIGSTATIC
-void SWIG_RegisterTypes(swig_type_info **table,
-			swig_type_info **init)
-{
   for (; *init; table++, init++) {
     swig_type_info *type = *table = *init;
     const char *origname = type->name;

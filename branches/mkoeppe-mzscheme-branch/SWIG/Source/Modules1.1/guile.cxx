@@ -484,7 +484,7 @@ guile_typemap_lookup(const char *op, SwigType *type, const String_or_char *pname
   if (!tm) {
     SwigType *base = SwigType_typedef_resolve_all(type);
     if (strncmp(Char(base), "enum ", 5)==0)
-      tm = Swig_typemap_lookup((char*) op, (char*) "int", (char*)pname, source, target, f);
+      tm = Swig_typemap_lookup((char*) op, NewSwigType(T_INT), (char*)pname, source, target, f);
   }
   return tm;
 }
@@ -503,42 +503,11 @@ guile_do_typemap(DOHFile *file, const char *op,
   if ((tm = guile_typemap_lookup(op, type, arg,
 				 source, target, f))) {
     String *s = NewString(tm);
-    String *descriptor = NewString("");
-    String *basedescriptor = NewString("");
-    String *stardescriptor = NewString("");
     char argnum_s[10];
-    SwigType *startype = NULL;
-
-    if (SwigType_ispointer(type)) {
-      startype = Copy(type);
-      SwigType_del_pointer(startype);
-      Printf(stardescriptor, "SWIGTYPE%s",
-	     SwigType_manglestr(startype));
-    }
-    else Printf(stardescriptor, "SWIGTYPE_BAD");
-    Printf(descriptor, "SWIGTYPE%s",
-	   SwigType_manglestr(type));
-    Printf(basedescriptor, "SWIGTYPE%s",
-	   SwigType_manglestr(SwigType_base(type)));
     sprintf(argnum_s, "%d", argnum);
     Replace(s,"$argnum", argnum_s, DOH_REPLACE_ANY);
     Replace(s,"$arg",    arg,      DOH_REPLACE_ANY);
     Replace(s,"$name",   name,     DOH_REPLACE_ANY);
-    if (Replace(s, "$descriptor",
-		descriptor, DOH_REPLACE_ANY))
-      SwigType_remember(type);
-    if (Replace(s, "$basedescriptor",
-		basedescriptor, DOH_REPLACE_ANY))
-      SwigType_remember(SwigType_base(type));
-    if (Replace(s, "$*descriptor", stardescriptor,
-		DOH_REPLACE_ANY)) {
-      if (!startype) {
-	Printf (stderr, "%s : Line %d. $*descriptor is meaningless for non-pointer types.\n",
-		input_file, line_number);
-	error_count++;
-      }
-      else SwigType_remember(startype);
-    }
     if (nonewline_p)
       Printv(file, s, 0);
     else Printv(file, s, "\n", 0);
@@ -797,7 +766,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
     Printv(f_wrappers, ");\n", 0);
     Printv(f_wrappers, "}\n", 0);
     /* Register it */
-    Printf (f_init, "gh_new_procedure(\"%s\", (SCM (*) ()) %s_rest, 0, 0, 1);\n",
+    Printf (f_init, "gh_new_procedure(\"%s\", (swig_guile_proc) %s_rest, 0, 0, 1);\n",
              proc_name, wname, numargs-numopt, numopt);
   }
   else if (emit_setters && struct_member && strlen(Char(proc_name))>3) {
@@ -810,7 +779,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
       struct_member = 2; /* have a setter */
     }
     else Printf(f_init, "SCM getter = ");
-    Printf (f_init, "gh_new_procedure(\"%s\", (SCM (*) ()) %s, %d, %d, 0);\n",
+    Printf (f_init, "gh_new_procedure(\"%s\", (swig_guile_proc) %s, %d, %d, 0);\n",
 	    proc_name, wname, numargs-numopt, numopt);
     if (!is_setter) {
       /* Strip off "-get" */
@@ -834,7 +803,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   }
   else {
     /* Register the function */
-    Printf (f_init, "gh_new_procedure(\"%s\", (SCM (*) ()) %s, %d, %d, 0);\n",
+    Printf (f_init, "gh_new_procedure(\"%s\", (swig_guile_proc) %s, %d, %d, 0);\n",
 	    proc_name, wname, numargs-numopt, numopt);
   }
   Printf (exported_symbols, "\"%s\", ", proc_name);
@@ -932,12 +901,12 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
       /* Read-only variables become a simple procedure returning the
 	 value; read-write variables become a simple procedure with
 	 an optional argument. */
-      Printf (f_init, "\t gh_new_procedure(\"%s\", (SCM (*) ()) %s, 0, %d, 0);\n",
+      Printf (f_init, "\t gh_new_procedure(\"%s\", (swig_guile_proc) %s, 0, %d, 0);\n",
 	      proc_name, var_name, (Status & STAT_READONLY) ? 0 : 1);
     }
     else {
       /* Read/write variables become a procedure with setter. */
-      Printf (f_init, "\t{ SCM p = gh_new_procedure(\"%s\", (SCM (*) ()) %s, 0, 1, 0);\n",
+      Printf (f_init, "\t{ SCM p = gh_new_procedure(\"%s\", (swig_guile_proc) %s, 0, 1, 0);\n",
 	      proc_name, var_name);
       Printf (f_init, "\t  gh_define(\"%s\", "
 	      "scm_make_procedure_with_setter(p, p)); }\n",
@@ -1072,4 +1041,12 @@ void GUILE::pragma(char *lang, char *cmd, char *value)
       before_return = value ? NewString(value) : NULL;
     }
   }
+}
+
+void
+GUILE::import_start(char *modname) {
+}
+
+void 
+GUILE::import_end() {
 }

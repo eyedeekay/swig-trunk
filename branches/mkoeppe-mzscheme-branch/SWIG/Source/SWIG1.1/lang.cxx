@@ -438,6 +438,19 @@ void Language::import(char *) {
   /* Does nothing by default */
 }
 
+void Language::import_start(char *modulename) {
+  WARNING("lang->import() API is deprecated.  See Source/SWIG1.1/swig11.h.");
+  /* This implements the old behavior */
+  this->import(input_file);
+  this->set_module(modulename);
+  /*  Printf(stdout,"import %s\n", modulename);*/
+}
+
+void Language::import_end() {
+  /* Does nothing by default */
+  /*  Printf(stdout,"end import\n"); */
+}
+
 /* -----------------------------------------------------------------------------
  * Language::is_multiple_definition()
  * ----------------------------------------------------------------------------- */

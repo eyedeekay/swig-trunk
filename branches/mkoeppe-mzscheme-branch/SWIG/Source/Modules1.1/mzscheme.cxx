@@ -190,7 +190,6 @@ MZSCHEME::headers (void)
 void
 MZSCHEME::initialize (void)
 {
-  Printf (f_init, "static void\nSWIG_init (void)\n{\n");
 }
 
 // ---------------------------------------------------------------------
@@ -203,9 +202,8 @@ void
 MZSCHEME::close (void)
 {
   SwigType_emit_type_table (f_runtime, f_wrappers);
-  Printf (f_init, "SWIG_RegisterTypes(swig_types, swig_types_initial);\n");
-  Printf (f_init, "}\n\n");
   Printf(f_init, "Scheme_Object *scheme_reload(Scheme_Env *env) {\n");
+  Printf (f_init, "\tSWIG_RegisterTypes(swig_types, swig_types_initial);\n");
   Printf(f_init, "%s\n", Char(init_func_def));
   Printf (f_init, "\treturn scheme_void;\n}\n");
   Printf(f_init, "Scheme_Object *scheme_initialize(Scheme_Env *env) {\n");

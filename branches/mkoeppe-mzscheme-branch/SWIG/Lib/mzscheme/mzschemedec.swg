@@ -66,9 +66,6 @@ SWIG_MustGetPtr_ (Scheme_Object *s,  swig_type_info *type,
 #define SWIG_MustGetPtr(s, type, argnum) \
   SWIG_MustGetPtr_(s, type, argnum, FUNC_NAME, argc, argv)
 
-SWIGSTATIC void
-SWIG_Init (void);
-
 SWIGSTATIC
 void SWIG_RegisterTypes(swig_type_info **table,
 			swig_type_info **init);

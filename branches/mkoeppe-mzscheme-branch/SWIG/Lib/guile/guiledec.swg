@@ -148,6 +148,8 @@ SWIG_Guile_GetArgs (SCM *dest, SCM rest,
 		    int reqargs, int optargs,
 		    const char *procname);
 
+typedef SCM (*swig_guile_proc)();
+
 #ifdef __cplusplus
 }
 #endif
