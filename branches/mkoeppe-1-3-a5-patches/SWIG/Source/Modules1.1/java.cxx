@@ -16,11 +16,11 @@ char bigbuf[1024];
 
 static char *usage = (char*)"\
 Java Options\n\
-     -jnic            - use c syntax for jni calls\n\
-     -jnicpp          - use c++ syntax for jni calls\n\
-     -module name     - set name of module\n\
-     -package name    - set name of package\n\
-     -shadow          - enable shadow classes\n\
+     -jnic            - use c syntax for JNI calls\n\
+     -jnicpp          - use c++ syntax for JNI calls\n\
+     -module <name>   - set name of the module\n\
+     -package <name>  - set name of the package\n\
+     -shadow          - generate shadow classes\n\
      -nofinalize      - do not generate finalize methods in shadow classes\n\
      -rn              - generate register natives code\n\n";
 
@@ -51,8 +51,9 @@ static  int          jnic = -1;          // 1: use c syntax jni; 0: use c++ synt
 static  int          nofinalize = 0;          // for generating finalize methods
 static  int          useRegisterNatives = 0;        // Set to 1 when doing stuff with register natives
 static  String      *registerNativesList = 0;
-static  String      *shadow_enum_code;
-static  String      *java_enum_code;
+static  String      *shadow_enum_code = 0;
+static  String      *java_enum_code = 0;
+static  String      *shadow_extra_code = 0; // Extra code for the shadow class supplied through a %pragma
 
 /* Test to see if a type corresponds to something wrapped with a shadow class */
 /* Return NULL if not otherwise the shadow name */
@@ -422,6 +423,7 @@ void JAVA::parse() {
   shadow_classdef = NewString("");
   registerNativesList = NewString("");
   java_enum_code = NewString("");
+  shadow_extra_code = NewString("");
 
   headers();       // Emit header files and other supporting code
   yyparse();       // Run the SWIG parser
@@ -532,6 +534,8 @@ void emit_banner(FILE *f) {
 void JAVA::emit_classdef() {
   if(!classdef_emitted) {
     emit_banner(f_java);
+    if(jimport != NULL)
+      Printf(f_java, "import %s;\n\n", jimport);
     Printf(f_java, "public class %s {\n", module);
   }
   classdef_emitted = 1;
@@ -560,9 +564,15 @@ void JAVA::close(void)
 	writeRegisterNatives();
 
   Delete(shadow_classes);
+  shadow_classes = 0;
   Delete(shadow_classdef);
+  shadow_classdef = 0;
   Delete(registerNativesList);
+  registerNativesList = 0;
   Delete(java_enum_code);
+  java_enum_code = 0;
+  Delete(shadow_extra_code);
+  shadow_extra_code = 0;
 }
 
 // ----------------------------------------------------------------------
@@ -1078,17 +1088,13 @@ void JAVA::pragma(char *lang, char *code, char *value) {
   Replace(s,"\\\"", "\"", DOH_REPLACE_ANY);
   if(strcmp(code, "import") == 0) {
     jimport = Swig_copy_string(Char(s));
-    Printf(f_java, "// pragma\nimport %s;\n\n", jimport);
   } else if(strcmp(code, "module") == 0) {
     if(!classdef_emitted) emit_classdef();
-    Printf(f_java, "// pragma\n");
     Printf(f_java, "%s", s);
     Printf(f_java, "\n\n");
   } else if(strcmp(code, "shadow") == 0) {
-    if(shadow && f_shadow) {
-      Printf(f_shadow, "// pragma\n");
-      Printf(f_shadow, "%s", s);
-      Printf(f_shadow, "\n\n");
+    if(shadow && shadow_extra_code) {
+      Printf(shadow_extra_code, "%s\n\n", s);
     }
   } else if(strcmp(code, "modifiers") == 0) {
     method_modifiers = Swig_copy_string(value);
@@ -1142,9 +1148,11 @@ void JAVA::cpp_open_class(char *classname, char *rename, char *ctype, int strip)
 
   if(*package)
 	Printf(f_shadow, "package %s;\n\n", package);
-  else Printf(f_shadow, "import %s;\n\n", module);
+  else 
+    Printf(f_shadow, "import %s;\n", module);
   if(jimport != NULL)
-	Printf(f_shadow, "import %s;\n\n", jimport);
+	Printf(f_shadow, "import %s;\n", jimport);
+  Printf(f_shadow, "\n");
 
   Clear(shadow_classdef);
   Printv(shadow_classdef, "public class ", shadow_classname, " %BASECLASS% ", "{\n", 0);
@@ -1176,6 +1184,8 @@ void JAVA::emit_shadow_classdef() {
     "  };\n",
     "\n", 0);
   Replace(shadow_classdef, "$class", shadow_classname, DOH_REPLACE_ANY);
+  if (shadow_extra_code)
+    Printv(shadow_classdef, shadow_extra_code, 0);
 
   Printv(f_shadow, shadow_classdef,0);
   shadow_classdef_emitted = 1;
