@@ -34,6 +34,7 @@ trunk of the CVS tree.
 	   thanks to Scott B. Drummonds for the report and the fix. 
 	 * [Ruby] Fixed typo in rubydec.swg; thanks to Lyle Johnson!
 	 * Don't stop testing when one test fails.
+	 * [Guile, MzScheme] Don't print "Generating wrappers...".
 
 6/12/2001: mkoeppe
 	   [Guile] VECTORLENINPUT and LISTLENINPUT now have separate
