@@ -21,7 +21,7 @@ Version 1.3.6  (not yet released)
 6/20/2001: cheetah (william fulton)
 	   * Makefile mods so that 'make check' uses the swig options in the makefiles
 	   * [Java] Removed Generating wrappers message
-	   * [Java] Possible NULL pointer bug fix
+	   * [Java] NULL pointer bug fix
 	   * [Java] Bug fix for Kaffe JVM
 
 6/20/2001: mkoeppe

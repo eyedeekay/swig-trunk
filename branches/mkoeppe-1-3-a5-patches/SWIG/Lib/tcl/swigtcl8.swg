@@ -52,7 +52,7 @@ SWIG_ConvertPtrFromString(Tcl_Interp *interp, char *c, void **ptr, swig_type_inf
     tc = SWIG_TypeCheck(c,ty);
     if (!tc) {
       Tcl_SetResult(interp, (char *) "Type error. Expected ", TCL_STATIC);
-      Tcl_AppendElement(interp, ty->name);
+      Tcl_AppendElement(interp, (char *) ty->name);
       return TCL_ERROR;
     }
     *ptr = SWIG_TypeCast(tc,(void *)p);
