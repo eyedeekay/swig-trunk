@@ -136,7 +136,7 @@ SwigMethodCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Tcl_SetResult(interp,"Invalid method. Must be one of: configure cget ", TCL_STATIC);
     meth = inst->classptr->methods;
     while (meth && meth->name) {
-      Tcl_AppendElement(interp, meth->name);
+      Tcl_AppendElement(interp, (char *) meth->name);
       meth++;
     }
     return TCL_ERROR;
