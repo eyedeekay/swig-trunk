@@ -940,7 +940,7 @@ for specifying local variable declarations and argument conversions.
 <h2>10. Guile Support</h2>
 </a>
 
-Revised: Matthias K&ouml;ppe (August 30, 2000)
+Revised: Matthias K&ouml;ppe (March 1, 2001)
 
 
 <p>
@@ -1026,6 +1026,24 @@ complained so far.
 <p>
 The Guile module handles all non-pointer types via typemaps. This
 information is read from <code>Lib/guile/typemaps.i</code>. 
+
+<p>
+A function can return multiple values in three ways:
+<ul>
+<li><em>Multiple values as lists.</em> 
+By default, if more than one value is to
+be returned, a list of the values is created and returned.
+<li><em>Multiple values as vectors.</em>
+By issueing 
+<pre>%pragma(guile) beforereturn = "GUILE_MAYBE_VECTOR"</pre>
+vectors instead of lists will be used.
+<li><em>Multiple values for multiple-value continuations.</em>
+By issueing 
+<pre>%pragma(guile) beforereturn = "GUILE_MAYBE_VALUES"</pre>
+multiple values are passed to the multiple-value
+continuation, as created by <code>call-with-values</code> or the
+convenience macro <code>receive</code>. 
+</ul>
 
 <a name="10.5" href="#i10.5">
 <h3>10.5 Smobs</h3>

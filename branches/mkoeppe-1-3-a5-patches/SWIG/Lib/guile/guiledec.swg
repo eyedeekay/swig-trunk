@@ -38,6 +38,18 @@ extern "C" {
                                       gh_list(object, GH_NOT_PASSED));   \
     }
 
+/* scm_values was implemented on C level in 1.4.1, and the prototype
+   is not included in libguile.h, so play safe and lookup `values'... */
+#define GUILE_MAYBE_VALUES						\
+    if (gh_pair_p(gswig_result)) {					\
+      /* have a result list, so return multiple values */		\
+      gswig_result = gh_apply(gh_lookup("values"), gswig_result);	\
+    }
+    
+#define GUILE_MAYBE_VECTOR				\
+    if (gh_pair_p(gswig_result))			\
+        gswig_result = gh_list_to_vector(gswig_result);
+
 static char *
 GSWIG_scm2str (SCM s)
 {

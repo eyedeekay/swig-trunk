@@ -43,6 +43,7 @@ private:
   } docformat;
   int	 emit_setters;
   int    struct_member;
+  String *before_return;
   void   emit_linkage(char *module_name);
   void   write_doc(const String *proc_name,
 		   const String *signature,
@@ -61,6 +62,7 @@ public :
   void set_init (char *);
   void create_command (char *, char *) { };
   void cpp_variable(char *name, char *iname, SwigType *t);
+  void pragma(char *lang, char *cmd, char *value);
 };
 
 /* guile.h ends here */

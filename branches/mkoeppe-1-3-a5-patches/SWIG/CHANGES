@@ -4,8 +4,18 @@ The Guile Support Patch for 1.3a5
 =================================
 
 3/1/2001 : mkoeppe
+	   [Guile] Added support for returning multiple values as
+	   vectors, or passing them to a muliple-value
+	   continuation. By default, multiple values still get
+	   returned as a list.
+
+3/1/2001 : mkoeppe
+	   [Guile] Added a "beforereturn" pragma. The value of this
+	   pragma is inserted just before every return statement.
+
+3/1/2001 : mkoeppe
 	   [Guile] Added support for Guile 1.4.1 procedure
-	   documentation formats.
+	   documentation formats, see internals.html.
 
 2/26/2001: mkoeppe
 	   [Guile] Made the wrapper code compile with C++ if the

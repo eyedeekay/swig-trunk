@@ -64,6 +64,7 @@ GUILE::GUILE ()
   docformat = GUILE_1_4;
   emit_setters = 0;
   struct_member = 0;
+  before_return = NULL;
 }
 
 // ---------------------------------------------------------------------
@@ -686,6 +687,8 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 
   // Wrap things up (in a manner of speaking)
 
+  if (before_return)
+    Printv(f->code, before_return, "\n", 0);
   Printv(f->code, "return gswig_result;\n", 0);
 
   // Undefine the scheme name
@@ -1005,5 +1008,16 @@ void GUILE::cpp_variable(char *name, char *iname, SwigType *t)
   else {
     /* Only emit traditional VAR-get and VAR-set procedures */
     Language::cpp_variable(name, iname, t);
+  }
+}
+
+void GUILE::pragma(char *lang, char *cmd, char *value)
+{
+  if (strcmp(lang,(char*)"guile") == 0) {
+    if (strcmp(cmd, (char*)"beforereturn")==0) {
+      if (before_return)
+	Delete(before_return);
+      before_return = NewString(value);
+    }
   }
 }
