@@ -55,6 +55,7 @@ typedef struct swig_type_info {
 SWIGEXPORT(swig_type_info *) SWIG_TypeRegister(swig_type_info *);
 SWIGEXPORT(swig_type_info *) SWIG_TypeCheck(char *c, swig_type_info *);
 SWIGEXPORT(void *) SWIG_TypeCast(swig_type_info *, void *);
+SWIGEXPORT(void *) SWIG_TypeQuery(const char *);
 #else
 
 static swig_type_info *swig_type_list = 0;
