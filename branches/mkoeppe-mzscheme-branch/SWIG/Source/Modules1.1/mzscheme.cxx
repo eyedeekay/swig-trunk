@@ -601,3 +601,10 @@ MZSCHEME::declare_const (char *name, char *, SwigType *type, char *value)
   Delete(temp);
 }
 
+void
+MZSCHEME::import_start(char *modname) {
+}
+
+void 
+MZSCHEME::import_end() {
+}

@@ -39,4 +39,6 @@ public :
   void set_module (char *);
   void set_init (char *);
   void create_command (char *, char *) { };
+  void import_start(char *modname);
+  void import_end();
 };
