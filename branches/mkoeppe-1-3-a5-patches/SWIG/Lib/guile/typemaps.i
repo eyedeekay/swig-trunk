@@ -54,6 +54,8 @@
 
 %typemap (guile, freearg) char *, const char * "if ($target) scm_must_free($target);";
 
+%typemap (guile, freearg) char **OUTPUT, char **BOTH "if (*$target) scm_must_free(*$target);"
+
 /* But this shall not apply if we try to pass a single char by
    reference. */
 
