@@ -47,25 +47,25 @@ experiment: Swig Preprocessor LParse DOH Modules
 	$(LIBS)
 
 SWIG1.1: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/SWIG1.1
+	@cd $(SOURCE)/SWIG1.1; $(MAKE)
 
 Modules1.1: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/Modules1.1
+	@cd $(SOURCE)/Modules1.1; $(MAKE)
 
 Swig: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/Swig
+	@cd $(SOURCE)/Swig; $(MAKE)
 
 Preprocessor: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/Preprocessor
+	@cd $(SOURCE)/Preprocessor; $(MAKE)
 
 LParse: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/LParse
+	@cd $(SOURCE)/LParse; $(MAKE)
 
 DOH: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/DOH
+	@cd $(SOURCE)/DOH; $(MAKE)
 
 Modules: Source/Include/swigconfig.h
-	$(MAKE) -C $(SOURCE)/Modules
+	@cd $(SOURCE)/Modules; $(MAKE)
 
 .PHONY: SWIG1.1 Modules1.1 Swig Preprocessor LParse \
         Experiment Swim SWILL DOH Swithe
@@ -74,7 +74,7 @@ Modules: Source/Include/swigconfig.h
 # time because it paths need to be substituted.
 
 Source/Include/swigconfig.h: Source/Include/swigconfig.h.in Makefile.in config.status
-	sed 's|@-swig_lib-@|$(SWIG_LIB)|g;s|@-exec_prefix-@|$(exec_prefix)|g;s|@-release_suffix-@|$(RELEASESUFFIX)|g' $< > $@
+	sed 's|@-swig_lib-@|$(SWIG_LIB)|g;s|@-exec_prefix-@|$(exec_prefix)|g;s|@-release_suffix-@|$(RELEASESUFFIX)|g' Source/Include/swigconfig.h.in > $@
 
 
 #####################################################################
@@ -82,7 +82,7 @@ Source/Include/swigconfig.h: Source/Include/swigconfig.h.in Makefile.in config.s
 #####################################################################
 
 runtime:
-	$(MAKE) -C Runtime
+	@cd Runtime; $(MAKE)
 
 #####################################################################
 # CHECK
@@ -183,7 +183,7 @@ clean:
 		(cd $(SOURCE)/$$i; $(MAKE) clean) ; \
 	   fi \
 	done;
-	$(MAKE) -C Runtime clean
+	@cd Runtime clean; $(MAKE)
 	rm -f swig
 
 distclean-dead = config.status config.log config.cache \
@@ -268,7 +268,7 @@ install-lib:
 	    done;
 
 install-runtime:
-	$(MAKE) -C Runtime install
+	@cd Runtime install; $(MAKE)
 
 ############################################################################
 # DIST and other maintenance
