@@ -24,6 +24,7 @@ trunk of the CVS tree.
 	   Handle C++ methods that have both a "const" and a "throw"
 	   directive (see Examples/Guile/test-suite/cplusplus-throw.i); 
 	   thanks to Scott B. Drummonds for the report and the fix. 
+	   [Ruby] Fixed typo in rubydec.swg; thanks to Lyle Johnson!
 
 6/12/2001: mkoeppe
 	   [Guile] VECTORLENINPUT and LISTLENINPUT now have separate
