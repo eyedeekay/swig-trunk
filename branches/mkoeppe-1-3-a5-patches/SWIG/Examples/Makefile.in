@@ -68,12 +68,12 @@ CPP_DLLIBS = #-L/usr/local/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2 \
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
-CXXSHARED=      @LDSHARED@
+CXXSHARED=      @CXXSHARED@
 
 # This is used for building shared libraries with a number of C++
 # compilers.   If it doesn't work,  comment it out.
 
-CXXSHARED=      @CXX@ -shared
+@TRYLINKINGWITHCXX@
 
 OBJS      = $(SRCS:.c=.o) $(CXXSRCS:.cxx=.o)
 IOBJS     = $(ISRCS:.c=.o)
@@ -330,7 +330,7 @@ mzscheme: $(SRCS)
 
 # Make sure these locate your Ruby installation
 RUBY_INCLUDE= -DHAVE_CONFIG_H @RUBYINCLUDE@
-
+RUBY_LIBRUBYARG= @RUBYLIBRUBYARG@
 # ----------------------------------------------------------------
 # Build a C dynamically loadable module
 # ----------------------------------------------------------------
@@ -338,7 +338,7 @@ RUBY_INCLUDE= -DHAVE_CONFIG_H @RUBYINCLUDE@
 ruby: $(SRCS)
 	$(SWIG) -ruby $(SWIGOPT) $(INTERFACE)
 	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) $(RUBY_LIBRUBYARG) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build a C++ dynamically loadable module
@@ -347,7 +347,7 @@ ruby: $(SRCS)
 ruby_cpp: $(SRCS)
 	$(SWIG) -c++ -ruby $(SWIGOPT) $(INTERFACE)
 	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) $(RUBY_LIBRUBYARG) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build statically linked Ruby interpreter

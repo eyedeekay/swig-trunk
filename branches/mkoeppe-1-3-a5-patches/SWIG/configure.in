@@ -61,6 +61,8 @@ dnl Checks for library functions.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
 AC_SUBST(CCSHARED)
+AC_SUBST(CXXSHARED)
+AC_SUBST(TRYLINKINGWITHCXX)
 AC_SUBST(LINKFORSHARED)
 
 # SO is the extension of shared libraries `(including the dot!)
@@ -83,6 +85,8 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
+        # cygwin uses dllwrap to create shared libraries
+	CYGWIN*) LDSHARED="dllwrap --target=cygwin --as=as --dlltool-name=dlltool --driver-name=$CC --export-all -s ";;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
@@ -114,6 +118,32 @@ then
 	esac
 fi
 AC_MSG_RESULT($LDSHARED)
+# CXXSHARED is the ld *command* used to create C++ shared library
+# -- "ld" on SunOS 4.x.x, "ld -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# (Shared libraries in this instance are shared modules to be loaded into
+# Python, as opposed to building Python itself as a shared library.)
+AC_MSG_CHECKING(CXXSHARED)
+if test -z "$CXXSHARED"
+then
+	case $ac_sys_system/$ac_sys_release in
+        # cygwin uses dllwrap to create shared libraries
+	CYGWIN*) CXXSHARED="dllwrap --target=cygwin --as=as --dlltool-name=dlltool --driver-name=$CXX --export-all -s ";;
+        # all other platforms make no distinction between C and C++ shared libraries
+	*)	CXXSHARED="$LDSHARED";;
+	esac
+fi
+AC_MSG_RESULT($CXXSHARED)
+#
+AC_MSG_CHECKING(TRYLINKINGWITHCXX)
+if test -z "$TRYLINKINGWITHCXX"
+then
+	case $ac_sys_system/$ac_sys_release in
+        # cygwin uses dllwrap to create shared libraries
+        CYGWIN*) TRYLINKINGWITHCXX="# Not for CYGWIN: CXXSHARED=      $CXX -shared ";;
+        *)       TRYLINKINGWITHCXX="CXXSHARED=      $CXX -shared ";;
+        esac
+fi
+AC_MSG_RESULT($TRYLINKINGWITHCXX)
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -681,7 +711,8 @@ if test -n "$RUBY"; then
 		AC_MSG_CHECKING(for Ruby library)
 		RUBYLIB=none
 		for i in $dirs; do
-			if test -r $i/libruby.a; then
+                        # cygwin produces "librubys.a" instead of "libruby.a"
+			if ((test -r $i/libruby.a;) || (test -r $i/librubys.a;)) then
 				AC_MSG_RESULT($i)
 				RUBYLIB="$i"
 				break;
@@ -699,16 +730,22 @@ if test -n "$RUBY"; then
 	RUBYLINK=`($RUBY -rrbconfig -e 'print Config::CONFIG[["RUBY_INSTALL_NAME"]]') 2>/dev/null`
 	RUBYLINK="-l$RUBYLINK"
 	RUBYLINK="$RUBYLINK `($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBS"]]') 2>/dev/null`"
+
+        RUBYLIBRUBYARG=`($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBRUBYARG"]]') 2>/dev/null`
+AC_MSG_RESULT(----->)
+AC_MSG_RESULT($RUBYLIBRUBYARG)
 else
        	AC_MSG_RESULT(could not figure out how to run ruby)
 	RUBYINCLUDE="-I/usr/local/lib/ruby/1.4/arch"
 	RUBYLIB="-I/usr/local/lib/ruby/1.4/arch"
 	RUBYLINK="-lruby -lm"
+        RUBYLIBRUBYARG="-L. -lruby"
 fi
 
 AC_SUBST(RUBYINCLUDE)
 AC_SUBST(RUBYLIB)
 AC_SUBST(RUBYLINK)
+AC_SUBST(RUBYLIBRUBYARG)
 
 # Configure SWIG_LIB path
 
