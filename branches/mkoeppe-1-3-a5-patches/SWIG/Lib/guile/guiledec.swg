@@ -79,7 +79,8 @@ typedef struct swig_type_info {
 } swig_type_info;
 
 SWIGSTATIC void
-SWIG_Guile_RegisterTypes (swig_type_info **table);
+SWIG_Guile_RegisterTypes (swig_type_info **table,
+			  swig_type_info **init);
 
 /* Register a new type-mapping with the type-checker.  origtype is the
    original datatype and newtype is an equivalent type.  cast is optional

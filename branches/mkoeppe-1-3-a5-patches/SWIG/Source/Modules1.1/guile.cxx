@@ -326,9 +326,9 @@ GUILE::emit_linkage (char *module_name)
 void
 GUILE::close (void)
 {
-  SwigType_emit_type_table_guile (f_runtime);
+  SwigType_emit_type_table (f_runtime, f_wrappers);
 
-  Printf (f_init, "SWIG_Guile_RegisterTypes(swig_types);\n");
+  Printf (f_init, "SWIG_Guile_RegisterTypes(swig_types, swig_types_initial);\n");
   Printf (f_init, "}\n\n");
   char module_name[256];
 

@@ -246,10 +246,11 @@ SWIG_Guile_Init (void)
 /* Convert datatype table */
 
 SWIGSTATIC
-void SWIG_Guile_RegisterTypes(swig_type_info **table)
+void SWIG_Guile_RegisterTypes(swig_type_info **table,
+			      swig_type_info **init)
 {
-  for (; *table; table++) {
-    swig_type_info *type = *table;
+  for (; *init; table++, init++) {
+    swig_type_info *type = *table = *init;
     char *origname = type->name;
     /* Register datatype itself and store pointer back */
     type->tag = SWIG_RegisterType(origname, type->str);

@@ -1636,60 +1636,14 @@ SwigType_emit_type_table(File *f_forward, File *f_table) {
   Delete(table);
 }
 
-/* -----------------------------------------------------------------------------
- * SwigType_emit_type_table_guile()
- *
- * Generate the type-table for the type-checker.
- *
- * This version of the procedure above uses a single array "swig_types",
- * doesn't use #define and puts all type information in a single place
- * of the wrapper code. 
- * ----------------------------------------------------------------------------- */
 
-void
-SwigType_emit_type_table_guile(File *f) {
-  DOH *key;
-  String *table;
-  int i = 0;
 
-  if (!r_mangled) {
-    r_mangled = NewHash();
-    r_resolved = NewHash();
-  }
 
-  Printf(f,"\n/* -------- TYPES TABLE (BEGIN) -------- */\n\n");
 
-  SwigType_inherit_equiv(f);
 
-  table = NewString("");
-  Printf(table,"static swig_type_info *swig_types[] = {\n");
-  key = Firstkey(r_mangled);
-  while (key) {
-    List *el;
-    String *en;
-    Printv(f, "static swig_type_info SWIGTYPE", key, "[] = {", 0);
-    Printv(f, "{\"", key, "\", 0, \"", SwigType_str(Getattr(r_ltype,key),0),"\"},", 0);
-    el = SwigType_equivalent_mangle(key,0,0);
-    for (en = Firstitem(el); en; en = Nextitem(el)) {
-      String *ckey;
-      ckey = NewStringf("%s+%s", en, key);
-      if (Getattr(conversions,ckey)) {
-	Printf(f,"{\"%s\", %sTo%s},", en, en, key);
-      } else {
-	Printf(f,"{\"%s\"},", en);
-      }
-      Delete(ckey);
-    }
-    Delete(el);
-    Printf(f,"{0}};\n");
-    Printv(table, "  SWIGTYPE", key, ", \n", 0);
-    key = Nextkey(r_mangled);
-    i++;
-  }
 
-  Printf(table, "0\n};\n");
-  Printf(f,"\n%s\n", table);
 
-  Printf(f,"/* -------- TYPES TABLE (END) -------- */\n\n");
-  Delete(table);
-}
+
+
+
+
