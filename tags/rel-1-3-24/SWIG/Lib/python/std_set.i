@@ -1,0 +1,51 @@
+/*
+  Sets
+*/
+
+%fragment("StdSetTraits","header",fragment="StdSequenceTraits")
+%{
+  namespace swig {
+    template <class PySeq, class T> 
+    void assign(const PySeq& pyseq, std::set<T>* seq) {
+#ifdef SWIG_STD_NOINSERT_TEMPLATE_STL
+      typedef typename PySeq::value_type value_type;
+      typename PySeq::const_iterator it = pyseq.begin();
+      for (;it != pyseq.end(); ++it) {
+	seq->insert(seq->end(),(value_type)(*it));
+      }
+#else
+      seq->insert(pyseq.begin(), pyseq.end());
+#endif
+    }
+
+    template <class T>
+    struct traits_asptr<std::set<T> >  {
+      static int asptr(PyObject *obj, std::set<T> **s) {
+	return traits_asptr_stdseq<std::set<T> >::asptr(obj, s);
+      }
+    };
+
+    template <class T>
+    struct traits_from<std::set<T> > {
+      static PyObject *from(const std::set<T>& vec) {
+	return traits_from_stdseq<std::set<T> >::from(vec);
+      }
+    };
+  }
+%}
+
+%define %swig_set_methods(set...)
+  %swig_container_methods(set);
+
+  %extend  {
+   void append(value_type x) {
+     self->insert(x);
+   }
+  
+   bool __contains__(value_type x) {
+     return self->find(x) != self->end();
+   }
+  };    
+%enddef
+
+%include <std/std_set.i>

@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- Hand-written HTML -->
+<html>
+<head>
+<title>SWIG and Chicken</title>
+</head>
+
+<body bgcolor="#ffffff">
+
+<H1><a name="Chicken"></a>17 SWIG and Chicken</H1>
+<!-- INDEX -->
+<ul>
+<li><a href="#Chicken_nn2">Preliminaries</a>
+<ul>
+<li><a href="#Chicken_nn3">Running SWIG in C mode</a>
+<li><a href="#Chicken_nn4">Running SWIG in C++ mode</a>
+</ul>
+<li><a href="#Chicken_nn5">Code Generation</a>
+<ul>
+<li><a href="#Chicken_nn6">Naming Conventions</a>
+<li><a href="#Chicken_nn7">Modules</a>
+<li><a href="#Chicken_nn8">Constants and Variables</a>
+<li><a href="#Chicken_nn9">Functions</a>
+</ul>
+<li><a href="#Chicken_nn10">TinyCLOS</a>
+<li><a href="#Chicken_nn11">Compilation</a>
+<li><a href="#Chicken_nn12">Linkage</a>
+<ul>
+<li><a href="#Chicken_nn13">Shared library</a>
+<li><a href="#Chicken_nn14">Static binary</a>
+</ul>
+<li><a href="#Chicken_nn15">Typemaps</a>
+<li><a href="#Chicken_nn16">Pointers</a>
+<li><a href="#Chicken_nn17">Unsupported features and known problems</a>
+</ul>
+<!-- INDEX -->
+
+
+
+    <p>
+      This chapter describes SWIG's support of CHICKEN.  CHICKEN is a
+      Scheme-to-C compiler supporting most of the language features as
+      defined in the <i>Revised^5 Report on Scheme</i>.  Its main
+      attributes are that it
+    </p>
+      <ol>
+	<li>generates portable C code</li>
+	<li>includes a customizable interpreter</li>
+	<li>links to C libraries with a simple Foreign Function Interface</li>
+	<li>supports full tail-recursion and first-class continuations</li>
+      </ol>
+
+    <p>
+      When confronted with a large C library, CHICKEN users can use
+      SWIG to generate CHICKEN wrappers for the C library.  However,
+      the real advantages of using SWIG with CHICKEN are its
+      <strong>support for C++</strong> -- object-oriented code is
+      difficult to wrap by hand in CHICKEN -- and its <strong>typed
+      pointer representation</strong>, essential for C and C++
+      libraries involving structures or classes.
+
+    </p>
+
+<H2><a name="Chicken_nn2"></a>17.1 Preliminaries</H2>
+
+
+    <p>
+      CHICKEN support was introduced to SWIG in version 1.3.18.  SWIG
+      relies on some recent additions to CHICKEN, which are only
+      present in releases of CHICKEN with version number
+      <strong>greater than or equal to <tt>1.40</tt></strong>.
+
+      <br> CHICKEN can be downloaded from <a
+      href="http://www.call-with-current-continuation.org/">http://www.call-with-current-continuation.org/</a>
+
+      You may want to look at any of the examples in Examples/chicken/
+      or Examples/GIFPlot/Chicken for the basic steps to run SWIG
+      CHICKEN.
+
+      We will generically refer to the <em>wrapper</em> as the
+      generated files.
+
+    </p>
+
+<H3><a name="Chicken_nn3"></a>17.1.1 Running SWIG in C mode</H3>
+
+
+      <p>
+      To run SWIG CHICKEN in C mode, use
+      the -chicken option.
+      </p>
+
+      <blockquote>
+	<pre>% swig -chicken example.i</pre>
+      </blockquote>
+
+      <p>
+      To allow the wrapper to take advantage of future CHICKEN code
+      generation improvements, part of the wrapper is direct CHICKEN
+      function calls (<tt>example_wrap.c</tt>) and part is CHICKEN
+      Scheme (<tt>example.scm</tt>).  The basic Scheme code must
+      be compiled to C using your system's CHICKEN compiler.
+      </p>
+
+      <blockquote>
+	<pre>% chicken example.scm -output-file oexample.c</pre>
+      </blockquote>
+
+      <p>
+      So for the C mode of SWIG CHICKEN, <tt>example_wrap.c</tt> and
+      <tt>oexample.c</tt> are the files that must be compiled to
+      object files and linked into your project.
+      </p>
+
+<H3><a name="Chicken_nn4"></a>17.1.2 Running SWIG in C++ mode</H3>
+
+
+      <p>
+      To run SWIG CHICKEN in C++ mode, use
+      the -chicken -c++ option.
+      </p>
+
+      <blockquote>
+	<pre>% swig -chicken -c++ example.i</pre>
+      </blockquote>
+
+      <p>
+      This will generate <tt>example_wrap.cxx</tt> and
+      <tt>example.scm</tt>.  The basic Scheme code must be
+      compiled to C using your system's CHICKEN compiler.
+      </p>
+
+      <blockquote>
+	<pre>% chicken example.scm -output-file oexample.c</pre>
+      </blockquote>
+
+      <p>
+      So for the C++ mode of SWIG CHICKEN, <tt>example_wrap.cxx</tt>
+      and <tt>oexample.c</tt> are the files that must be compiled to
+      object files and linked into your project.
+
+      </p>
+
+<H2><a name="Chicken_nn5"></a>17.2 Code Generation</H2>
+
+
+<H3><a name="Chicken_nn6"></a>17.2.1 Naming Conventions</H3>
+
+
+    <p>
+      Given a C variable, function or constant declaration named
+      <tt>Foo_Bar</tt>, the declaration will be available
+      in CHICKEN as an identifier ending with
+      <tt>Foo-Bar</tt>.  That is, an underscore is converted
+      to a dash.
+
+      <br>
+
+      You may control what the CHICKEN identifier will be by using the
+      <tt>%rename</tt> SWIG directive in the SWIG interface file.
+    </p>
+
+<H3><a name="Chicken_nn7"></a>17.2.2 Modules</H3>
+
+
+      The name of the module must be declared one of two ways:
+      <ul>
+	<li>Placing <tt>%module example</tt> in the SWIG interface
+	  file.</li>
+	<li>Using <tt>-module example</tt> on the SWIG command
+	  line.</li>
+      </ul>
+      The generated example.scm file then exports <code>(declare (unit modulename))</code>.
+      If you do not want SWIG to export the <code>(declare (unit modulename))</code>, pass
+      the -nounit option to SWIG.
+
+    <p>
+      CHICKEN will be able to access the module using the <code>(declare
+	(uses <i>modulename</i>))</code> CHICKEN Scheme form.
+
+<H3><a name="Chicken_nn8"></a>17.2.3 Constants and Variables</H3>
+
+
+    <p>
+      Constants may be created using any of the four constructs in
+      the interface file:
+    </p>
+      <ol>
+	<li><code>#define MYCONSTANT1 ...</code></li>
+	<li><code>%constant int MYCONSTANT2 = ...</code></li>
+	<li><code>const int MYCONSTANT3 = ...</code></li>
+	<li><code>enum { MYCONSTANT4  = ... };</code></li>
+      </ol>
+
+    <p>
+      In all cases, the constants may be accessed from with CHICKEN
+      using the form <tt>(MYCONSTANT1)</tt>; that is, the constants
+      may be accessed using the read-only parameter form.
+    </p>
+
+    <p>
+      Variables are accessed using the full parameter form.
+      For example, to set the C variable "int my_variable;", use the
+      Scheme form <tt>(my-variable 2345)</tt>.  To get the C variable,
+      use <tt>(my-variable)</tt>.
+    </p>
+
+<H3><a name="Chicken_nn9"></a>17.2.4 Functions</H3>
+
+
+    <p>
+      C functions declared in the SWIG interface file will have
+      corresponding CHICKEN Scheme procedures.  For example, the C
+      function "int sqrt(double x);" will be available using the
+      Scheme form <tt>(sqrt 2345.0)</tt>.  A <code>void</code> return
+      value will give C_SCHEME_UNDEFINED as a result.
+    </p>
+    <p>
+      A function may return more than one value by using the
+      <code>OUTPUT</code> specifier (see Lib/chicken/typemaps.i).
+      They will be returned as a Scheme list if there is more than one
+      result (that is, a non-void return value and at least one argout
+      parameter, or a void return value and at least two argout
+      parameters).
+    </p>
+
+<H2><a name="Chicken_nn10"></a>17.3 TinyCLOS</H2>
+
+
+      <p>
+      The author of TinyCLOS, Gregor Kiczales, describes TinyCLOS as:
+      </p>
+      <blockquote>
+	Tiny CLOS is a Scheme implementation of a `kernelized' CLOS, with a
+	metaobject protocol. The implementation is even simpler than
+	the simple CLOS found in `The Art of the Metaobject Protocol,'
+	weighing in at around 850 lines of code, including (some)
+	comments and documentation.
+      </blockquote>
+
+      <p>
+      Almost all good Scheme books describe how to use metaobjects and
+      generic procedures to implement an object-oriented Scheme
+      system.  Please consult a Scheme book if you are unfamiliar
+      with the concept.
+      </p>
+
+      <p>
+
+      CHICKEN has a modified version of TinyCLOS, which SWIG CHICKEN
+      uses if the -proxy argument is given.  If -proxy is passed, then
+      the generated example.scm file will contain TinyCLOS class definitions.
+      A class named Foo is declared as &lt;Foo&gt;, and each member variable
+      is allocated a slot.  Member functions are exported as generic functions.
+
+      <p>
+      
+      Primitive symbols and functions (the interface that would be presented if
+      -proxy was not passed) are hidden and no longer accessable.  If the -unhideprimitive
+      command line argument is passed to SWIG, then the primitive symbols will be
+      available, but each will be prefixed by the string "primitive:"
+
+      <p>
+
+      The exported symbol names can be controlled with the -closprefix and -useclassprefix arguments.
+      If -useclassprefix is passed to SWIG, every member function will be generated with the class name
+      as a prefix.  If the -closprefix mymod: argument is passed to SWIG, then the exported functions will
+      be prefixed by the string "mymod:".  If -useclassprefix is passed, -closprefix is ignored.
+      
+      </p>
+
+<H2><a name="Chicken_nn11"></a>17.4 Compilation</H2>
+
+
+    <p>
+      Please refer to <em>CHICKEN - A practical and portable Scheme
+      system - User's manual</em> for detailed help on how to compile
+      C code for use in a CHICKEN program.  Briefly, to compile C
+      code, be sure to add <tt>`chicken-config -cflags`</tt> or
+      <tt>`chicken-config -shared -cflags`</tt> to your compiler
+      options.  Use the <tt>-shared</tt> option if you want to create
+      a dynamically loadable module.  You might also want to use the
+      much simpler <tt>csc</tt> or <tt>csc.bat</tt>.
+    </p>
+
+<H2><a name="Chicken_nn12"></a>17.5 Linkage</H2>
+
+
+    <p>
+      Please refer to <em>CHICKEN - A practical and portable Scheme
+      system - User's manual</em> for detailed help on how to link
+      object files to create a CHICKEN Scheme program.  Briefly, to
+      link object files, be sure to add <tt>`chicken-config
+      -extra-libs -libs`</tt> or <tt>`chicken-config -shared
+      -extra-libs -libs`</tt>to your linker options.  Use the
+      <tt>-shared</tt> option if you want to create a dynamically
+      loadable module.
+    </p>
+
+<H3><a name="Chicken_nn13"></a>17.5.1 Shared library</H3>
+
+
+    <p>
+      The easiest way to use SWIG and CHICKEN is to use the csc compiler
+      wrapper provided by CHICKEN.  Assume you have a SWIG interface file
+      in example.i and the C functions being wrapped are in example_impl.c.
+    </p>
+
+   <blockquote>
+   <pre>
+   $ swig -chicken example.i
+   $ csc -svk example.scm example_impl.c example_wrap.c
+   $ csi example.so test_script.scm
+   </pre>
+   </blockquote>
+
+    <p>
+      You must be careful not to name the example_impl.c file example.c because
+      when compiling example.scm, csc compiles that into example.c!
+    </p>
+
+    <p>
+      The test_script.scm should have <code>(load-library 'example "example.so")</code>
+      and <code>(declare (uses example))</code>.  As well, the path to example.so should
+      be accessable to the loader.  You might need to set LD_LIBRARY_PATH.
+    </p>
+
+<H3><a name="Chicken_nn14"></a>17.5.2 Static binary</H3>
+
+
+   <p>Again, we can easily use csc to build a binary.</p>
+
+   <blockquote>
+   <pre>
+   $ swig -chicken example.i
+   $ csc -vk example.scm example_impl.c example_wrap.c test_script.scm -o example
+   $ ./example
+   </pre>
+   </blockquote>
+
+<H2><a name="Chicken_nn15"></a>17.6 Typemaps</H2>
+
+
+    <p>
+      The Chicken module handles all types via typemaps. This information is
+      read from <code>Lib/chicken/typemaps.i</code> and
+      <code>Lib/chicken/chicken.swg</code>.
+    </p>
+
+<H2><a name="Chicken_nn16"></a>17.7 Pointers</H2>
+
+
+    <p>
+      For pointer types, SWIG uses CHICKEN tagged pointers.
+
+      A tagged pointer is an ordinary CHICKEN pointer with an
+      extra slot for a void *.  With SWIG
+      CHICKEN, this void * is a pointer to a type-info
+      structure.  So each pointer used as input or output from
+      the SWIG-generated CHICKEN wrappers will have type
+      information attached to it.  This will let the wrappers
+      correctly determine which method should be called
+      according to the object type hierarchy exposed in the SWIG
+      interface files.
+    </p>
+    <p>
+      To construct a Scheme object from a C pointer, the wrapper code
+      calls the function 
+      <code>SWIG_NewPointerObj(void *ptr, swig_type_info *type, int owner)</code>,
+      The function that calls <code>SWIG_NewPointerObj</code> must have a variable declared
+      <code>C_word *known_space = C_alloc(C_SIZEOF_SWIG_POINTER);</code>
+      It is ok to call <code>SWIG_NewPointerObj</code> more than once, 
+      just make sure known_space has enough space for all the created pointers.
+    </p>
+    <p>
+      To get the pointer represented by a CHICKEN tagged pointer, the
+      wrapper code calls the function 
+      <code>SWIG_ConvertPtr(C_word s, void **result, swig_type_info *type, int flags)</code>,
+      passing a pointer to a struct representing the expected pointer
+      type.
+    </p>
+
+<H2><a name="Chicken_nn17"></a>17.8 Unsupported features and known problems</H2>
+
+
+    <ul>
+      <li>No exception handling.</li>
+      <li>No director support.</li>
+      <li>No support for c++ standard types like std::vector.</li>
+      <li>No support for automatic garbage collection of wrapped classes and structures. (Planned on adding in SWIG version 1.3.25) </li>
+      <li>Importing multiple SWIG modules not working with TinyCLOS. (Planned on fixing for 1.3.25) </li>
+      <li>Problems with complicated function overloading. (Planned on fixing for 1.3.25)</li>
+    </ul>
+
+  </body>
+</html>
