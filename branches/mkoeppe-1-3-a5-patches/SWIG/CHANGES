@@ -6,8 +6,8 @@ The Guile/MzScheme/Java Support Branch for 1.3a5
 In this CVS branch, fixes in the SWIG core and improvements to the
 language modules take place.  This branch is also the basis for the
 "swig1.3" Debian package (currently unofficial, available from
-http://www.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it will
-be merged with the development on the trunk of the CVS tree.
+http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
+will be merged with the development on the trunk of the CVS tree.
 
 5/28/2001: mkoeppe
 	   Minor changes to the build system.  Added subdirectory for
