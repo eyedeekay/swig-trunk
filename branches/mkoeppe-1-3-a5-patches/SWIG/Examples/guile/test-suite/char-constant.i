@@ -3,6 +3,4 @@
    Scheme strings). 
 */
 
-%include "guilemain.i"
-
 #define CHAR_CONSTANT 'x'

@@ -5,8 +5,6 @@
    and {} instead of "". It works.
 */
 
-%include guilemain.i
-
 #define FOO(x) gh_scm2int(x)
 
 #define TEST_1(BAR) \

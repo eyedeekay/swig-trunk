@@ -5,8 +5,6 @@
    correctly, so that a reference to FOO ends up in the wrapper.
 */
 
-%include guilemain.i
-
 %define FOO(x)
  gh_int2scm(x)
 %enddef

@@ -5,8 +5,6 @@
    is bogus.
 */
 
-%include guilemain.i
-
 %define FOO(C_TYPE, GETLENGTH)
      /* nothing */
 %enddef

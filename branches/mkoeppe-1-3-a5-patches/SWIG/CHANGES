@@ -15,6 +15,13 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).
 Eventually this branch will be merged with the development on the
 trunk of the CVS tree.
 
+6/14/2001: mkoeppe
+	   * The parser now understands the (non-standard) "long long"
+	     types. It is up to the individual language modules to
+	     provide typemaps if needed. Reported by Sam Steingold, SF
+	     bug #429176.
+	   * Fixed the Guile test-suite.
+
 6/13/2001: mkoeppe
 	   Partial merge from the CVS trunk at tag
 	   "mkoeppe-merge-1". This covers the following changes:

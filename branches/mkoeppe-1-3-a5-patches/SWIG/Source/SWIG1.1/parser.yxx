@@ -1621,6 +1621,9 @@ type           : TYPE_INT {
                | TYPE_LONG opt_int {
                    $$ = $1;
 	       }
+	       | TYPE_LONG TYPE_LONG opt_int {
+	           $$ = NewString("long long");
+	       }
                | TYPE_CHAR {
                    $$ = $1;
 	       }
@@ -1688,6 +1691,9 @@ strict_type    : TYPE_INT {
                | TYPE_LONG opt_int {
                    $$ = $1;
 	       }
+	       | TYPE_LONG TYPE_LONG opt_int {
+		   $$ = NewString("long long");
+	       }
                | TYPE_CHAR {
                    $$ = $1;
 	       }
@@ -1740,6 +1746,9 @@ opt_signed     : empty {
                | TYPE_LONG opt_int {
                    $$ = $1;
 	       }
+	       | TYPE_LONG TYPE_LONG opt_int {
+	           $$ = NewString("long long");
+	       }
                | TYPE_CHAR {
                    $$ = NewString("signed char");
 	       }
@@ -1758,6 +1767,9 @@ opt_unsigned   : empty {
 	       }
                | TYPE_LONG opt_int {
                    $$ = NewString("unsigned long");
+	       }
+	       | TYPE_LONG TYPE_LONG opt_int {
+	           $$ = NewString("unsigned long long");
 	       }
                | TYPE_CHAR {
                    $$ = NewString("unsigned char");
