@@ -1,0 +1,17 @@
+swig1.3 (1.3.a5+patches-2) unstable; urgency=low
+
+  * Binary and manpage now include version number, to improve
+    cooperation with the "swig" package.
+
+ -- Matthias Koeppe <mkoeppe@rotehorn.math.uni-magdeburg.de>  Tue, 29 May 2001 15:15:07 +0200
+
+swig1.3 (1.3.a5+patches-1) unstable; urgency=low
+
+  * First release.
+
+ -- Matthias Koeppe <mkoeppe@mail.math.uni-magdeburg.de>  Sat, 20 Nov 1999 01:09:11 +0100
+
+Local variables:
+mode: debian-changelog
+add-log-mailing-address: "mkoeppe@mail.math.uni-magdeburg.de"
+End:

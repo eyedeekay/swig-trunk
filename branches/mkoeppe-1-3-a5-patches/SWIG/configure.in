@@ -145,10 +145,10 @@ AC_MSG_CHECKING(RPATH)
 if test -z "$RPATH"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS/5*) RPATH="-R. -R$(exec_prefix)/lib";;
-        IRIX*) RPATH="-rpath .:$(exec_prefix)/lib";;
-	Linux*) RPATH="-Xlinker -rpath $(exec_prefix)/lib -Xlinker -rpath .";;
-	*)	RPATH="";;
+	SunOS/5*) RPATH='-R. -R$(exec_prefix)/lib';;
+        IRIX*) RPATH='-rpath .:$(exec_prefix)/lib';;
+	Linux*) RPATH='-Xlinker -rpath $(exec_prefix)/lib -Xlinker -rpath .';;
+	*)	RPATH='';;
 	esac
 fi
 AC_MSG_RESULT($RPATH)
@@ -723,7 +723,6 @@ configure_substituted_files=`echo	\
     Examples/guile/Makefile		\
     Makefile				\
     Runtime/Makefile			\
-    Source/Experiment/Makefile		\
     Source/Include/swigconfig.h		\
     Source/Include/swigver.h		\
     Source/LParse/Makefile		\

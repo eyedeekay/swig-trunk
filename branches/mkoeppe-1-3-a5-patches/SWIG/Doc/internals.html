@@ -940,18 +940,18 @@ for specifying local variable declarations and argument conversions.
 <h2>10. Guile Support</h2>
 </a>
 
-Revised: Matthias K&ouml;ppe (May 8, 2001)
+Revised: Matthias K&ouml;ppe (May 29, 2001)
 
 
 <p>
 This section details guile-specific support in SWIG.
 
 <p>
-Currently, one wrapper module must be generated without
+One wrapper module must be generated without
 <code>-c</code> and compiled with <code>-DSWIG_GLOBAL</code>, all the
-other wrapper modules must be generated with <code>-c</code>.  Maybe
-one should move all the global helper functions that come from
-<code>guile.swg</code> into a library, which is built by <code>make
+other wrapper modules must be generated with <code>-c</code>.
+Alternatively, one can use the runtime library
+<code>libswigguile</code>, which is built by <code>make
 runtime</code>. 
 
 <a name="10.1" href="#i10.1">

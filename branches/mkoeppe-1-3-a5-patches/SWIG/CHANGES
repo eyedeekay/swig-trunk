@@ -1,7 +1,20 @@
 SWIG (Simplified Wrapper and Interface Generator)
 
-The Guile/MzScheme/Java Support Patch for 1.3a5
-===============================================
+The Guile/MzScheme/Java Support Branch for 1.3a5
+================================================
+
+In this CVS branch, fixes in the SWIG core and improvements to the
+language modules take place.  This branch is also the basis for the
+"swig1.3" Debian package (currently unofficial, available from
+http://www.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it will
+be merged with the development on the trunk of the CVS tree.
+
+5/28/2001: mkoeppe
+	   Minor changes to the build system.  Added subdirectory for
+	   Debian package control files.
+
+5/28/2001: mkoeppe
+	   [Guile] Build a runtime library, libswigguile.
 
 5/28/2001: mkoeppe
 	   [Guile] New typemap substitution $*descriptor.  Use the {}
