@@ -9,6 +9,11 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+6/06/2001: mkoeppe
+	   [Guile] gswig_list_p is an int, not a SCM.  This typo
+	   caused warnings when compiling with a Guile configured with
+	   strict C type checking.
+
 6/05/2001: cheetah (william fulton)
 	   [Java] Mods for using inherited c++ classes from Java
 	   [Java] New example called class based on the same example from other modules
