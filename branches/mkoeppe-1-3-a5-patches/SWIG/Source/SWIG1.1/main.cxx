@@ -393,18 +393,16 @@ int SWIG_main(int argc, char *argv[], Language *l) {
       DOH *cpps;
       int i;
       String *fs = NewString("");
-      String *ds = Swig_include(input_file);
-      if (!ds) {
+      FILE *df = Swig_open(input_file);
+      if (!df) {
 	Printf(stderr,"Unable to find '%s'\n", input_file);
 	SWIG_exit (EXIT_FAILURE);
       }
+      fclose(df);
       if (lang_config) {
 	Printf(fs,"\n%%include \"%s\"\n", lang_config);
       }
-      Printf(fs,"\n%%includefile \"%s\" {\n", Swig_last_file());
-      Append(fs, ds);
-      Append(fs,"\n}\n");
-      Delete(ds);
+      Printf(fs,"%%include \"%s\"\n", Swig_last_file());
       for (i = 0; i < Len(libfiles); i++) {
 	Printf(fs,"\n%%include \"%s\"\n", Getitem(libfiles,i));
       }
