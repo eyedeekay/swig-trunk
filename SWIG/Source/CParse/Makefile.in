@@ -1,0 +1,69 @@
+#######################################################################
+# $Header$
+#######################################################################
+
+srcdir   = @srcdir@
+VPATH    = @srcdir@
+
+SHELL    = /bin/sh
+CC       = @CC@
+CFLAGS   = @CFLAGS@
+YACC     = @YACC@
+AR       = @AR@
+RANLIB   = @RANLIB@
+
+TARGET   = libcparse.a
+
+OBJS     = parser.o cscanner.o templ.o util.o
+
+SRCS     = cscanner.c templ.c util.c 
+
+PARSER   = $(srcdir)/parser.y
+INCLUDE  = -I$(srcdir)/../Include               \
+           -I$(srcdir)/.                        \
+           -I$(srcdir)/../Swig                  \
+           -I$(srcdir)/../Preprocessor          \
+           -I$(srcdir)/../DOH/Include		\
+	   -I../Include				\
+	   -I.
+
+.c.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c -o $*.o $<
+
+cparse:   $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(AR) cr $(TARGET) $(OBJS)
+	$(RANLIB) $(TARGET)
+
+parser.o: parser.c
+	$(CC) $(INCLUDE) $(CFLAGS) $< -c -o parser.o
+
+parser.c parser.h: $(PARSER)
+	$(YACC) @YFLAGS@ $(PARSER)
+	@cp y.tab.h parser.h
+	@cp y.tab.c parser.c
+
+scanner.o: parser.h
+
+parser::
+	@cp y.tab.c.bison parser.c
+	@cp y.tab.h.bison parser.h
+	@cp y.tab.h.bison y.tab.h
+	$(CC) $(CFLAGS) parser.c -c -o parser.o
+
+clean::
+	rm -f *.o $(TARGET) y.tab.c y.tab.h
+
+nuke::
+	rm -f Makefile *~ #* core a.out
+
+
+
+
+
+
+
+
+
+

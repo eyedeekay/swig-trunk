@@ -32,7 +32,8 @@ INCLUDE    =
 LIBS       =
 INTERFACE  =
 SWIGOPT    =
-SWIG       = SWIG
+SWIG       = swig@release_suffix@
+RUNTIMEDIR = $(exec_prefix)/lib
 
 LIBM       = @LIBM@
 LIBC       = @LIBC@
@@ -47,7 +48,10 @@ libtool_link = $(TOP)/../Tools/libtool --mode link
 XLIB       = @XLIBSW@
 XINCLUDE   = @XINCLUDES@
 
-ISRCS      = $(INTERFACE:.i=_wrap.c)
+IWRAP      = $(INTERFACE:.i=_wrap.i)
+ISRCS      = $(IWRAP:.i=.c)
+ICXXSRCS   = $(IWRAP:.i=.cxx)
+IOBJS      = $(IWRAP:.i=.o)
 
 ##################################################################
 # Dynamic loading for C++
@@ -68,15 +72,13 @@ CPP_DLLIBS = #-L/usr/local/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2 \
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
-CXXSHARED=      @LDSHARED@
+CXXSHARED=      @CXXSHARED@
 
 # This is used for building shared libraries with a number of C++
 # compilers.   If it doesn't work,  comment it out.
-
-CXXSHARED=      @CXX@ -shared
+@TRYLINKINGWITHCXX@
 
 OBJS      = $(SRCS:.c=.o) $(CXXSRCS:.cxx=.o)
-IOBJS     = $(ISRCS:.c=.o)
 
 ##################################################################
 #####                       Tcl/Tk                          ######
@@ -86,8 +88,11 @@ IOBJS     = $(ISRCS:.c=.o)
 
 TCL_INCLUDE = @TCLINCLUDE@
 TCL_LIB     = @TCLLIB@
-TCL_OPTS    = -ltcl @LIBS@
+TCL_OPTS    = @LIBS@
 TK_OPTS     = -ltk -ltcl @LIBS@
+
+# Extra Tcl specific dynamic linking options
+TCL_DLNK   = @TCLDYNAMICLINKING@
 
 # -----------------------------------------------------------
 # Build a new version of the tclsh shell
@@ -101,7 +106,7 @@ tclsh: $(SRCS)
 
 tclsh_cpp: $(SRCS)
 	$(SWIG) -tcl8 -c++ $(SWIGOPT) $(TCL_SWIGOPTS) -ltclsh.i $(INTERFACE)
-	$(CXX) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) $(TCL_INCLUDE) \
+	$(CXX) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(TCL_INCLUDE) \
 	$(TCL_LIB) $(TCL_OPTS) $(LIBS) $(SYSLIBS) -o $(TARGET)
 
 # -----------------------------------------------------------
@@ -116,7 +121,7 @@ wish: $(SRCS)
 
 wish_cpp: $(SRCS)
 	$(SWIG) -tcl8 -c++ $(SWIGOPT) $(TCL_SWIGOPTS) -lwish.i $(INTERFACE)
-	$(CXX) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) $(TCL_INCLUDE) \
+	$(CXX) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(TCL_INCLUDE) \
 	$(XINCLUDE) $(TCL_LIB) $(TK_OPTS) $(XLIB) $(LIBS) $(SYSLIBS) -o $(TARGET)
 
 # -----------------------------------------------------------
@@ -126,7 +131,7 @@ wish_cpp: $(SRCS)
 tcl:  $(SRCS)
 	$(SWIG) -tcl8 $(SWIGOPT) $(TCL_SWIGOPTS) $(INTERFACE)
 	$(CC) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) $(TCL_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(TCL_DLNK) $(LIBS) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------
 # Build a Tcl7.5 dynamic loadable module for C++
@@ -134,8 +139,24 @@ tcl:  $(SRCS)
 
 tcl_cpp: $(SRCS)
 	$(SWIG) -tcl8 -c++ $(SWIGOPT) $(TCL_SWIGOPTS) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) $(TCL_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(TCL_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(TCL_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# -----------------------------------------------------------
+# Build a Tcl7.5 dynamic loadable module, linked against SWIG runtime lib
+# -----------------------------------------------------------
+
+TCL_RUNTIME=-L$(RUNTIMEDIR) -lswigtcl8@release_suffix@
+
+tcl_multi:  $(SRCS)
+	$(SWIG) -c -tcl8 $(SWIGOPT) $(TCL_SWIGOPTS) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) $(TCL_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(TCL_RUNTIME) $(TCL_DLNK) $(LIBS) -o $(TARGET)$(SO)
+
+tcl_multi_cpp: $(SRCS)
+	$(SWIG) -c -tcl8 -c++ $(SWIGOPT) $(TCL_SWIGOPTS) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(TCL_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(TCL_RUNTIME) $(TCL_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
 
 ##################################################################
 #####                       PERL 5                          ######
@@ -147,6 +168,8 @@ tcl_cpp: $(SRCS)
 
 PERL5_INCLUDE= @PERL5EXT@
 
+# Extra Perl specific dynamic linking options
+PERL5_DLNK   = @PERL5DYNAMICLINKING@
 
 # ----------------------------------------------------------------
 # Build a Perl5 dynamically loadable module (C)
@@ -155,7 +178,7 @@ PERL5_INCLUDE= @PERL5EXT@
 perl5: $(SRCS)
 	$(SWIG) -perl5 $(SWIGOPT) $(INTERFACE)
 	$(CC) -c -Dbool=char $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) -I$(PERL5_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PERL5_DLNK) $(LIBS) -o $(TARGET)$(SO)
 
 # ----------------------------------------------------------------
 # Build a Perl5 dynamically loadable module (C++)
@@ -163,8 +186,24 @@ perl5: $(SRCS)
 
 perl5_cpp: $(SRCS)
 	$(SWIG) -perl5 -c++ $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) -I$(PERL5_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) -I$(PERL5_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PERL5_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# ----------------------------------------------------------------
+# Build a Perl5 dynamically loadable module, linked against SWIG runtime lib
+# ----------------------------------------------------------------
+
+PERL5_RUNTIME=-L$(RUNTIMEDIR) -lswigpl@release_suffix@
+
+perl5_multi: $(SRCS)
+	$(SWIG) -c -perl5 $(SWIGOPT) $(INTERFACE)
+	$(CC) -c -Dbool=char $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) -I$(PERL5_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PERL5_RUNTIME) $(PERL5_DLNK) $(LIBS) -o $(TARGET)$(SO)
+
+perl5_multi_cpp: $(SRCS)
+	$(SWIG) -c -perl5 -c++ $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) -I$(PERL5_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PERL5_RUNTIME) $(PERL5_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
 
 # ----------------------------------------------------------------
 # Build a module from existing XS C source code.   (ie. from xsubpp).
@@ -177,7 +216,7 @@ perl5_xs: $(SRCS)
 # Build a statically linked Perl5 executable
 # ----------------------------------------------------------------
 
-PERL5_LIB    = -L$(PERL5_INCLUDE) -lperl @LIBS@ $(SYSLIBS)
+PERL5_LIB    = -L$(PERL5_INCLUDE) -l@PERL5LIB@ @LIBS@ $(SYSLIBS)
 
 perl5_static: $(SRCS)
 	$(SWIG) -perl5 -static -lperlmain.i $(SWIGOPT) $(INTERFACE)
@@ -185,7 +224,7 @@ perl5_static: $(SRCS)
 
 perl5_static_cpp: $(SRCS)
 	$(SWIG) -perl5 -c++ -static -lperlmain.i $(SWIGOPT) $(INTERFACE)
-	$(CXX) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) -I$(PERL5_INCLUDE) $(PERL5_LIB) $(LIBS) -o $(TARGET)
+	$(CXX) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) -I$(PERL5_INCLUDE) $(PERL5_LIB) $(LIBS) -o $(TARGET)
 
 
 ##################################################################
@@ -196,6 +235,9 @@ perl5_static_cpp: $(SRCS)
 PYTHON_INCLUDE= -DHAVE_CONFIG_H @PYINCLUDE@
 PYTHON_LIB    = @PYLIB@
 
+# Extra Python specific dynamic linking options
+PYTHON_DLNK   = @PYTHONDYNAMICLINKING@
+
 # ----------------------------------------------------------------
 # Build a C dynamically loadable module
 # ----------------------------------------------------------------
@@ -203,7 +245,7 @@ PYTHON_LIB    = @PYLIB@
 python: $(SRCS)
 	$(SWIG) -python $(SWIGOPT) $(INTERFACE)
 	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(PYTHON_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)module$(SO)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PYTHON_DLNK) $(LIBS) -o _$(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build a C++ dynamically loadable module
@@ -211,8 +253,25 @@ python: $(SRCS)
 
 python_cpp: $(SRCS)
 	$(SWIG) -c++ -python $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PYTHON_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)module$(SO)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PYTHON_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PYTHON_DLNK) $(LIBS) $(CPP_DLLIBS) -o _$(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build a dynamically loadable module, linked against SWIG Runtime lib
+# -----------------------------------------------------------------
+
+PYTHON_RUNTIME=-L$(RUNTIMEDIR) -lswigpy@release_suffix@
+
+python_multi: $(SRCS)
+	$(SWIG) -c -python $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(PYTHON_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PYTHON_RUNTIME) $(PYTHON_DLNK) $(LIBS) -o _$(TARGET)$(SO)
+
+python_multi_cpp: $(SRCS)
+	$(SWIG) -c -c++ -python $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PYTHON_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PYTHON_RUNTIME) $(PYTHON_DLNK) $(LIBS) $(CPP_DLLIBS) -o _$(TARGET)$(SO)
+
 
 # -----------------------------------------------------------------
 # Build statically linked Python interpreter
@@ -232,9 +291,15 @@ python_static: $(SRCS)
 
 python_static_cpp: $(SRCS)
 	$(SWIG) -c++ -python -lembed.i $(SWIGOPT) $(INTERFACE)
-	$(CXX) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
 	$(PYTHON_INCLUDE) $(LIBS)  -L$(PYTHON_LIB) $(PYTHON_LIBOPTS) -o $(TARGET)
 
+# -----------------------------------------------------------------
+# Cleaning the python examples
+# -----------------------------------------------------------------
+
+python_clean:
+	rm -f *_wrap* *.o *~ *$(SO) mypython *.pyc .~* core
 
 ##################################################################
 #####                       GUILE                           ######
@@ -259,8 +324,39 @@ guile: $(SRCS)
 
 guile_cpp: $(SRCS)
 	$(SWIG) -c++ -guile -Linkage ltdlmod $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ISRCS) $(SRCS) $(CXXSRCS)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ICXXSRCS) $(SRCS) $(CXXSRCS)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o lib$(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build a dynamically loadable module with passive linkage
+# -----------------------------------------------------------------
+
+guile_passive: $(SRCS)
+	$(SWIG) -guile -Linkage passive $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ISRCS) $(SRCS)
 	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o lib$(TARGET)$(SO)
+
+guile_passive_cpp: $(SRCS)
+	$(SWIG) -c++ -guile -Linkage passive $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ICXXSRCS) $(SRCS) $(CXXSRCS)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o lib$(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build a dynamically loadable module with passive linkage, 
+# linked against SWIG runtime lib
+# -----------------------------------------------------------------
+
+GUILE_RUNTIME=-L$(RUNTIMEDIR) -lswigguile@release_suffix@
+
+guile_passive_multi: $(SRCS)
+	$(SWIG) -c -guile -Linkage passive $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ISRCS) $(SRCS)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(GUILE_RUNTIME) $(LIBS) -o lib$(TARGET)$(SO)
+
+guile_passive_multi_cpp: $(SRCS)
+	$(SWIG) -c -c++ -guile -Linkage passive $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ICXXSRCS) $(SRCS) $(CXXSRCS)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(GUILE_RUNTIME) $(LIBS) $(CPP_DLLIBS) -o lib$(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build statically linked Guile interpreter
@@ -276,10 +372,19 @@ guile_static: $(SRCS)
 
 guile_static_cpp: $(SRCS)
 	$(SWIG) -c++ -guile -lguilemain.i -Linkage ltdlmod $(SWIGOPT) $(INTERFACE)
-	$(CXX) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
 	  -DSWIGINIT="SCM scm_init_$(TARGET)_module(void); scm_init_$(TARGET)_module();" \
 	  $(GUILE_INCLUDE) $(LIBS) -L$(GUILE_LIB) $(GUILE_LIBOPTS) -o $(TARGET)-guile
 
+guile_simple: $(SRCS)
+	$(SWIG) -guile -lguilemain.i -Linkage simple $(SWIGOPT) $(INTERFACE)
+	$(CC) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) \
+	  $(GUILE_INCLUDE) $(LIBS) -L$(GUILE_LIB) $(GUILE_LIBOPTS) -o $(TARGET)-guile
+
+guile_simple_cpp: $(SRCS)
+	$(SWIG) -c++ -guile -lguilemain.i -Linkage simple $(SWIGOPT) $(INTERFACE)
+	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	  $(GUILE_INCLUDE) $(LIBS) -L$(GUILE_LIB) $(GUILE_LIBOPTS) -o $(TARGET)-guile
 
 ##################################################################
 #####                       JAVA                            ######
@@ -288,8 +393,11 @@ guile_static_cpp: $(SRCS)
 # You need to set this variable to the java directories containing the
 # files "jni.h" and "md.h"
 # usually something like /usr/java/include and /usr/java/include/<arch-osname>.
-
 JAVA_INCLUDE= @JAVAINC@
+
+# Extra Java specific dynamic linking options
+JAVA_DLNK  = @JAVADYNAMICLINKING@
+JAVALIBPREFIX = @JAVALIBRARYPREFIX@
 
 # ----------------------------------------------------------------
 # Build a java dynamically loadable module (C)
@@ -298,7 +406,7 @@ JAVA_INCLUDE= @JAVAINC@
 java: $(SRCS)
 	$(SWIG) -java $(SWIGOPT) $(INTERFACE)
 	$(CC) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) $(JAVA_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(JAVA_DLNK) $(LIBS) -o $(JAVALIBPREFIX)$(TARGET)$(SO)
 
 # ----------------------------------------------------------------
 # Build a java dynamically loadable module (C++)
@@ -306,30 +414,125 @@ java: $(SRCS)
 
 java_cpp: $(SRCS)
 	$(SWIG) -java -c++ $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ISRCS) $(INCLUDE) $(JAVA_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(JAVA_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(JAVA_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(JAVALIBPREFIX)$(TARGET)$(SO)
+
+# ----------------------------------------------------------------
+# Build a java dynamically loadable module
+# ----------------------------------------------------------------
+
+java_multi: $(SRCS)
+	$(SWIG) -java $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) $(JAVA_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(JAVA_DLNK) $(LIBS) -o $(JAVALIBPREFIX)$(TARGET)$(SO)
+
+java_multi_cpp: $(SRCS)
+	$(SWIG) -java -c++ $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(JAVA_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(JAVA_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(JAVALIBPREFIX)$(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Cleaning the java examples
+# -----------------------------------------------------------------
+
+java_clean:
+	mv main.java main.java.tmp
+	rm -f *_wrap* *.o core *~ *$(SO) *.class *.java 
+	mv main.java.tmp main.java
 
 ##################################################################
 #####                       MZSCHEME                        ######
 ##################################################################
 
-# ----------------------------------------------------------------
-# Build a C dynamically loadable module
-# ----------------------------------------------------------------
-
 MZC = test -n "@MZC@" && @MZC@
+
+# ----------------------------------------------------------------
+# Build a C/C++ dynamically loadable module
+# ----------------------------------------------------------------
 
 mzscheme: $(SRCS)
 	$(SWIG) -mzscheme $(SWIGOPT) $(INTERFACE)
-	$(MZC) --cc $(ISRCS) $(SRCS)
+	$(MZC) ++ccf "$(INCLUDE)" --cc $(ISRCS) $(SRCS)
 	$(MZC) --ld $(TARGET)$(SO) $(OBJS) $(IOBJS)
+
+mzscheme_cpp: $(SRCS)
+	$(SWIG) -mzscheme -c++ $(SWIGOPT) $(INTERFACE)
+	$(MZC) ++ccf "$(INCLUDE)" --cc $(ICXXSRCS) $(SRCS) $(CXXSRCS)
+	$(MZC) --ld $(TARGET)$(SO) $(OBJS) $(IOBJS) $(CPP_DLLIBS) 
+
+# ----------------------------------------------------------------
+# Build a dynamically loadable module, linked against SWIG runtime
+# ----------------------------------------------------------------
+
+MZSCHEME_RUNTIME=-L$(RUNTIMEDIR) -lswigmz@release_suffix@
+
+mzscheme_multi: $(SRCS)
+	$(SWIG) -c -mzscheme $(SWIGOPT) $(INTERFACE)
+	$(MZC) ++ccf "$(INCLUDE)" --cc $(ISRCS) $(SRCS)
+	$(MZC) --ld $(TARGET)$(SO) $(OBJS) $(IOBJS) $(MZSCHEME_RUNTIME)
+
+mzscheme_multi_cpp: $(SRCS)
+	$(SWIG) -c -mzscheme -c++ $(SWIGOPT) $(INTERFACE)
+	$(MZC) ++ccf "$(INCLUDE)" --cc $(ICXXSRCS) $(SRCS) $(CXXSRCS)
+	$(MZC) --ld $(TARGET)$(SO) $(OBJS) $(IOBJS) $(MZSCHEME_RUNTIME) $(CPP_DLLIBS) 
+
+##################################################################
+#####                          Ocaml                         #####
+##################################################################
+
+OCC=@OCAMLC@
+NOLINK ?= false
+
+ocaml_static: $(SRCS)
+	$(SWIG) -ocaml -classmod -mlout $(INTERFACE:%.i=%.ml) $(SWIGOPT) $(INTERFACE)
+	$(OCC) -c -ccopt "$(INCLUDE)" $(ISRCS) $(SRCS)
+	$(OCC) -c $(INTERFACE:%.i=%.mli)
+	$(OCC) -c $(INTERFACE:%.i=%.ml)
+	test -z "$(PROGFILE)" || test -f "$(PROGFILE)" && \
+		$(OCC) -c $(PROGFILE)
+	$(NOLINK) || $(OCC) -custom -o $(TARGET) \
+		$(INTERFACE:%.i=%.cmo) \
+		$(PROGFILE:%.ml=%.cmo) \
+		$(INTERFACE:%.i=%_wrap.o) $(OBJS) -cclib "$(LIBS)"
+
+ocaml_static_cpp: $(SRCS)
+	$(SWIG) -ocaml -c++ -classmod -mlout $(INTERFACE:%.i=%.ml) $(SWIGOPT) \
+		$(INTERFACE)
+	cp $(ICXXSRCS) $(ICXXSRCS:%.cxx=%.c)
+	$(OCC) -c -ccopt "-xc++ $(INCLUDE)" \
+		$(ICXXSRCS:%.cxx=%.c) $(SRCS) $(CXXSRCS)
+	$(OCC) -c $(INTERFACE:%.i=%.mli)
+	$(OCC) -c $(INTERFACE:%.i=%.ml)
+	test -z "$(PROGFILE)" || test -f "$(PROGFILE)" && \
+		$(OCC) -c $(PROGFILE)
+	$(NOLINK) || $(OCC) -custom -o $(TARGET) $(INTERFACE:%.i=%.cmo) \
+		$(INTERFACE:%.i=%_wrap.o) -cclib "$(LIBS)"
+
+ocaml_static_multi_cpp: $(SRCS)
+	$(SWIG) -c -ocaml -c++ -classmod -objects -mlout $(INTERFACE:%.i=%.ml) $(SWIGOPT) \
+		$(INTERFACE)
+	cp $(ICXXSRCS) $(ICXXSRCS:%.cxx=%.c)
+	$(OCC) -c -ccopt "-xc++ $(INCLUDE)" \
+		$(ICXXSRCS:%.cxx=%.c) $(SRCS) $(CXXSRCS)
+	$(OCC) -c $(INTERFACE:%.i=%.mli)
+	$(OCC) -c $(INTERFACE:%.i=%.ml)
+	test -z "$(PROGFILE)" || test -f "$(PROGFILE)" && \
+		$(OCC) -c $(PROGFILE)
+	$(NOLINK) || $(OCC) -custom -o $(TARGET) $(INTERFACE:%.i=%.cmo) \
+		$(INTERFACE:%.i=%_wrap.o) -cclib "$(LIBS)"
+
+ocaml_clean:
+	rm -f *_wrap* *.o *~ *$(SO) *.cmo *.cmi $(MLFILE) $(MLFILE)i .~* core
 
 ##################################################################
 #####                       RUBY                            ######
 ##################################################################
 
 # Make sure these locate your Ruby installation
-RUBY_INCLUDE= -DHAVE_CONFIG_H @RUBYINCLUDE@
+RUBY_CFLAGS= @RUBYCCDLFLAGS@ -DHAVE_CONFIG_H
+RUBY_INCLUDE= @RUBYINCLUDE@
+RUBY_LIB     = @RUBYLIB@
+RUBY_DLNK = @RUBYDYNAMICLINKING@
 
 # ----------------------------------------------------------------
 # Build a C dynamically loadable module
@@ -337,8 +540,8 @@ RUBY_INCLUDE= -DHAVE_CONFIG_H @RUBYINCLUDE@
 
 ruby: $(SRCS)
 	$(SWIG) -ruby $(SWIGOPT) $(INTERFACE)
-	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(RUBY_DLNK) $(LIBS) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build a C++ dynamically loadable module
@@ -346,8 +549,24 @@ ruby: $(SRCS)
 
 ruby_cpp: $(SRCS)
 	$(SWIG) -c++ -ruby $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
-	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(RUBY_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build a dynamically loadable module, linked against SWIG runtime lib
+# -----------------------------------------------------------------
+
+RUBY_RUNTIME=-L$(RUNTIMEDIR) -lswigrb@release_suffix@
+
+ruby_multi: $(SRCS)
+	$(SWIG) -c -ruby $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(RUBY_RUNTIME) $(RUBY_DLNK) $(LIBS) -o $(TARGET)$(SO)
+
+ruby_multi_cpp: $(SRCS)
+	$(SWIG) -c -c++ -ruby $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(RUBY_RUNTIME) $(RUBY_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build statically linked Ruby interpreter
@@ -356,29 +575,114 @@ ruby_cpp: $(SRCS)
 # library file
 # -----------------------------------------------------------------
 
-RUBY_LIB     = @RUBYLIB@
 RUBY_LIBOPTS = @RUBYLINK@ @LIBS@ $(SYSLIBS)
 
 ruby_static: $(SRCS)
 	$(SWIG) -ruby -lembed.i $(SWIGOPT) $(INTERFACE)
-	$(CC) $(CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDE) \
+	$(CC) $(CFLAGS) $(RUBY_CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDE) \
 	$(RUBY_INCLUDE) $(LIBS) -L$(RUBY_LIB) $(RUBY_LIBOPTS) -o $(TARGET)
 
-ruby_static_cpp: $(SRCS)
+ruby_cpp_static: $(SRCS)
 	$(SWIG) -c++ -ruby -lembed.i $(SWIGOPT) $(INTERFACE)
-	$(CXX) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	$(CXX) $(CFLAGS) $(RUBY_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
 	$(RUBY_INCLUDE) $(LIBS)  -L$(RUBY_LIB) $(RUBY_LIBOPTS) -o $(TARGET)
 
 
+# -------------------------------------------------------------------
+# Build a PHP4 dynamically loadable module (C)
+# -------------------------------------------------------------------
+
+PHP4_INCLUDE = @PHP4INC@
+
+php4: $(SRCS)
+	$(SWIG) -php4 -cppext cxx $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(ISRCS) $(INCLUDE) $(PHP4_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o $(TARGET)$(SO)
+
+# --------------------------------------------------------------------
+# Build a PHP4 dynamically loadable module (C++)
+# --------------------------------------------------------------------
+
+php4_cpp: $(SRCS)
+	$(SWIG) -php4 -cppext cxx -c++ $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDE) $(PHP4_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# ---------------------------------------------------------------------
+# Build a dynamically loadable module, linked against SWIG Runtime lib
+# ---------------------------------------------------------------------
+
+PHP4_RUNTIME=-L$(RUNTIMEDIR) -lswigphp4@release_suffix@
+
+php4_multi: $(SRCS)
+	$(SWIG) -c -php4 -cppext cxx $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(PHP4_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PHP4_RUNTIME) $(PHP4_DLNK) $(LIBS) -o $(TARGET)module$(SO)
+
+php4_multi_cpp: $(SRCS)
+	$(SWIG) -c -c++ -php4 -cppext cxx $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PHP4_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PHP4_RUNTIME) $(PHP4_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)module$(SO)
+
 ##################################################################
-#####                       SWIG                            ######
+#####                       Pike                            ######
 ##################################################################
 
-# Build a new SWIG extension
+# Make sure these locate your Pike installation
+PIKE_CFLAGS  = @PIKECCDLFLAGS@ -DHAVE_CONFIG_H
+PIKE_INCLUDE = @PIKEINCLUDE@
+PIKE_LIB     = @PIKELIB@
+PIKE_DLNK    = @PIKEDYNAMICLINKING@
 
-SWIGINCLUDE = -I${prefix}/include
-SWIGLIB     = -L${exec_prefix}/lib
+# ----------------------------------------------------------------
+# Build a C dynamically loadable module
+# ----------------------------------------------------------------
 
-swig: $(SRCS)
-	$(CXX) $(SRCS) $(SWIGINCLUDE) $(INCLUDE) $(SWIGLIB) $(LIBS) -lswig -o $(TARGET)
+pike: $(SRCS)
+	$(SWIG) -pike $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(PIKE_CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(PIKE_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PIKE_DLNK) $(LIBS) -o $(TARGET)$(SO)
 
+# -----------------------------------------------------------------
+# Build a C++ dynamically loadable module
+# -----------------------------------------------------------------
+
+pike_cpp: $(SRCS)
+	$(SWIG) -c++ -pike $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(PIKE_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PIKE_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PIKE_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build a dynamically loadable module, linked against SWIG runtime lib
+# -----------------------------------------------------------------
+
+PIKE_RUNTIME=-L$(RUNTIMEDIR) -lswigpike@release_suffix@
+
+pike_multi: $(SRCS)
+	$(SWIG) -c -pike $(SWIGOPT) $(INTERFACE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(PIKE_CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(PIKE_INCLUDE)
+	$(LDSHARED) $(OBJS) $(IOBJS) $(PIKE_RUNTIME) $(PIKE_DLNK) $(LIBS) -o $(TARGET)$(SO)
+
+pike_multi_cpp: $(SRCS)
+	$(SWIG) -c -c++ -pike $(SWIGOPT) $(INTERFACE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(PIKE_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(PIKE_INCLUDE)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(PIKE_RUNTIME) $(PIKE_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
+
+# -----------------------------------------------------------------
+# Build statically linked Pike interpreter
+#
+# These should only be used in conjunction with the %include embed.i
+# library file
+# -----------------------------------------------------------------
+
+PIKE_LIBOPTS = @PIKELINK@ @LIBS@ $(SYSLIBS)
+
+pike_static: $(SRCS)
+	$(SWIG) -pike -lembed.i $(SWIGOPT) $(INTERFACE)
+	$(CC) $(CFLAGS) $(PIKE_CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDE) \
+	$(PIKE_INCLUDE) $(LIBS) -L$(PIKE_LIB) $(PIKE_LIBOPTS) -o $(TARGET)
+
+pike_cpp_static: $(SRCS)
+	$(SWIG) -c++ -pike -lembed.i $(SWIGOPT) $(INTERFACE)
+	$(CXX) $(CFLAGS) $(PIKE_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	$(PIKE_INCLUDE) $(LIBS)  -L$(PIKE_LIB) $(PIKE_LIBOPTS) -o $(TARGET)

@@ -265,7 +265,7 @@ DohvPrintf(DOH *so, const char *format, va_list ap)
 	doh = va_arg(ap, DOH *);
 	if (DohCheck(doh)) {
 	  /* Is a DOH object. */
- 	  if (DohIsString(doh) && (ObjType(doh) == DOHTYPE_STRING)) {
+ 	  if (DohIsString(doh)) {
 	    Sval = doh;
 	  } else {
 	    Sval = Str(doh);
@@ -411,7 +411,7 @@ int DohPrintv(DOHFile *f, ...) {
   va_start(ap,f);
   while(1) {
     obj = va_arg(ap,void *);
-    if (!obj) break;
+    if ((!obj) || (obj == DohNone)) break;
     if (DohCheck(obj)) {
       ret += DohDump(obj,f);
     } else {
@@ -464,7 +464,7 @@ DohCopyto(DOH *in, DOH *out) {
  * ----------------------------------------------------------------------------- */
 
 DOH *
-DohSplit(DOH *in, char *chs, int nsplits) {
+DohSplit(DOH *in, const char *chs, int nsplits) {
   DOH *list;
   DOH *str;
   int c;
@@ -490,6 +490,7 @@ DohSplit(DOH *in, char *chs, int nsplits) {
       nsplits--;
     }
     Append(list,str);
+    Delete(str);
     if (c == EOF) break;
   }
   return list;
