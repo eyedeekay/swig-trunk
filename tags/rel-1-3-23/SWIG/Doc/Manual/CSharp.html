@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>SWIG and C#</title>
+</head>
+<body bgcolor="#FFFFFF">
+<H1><a name="CSharp"></a>16 SWIG and C#</H1>
+<!-- INDEX -->
+<!-- INDEX -->
+
+
+
+The purpose of the C# module is to offer an automated way of accessing existing C/C++ code from .NET languages.
+The wrapper code implementation uses the Platform Invoke (PINVOKE) interface to access natively compiled C/C++ code.
+The PINVOKE interface has been chosen over Microsoft's Managed C++ interface as it is portable to both Microsoft Windows and non-Microsoft platforms.
+PINVOKE is part of the ECMA/ISO C# specification.
+Swig C# works equally well on non-Microsoft operating systems such as Linux, Solaris and Apple Mac using Mono and Portable.NET.
+
+<p>
+The C# module is very similar to the Java module, so until some documentation has been written,
+please use the <a href="Java.html#Java">Java documentation</a> as a guide to using SWIG with C#.
+The rest of this chapter should be read in conjunction with the Java documentation as it lists the main differences.
+
+<p>
+Director support (virtual method callbacks into C#) has not yet been implemented and is the main missing feature compared to Java.
+Less of the STL is supported and there are also a few minor utility typemaps in the various.i library which are missing.
+
+<p>
+
+The most noteable differences to Java are the following:
+<ul>
+
+<li>
+When invoking SWIG use the <tt>-csharp</tt> command line option instead of <tt>-java</tt>.
+</li>
+
+<li>
+The <tt>-package</tt> command line option does not exist.
+</li>
+
+<li>
+The <tt>-namespace &lt;name&gt;</tt> commandline option will generate all code into the namespace specified by <tt>&lt;name&gt;</tt>.
+</li>
+
+<li>
+The <tt>-dllimport &lt;name&gt;</tt> commandline option specifies the name of the DLL for the <tt>DllImport</tt> attribute for every PInvoke method. If this commandline option is not given, the <tt>DllImport</tt> DLL name is the same as the module name. This option is useful for when one wants to invoke SWIG multiple times on different modules, yet compile all the resulting code into a single DLL.
+</li>
+
+<li>
+C/C++ variables are wrapped with C# properties and not JavaBean style getters and setters.
+</li>
+
+<li>
+Global constants are generated into the module class. There is no constants interface.
+</li>
+
+<li>
+There is no implementation for type unsafe enums - not deemed necessary.
+</li>
+
+<li>
+The default enum wrapping approach is proper C# enums, not typesafe enums.
+<br>
+Note that %csconst(0) will be ignored when wrapping C/C++ enums with proper C# enums.
+This is because C# enum items must be initialised from a compile time constant.
+If an enum item has an initialiser and the initialiser doesn't compile as C# code,
+then the %csconstvalue directive must be used as %csconst(0) will have no effect.
+If it was used, it would generate an illegal runtime initialisation via a PINVOKE call.
+</li>
+
+<li>
+C# doesn't support the notion of throws clauses.
+Therefore there is no 'throws' typemap attribute support for adding exception classes to a throws clause.
+Likewise there is no need for an equivalent to <tt>%javaexception</tt>.
+</li>
+
+<li>
+Typemap equivalent names:
+
+<blockquote><pre>
+jni                         -&gt; ctype
+jtype                       -&gt; imtype
+jstype                      -&gt; cstype
+javain                      -&gt; csin
+javaout                     -&gt; csout
+javainterfaces              -&gt; csinterfaces and csinterfaces_derived
+javabase                    -&gt; csbase
+javaclassmodifiers          -&gt; csclassmodifiers
+javacode                    -&gt; cscode
+javaimports                 -&gt; csimports
+javabody                    -&gt; csbody
+javafinalize                -&gt; csfinalize
+javadestruct                -&gt; csdestruct
+javadestruct_derived        -&gt; csdestruct_derived
+</pre></blockquote>
+
+</li>
+
+<li>
+Additional typemaps:
+
+<blockquote><pre>
+csvarin                     C# code property set typemap
+csvarout                    C# code property get typemap
+</pre></blockquote>
+
+</li>
+
+<li>
+Feature equivalent names:
+<blockquote><pre>
+%javaconst                  -&gt; %csconst
+%javaconstvalue             -&gt; %csconstvalue
+%javamethodmodifiers        -&gt; %csmethodmodifiers
+</pre></blockquote>
+</li>
+
+<li>
+Pragma equivalent names:
+<blockquote><pre>
+%pragma(java)               -&gt; %pragma(csharp)
+jniclassbase                -&gt; imclassbase
+jniclassclassmodifiers      -&gt; imclassclassmodifiers
+jniclasscode                -&gt; imclasscode
+jniclassimports             -&gt; imclassimports
+jniclassinterfaces          -&gt; imclassinterfaces
+</pre></blockquote>
+</li>
+
+<li>
+Special variable equivalent names:
+<blockquote><pre>
+$javaclassname              -&gt; $csclassname
+$javainput                  -&gt; $csinput
+$jnicall                    -&gt; $imcall
+</pre></blockquote>
+</li>
+
+</ul>
+
+<p>
+<b><tt>$dllimport</tt></b><br>
+This is a C# only special variable that can be used in typemaps, pragmas, features etc.
+The special variable will get translated into the value specified by the <tt>-dllimport</tt> commandline option
+if specified, otherwise it is equivalent to the <b>$module</b> special variable.
+</p>
+
+The intermediary classname has <tt>PINVOKE</tt> appended after the module name instead of <tt>JNI</tt>, for example <tt>modulenamePINVOKE</tt>.
+
+<p>
+The directory <tt>Examples/csharp</tt> has a number of simple examples. 
+Visual Studio .NET 2003 solution and project files are available for compiling with the Microsoft .NET C# compiler on Windows.
+If your SWIG installation went well on a Unix environment and your C# compiler was detected, you should be able to type <tt>make</tt> in each example directory, 
+then <tt>ilrun runme</tt> (Portable.NET C# compiler) or <tt>mono runme</tt> (Mono C# compiler) to run the examples.
+Windows users can also get the examples working using a
+<a href="http://www.cygwin.com">Cygwin</a> or <a href="http://www.mingw.org">MinGW</a> environment for automatic configuration of the example makefiles.
+Any one of the three C# compilers (Portable.NET, Mono or Microsoft) can be detected from within a Cygwin or Mingw environment if installed in your path. 
+</body>
+</html>
+
