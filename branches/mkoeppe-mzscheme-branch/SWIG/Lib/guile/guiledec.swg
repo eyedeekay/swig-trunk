@@ -134,8 +134,6 @@ SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
 #define SWIG_MustGetPtr(s, type, argnum) \
   SWIG_Guile_MustGetPtr_(s, type, argnum, FUNC_NAME)
 
-#define SWIG_MustGetPtr SWIG_Guile_MustGetPtr
-
 /* Make a smob from a pointer and typeinfo.  */
 SWIGSTATIC SCM
 SWIG_Guile_MakePtr (void *ptr, swig_type_info *type);
