@@ -18,6 +18,11 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+7/02/2001: mkoeppe
+	   * [Python]: Prevent the problem of self.thisown not being
+	   defined if the C++ class constructor raised an exception.
+	   Thanks to Luigi Ballabio <ballabio@mac.com>.
+
 6/29/2001: mkoeppe
 	   * More portability fixes; fixed "gcc -Wall" warnings.
 
