@@ -285,12 +285,12 @@ PERL5::initialize()
   Printf(f_init,"XS(SWIG_init) {\n");
   Printf(f_init,"\t dXSARGS;\n");
   Printf(f_init,"\t int i;\n");
-  Printf(f_init,"\t char *file = __FILE__;\n");
+  Printf(f_init,"\t char *file = (char *) __FILE__;\n");
   Printv(f_init,
 	 "for (i = 0; swig_types_initial[i]; i++) {\n",
 	 "swig_types[i] = SWIG_TypeRegister(swig_types_initial[i]);\n",
 	 "}\n", 0);
-  Printf(f_init,"\t newXS(\"%s::var_%s_init\", _wrap_perl5_%s_var_init, file);\n",package,cmodule, cmodule);
+  Printf(f_init,"\t newXS((char *) \"%s::var_%s_init\", _wrap_perl5_%s_var_init, file);\n",package,cmodule, cmodule);
 
   Printv(vinit,
 	 "XS(_wrap_perl5_", cmodule, "_var_init) {\n",
@@ -491,7 +491,7 @@ get_pointer(char *iname, char *srcname, char *src, char *dest,
  * ----------------------------------------------------------------------------- */
 void
 PERL5::create_command(char *cname, char *iname) {
-  Printf(f_init,"\t newXS(\"%s::%s\", %s, file);\n", package, iname, Swig_name_wrapper(cname));
+  Printf(f_init,"\t newXS((char *) \"%s::%s\", %s, file);\n", package, iname, Swig_name_wrapper(cname));
   if (export_all) {
     Printf(exported,"%s ",iname);
   }
@@ -730,7 +730,7 @@ PERL5::create_function(char *name, char *iname, SwigType *d, ParmList *l)
 
   /* Now register the function */
 
-  Printf(f_init,"\t newXS(\"%s::%s\", %s, file);\n", package, iname, Swig_name_wrapper(iname));
+  Printf(f_init,"\t newXS((char *) \"%s::%s\", %s, file);\n", package, iname, Swig_name_wrapper(iname));
 
   if (export_all) {
     Printf(exported,"%s ", iname);
@@ -1262,7 +1262,7 @@ PERL5::usage_func(char *iname, SwigType *, ParmList *l) {
  * ----------------------------------------------------------------------------- */
 void
 PERL5::add_native(char *name, char *funcname, SwigType *, ParmList *) {
-  Printf(f_init,"\t newXS(\"%s::%s\", %s, file);\n", package,name, funcname);
+  Printf(f_init,"\t newXS((char *) \"%s::%s\", %s, file);\n", package,name, funcname);
   if (export_all)
     Printf(exported,"%s ",name);
   if (blessed) {
