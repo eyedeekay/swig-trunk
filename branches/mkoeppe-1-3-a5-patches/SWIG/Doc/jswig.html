@@ -315,55 +315,131 @@ is release afterwards</td>
 
 <br>&nbsp;
 <h2>
-Pragma</h2>
-The following pragma's are accepted:
-<dl>
-<dt>
-<b>pragma(java) import</b></dt>
-
-<dd>
-Import statements are generated in all generated Java classes which could
-be useful in combination with the %native feature.
-This pragma will be improved in the near future so that it will be possible to target the import for a specific shadow file.
-</dd>
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pragma(java) import="java.io.*"</pre>
-
-<dt>
-<b>pragma(java) module</b></dt>
-
-<dd>
-All text is copied verbatim to the (Java) module file.</dd>
-
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pragma(java) module="
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.loadLibrary(\"junixcall\");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } catch (UnsatisfiedLinkError e) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.printStackTrace();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.exit(1);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "</pre>
-
-<dt>
-<b>pragma(java) shadow</b></dt>
-
-<dd>
-All text is copied verbatim to all (Java) shadow files. This pragma will be improved in the near future so that it will be possible to copy code into a specified shadow file.
-<pre>
-</pre>
-</dd>
-
-<dt>
-<b> pragma(java) modifiers</b></dt>
-<dd>
-Change the modifiers of the generated native calls. The default is "public final static"
-<pre>
-	%pragma(java) modifiers="public final static synchronized"
-</pre>
-</dd>
+Pragmas</h2>
+There are two groups of pragmas in the Java module. The first group modify the Java module output file and the second modify the Java shadow output file. The pragmas beginning with <b>module</b> apply to the module output file. The pragmas beginning with <b>allshadow</b> apply to all shadow output classes. The pragmas beginning with <b>shadow</b> apply to the currently active shadow class so these pragmas can only be specified within the definition of a class or struct. For example:
+<blockquote><pre>
+/* TestStruct.i */
+#ifdef SWIG
+%pragma(java) modulecode="/*This code gets added to the module class*/"
+%pragma(java) allshadowcode="/*This code gets added to every shadow class*/"
+#endif
+typedef struct TestStruct {
+#ifdef SWIG
+%pragma(java) shadowcode="/*This code gets added to the TestStruct shadow class only*/"
+#endif
+  int    myInt;
+} TestStruct;
+</pre></blockquote>
+<br>
+A complete list of pragmas follows:
+<br><br>
+<table BORDER>
+<tr VALIGN=TOP>
+<td><b>Pragma</b></td>
+<td><b>Description</b></td>
+<td><b>Example</b></td>
+</tr>
+<tr>
+<td>modulebase</td>
+<td>Specifies a base class for the Java module class.</td>
+<td>%pragma(java) modulebase="BaseClass"</td>
+</tr>
+<tr>
+<td>shadowbase</td>
+<td>Specifies a base class for the Java shadow class.</td>
+<td>%pragma(java) shadowbase="BaseClass"</td>
+</tr>
+<tr>
+<td>allshadowbase</td>
+<td>Specifies a base class for all Java shadow classes.</td>
+<td>%pragma(java) allshadowbase="BaseClass"</td>
+</tr>
+<tr>
+<td>modulecode</td>
+<td>Adds code to the Java module class.</td>
+<td>%pragma(java) modulecode="/*module code*/"</td>
+</tr>
+<tr>
+<td>shadowcode</td>
+<td>Adds code to the Java shadow class.</td>
+<td>%pragma(java) shadowcode="/*shadow code*/"</td>
+</tr>
+<tr>
+<td>allshadowcode</td>
+<td>Adds code to all Java classes.</td>
+<td>%pragma(java) allshadowcode="/*all shadow code*/"</td>
+</tr>
+<tr>
+<td>moduleclassmodifiers</td>
+<td>Overrides the default Java module class modifiers. The default is public.</td>
+<td>%pragma(java) moduleclassmodifiers="public final"</td>
+</tr>
+<tr>
+<td>shadowclassmodifiers</td>
+<td>Overrides the default Java shadow class modifiers. The default is public. Also overrides allshadowclassmodifiers if present.</td>
+<td>%pragma(java) shadowclassmodifiers="public final"</td>
+</tr>
+<tr>
+<td>allshadowclassmodifiers</td>
+<td>Overrides the default modifiers for all Java classes. The default is public.</td>
+<td>%pragma(java) allshadowclassmodifiers="public final"</td>
+</tr>
+<tr>
+<td>moduleimport</td>
+<td>Adds an import statement to the Java module class file.</td>
+<td>%pragma(java) moduleimport="java.lang.*"</td>
+</tr>
+<tr>
+<td>shadowimport</td>
+<td>Adds an import statement to the Java shadow class file. Adds to any imports specified in allshadowimport.</td>
+<td>%pragma(java) shadowimport="java.lang.*"</td>
+</tr>
+<tr>
+<td>allshadowimport</td>
+<td>Adds an import statement to all Java shadow class files.</td>
+<td>%pragma(java) allshadowimport="java.lang.*"</td>
+</tr>
+<tr>
+<td>moduleinterface</td>
+<td>Specifies an interface which the Java module output class implements. Can be used multiple times as Java supports multiple interfaces.</td>
+<td>%pragma(java) moduleinterface="SomeInterface"</td>
+</tr>
+<tr>
+<td>shadowinterface</td>
+<td>Specifies an interface which the Java shadow class implements. Can be used multiple times as Java supports multiple interfaces. Adds to any interfaces specified in allshadowinterface.</td>
+<td>%pragma(java) shadowinterface="SomeInterface"</td>
+</tr>
+<tr>
+<td>allshadowinterface</td>
+<td>Specifies an interface which all Java shadow classes implement. Can be used multiple times as Java supports multiple interfaces.</td>
+<td>%pragma(java) allshadowinterface="SomeInterface"</td>
+</tr>
+<tr>
+<td>modulemethodmodifiers</td>
+<td>Overrides the native default method modifiers for the module class. The default is public final static.</td>
+<td>%pragma(java) modulemethodmodifiers="protected final static synchronized"</td>
+</tr>
+</table>
 
 </dl>
+
+<h3> Deprecated pragmas</h3>
+The following pragmas were in Swig 1.3a3 and have been deprecated:<br>
+<b>import</b>: Please replace with <b>moduleimport</b>, <b>shadowimport</b> and/or <b>allshadowimport</b> pragmas.<br>
+<b>module</b>: Please replace with the <b>modulecode</b> pragma.<br>
+<b>shadow</b>: Please replace with the <b>allshadowcode</b> pragma.<br>
+<b>modifiers</b>: Please replace with the <b>modulemethodmodifiers</b> pragma.<br>
+
+<h3> Pragma uses</h3>
+The pragmas are used primarily to modify the default Java output code. They provide flexibility as to how Java and C++ interact. In the pragma notation below, <b>xxxcode</b> for example would be used to denote the 3 similar 'code' pragmas, that is <b>modulecode</b>, <b>shadowcode</b> and <b>allshadowcode</b>. 
+
+<h4> Derive C++ from Java and visa-versa</h4>
+It is possible to derive a Java class from a shadow class (i.e. a C++ class) with the Java module. However, with the pragmas it is also possible to derive the SWIG produced Java shadow classes (i.e. C++ class) from your own Java class by using the <b>xxxbase</b> pragma with the <b>xxximport</b>, <b>xxxcode</b> and <b>xxxclassmodifiers</b> pragmas. It is also possible for the SWIG produced Java classes to implement interfaces using the <b>xxxinterface</b> pragmas.
+
+<!--
+<h3> JavaDoc </h3>
+The SWIG documentation system that was shipped with SWIG 1.1 is currently disabled and will be replaced in the future. If you require some documentation in the meantime in your Java module class or shadow class, it can be added using the <b>xxxcode</b> pragmas. JavaDoc comments can be inserted instead of Java code. Although you can insert as many of these code pragmas as you like scattered throughout the c/c++ code, they are all output together in the Java class. Thus you can have a block of JavaDoc comments per class, but it is not flexible enough to have a JavaDoc comment above each member function. <b> Does not work! The documenation only gets added to one method!!</b>
+-->
 
 <h2>
 Shadow Classes and Garbage Collection</h2>
@@ -415,6 +491,10 @@ The SWIG generated code ensures that the memory is not deleted twice, in the eve
 Write your own object manager in Java. You could derive all SWIG classes from a single base class which could track which objects have had their finalizers run, then call the rest of them on program termination. Currently you cannot tell SWIG to derive a SWIG shadow class from any named Java class, but this is planned in the near future. An alternative is to add the object handling code to all generated shadow classes using the shadow pragma.
 </li>
 </ol>
+
+<h2>
+Dynamic Linking Problems</h2>
+The code to load a native library is <code>System.loadLibrary("name")</code>. Commonly this will fail and it can be due to a number of reasons. The most common is an incorrect naming of the native library for the name passed to the <code>loadLibrary</code> function. The text passed to the <code>loadLibrary</code> function must not include the the extension name in the text, that is <i>.dll</i> or <i>.so</i>. The text must be <i>name</i> and not <i>libname</i> for all platforms. On Windows the native library must then be called <i>name.dll</i> and on Unix it must be called <i>libname.so</i>. If you are debugging using <code> java -debug</code>, then the native library must be called <i>name_g.dll</i> on Windows and <i>libname_g.so</i> on Unix.
 
 <h2>
 Tips</h2>

@@ -18,6 +18,14 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+6/26/2001: cheetah (william fulton)
+	   * [Java] Added in cpp_pragma() support with a host of new pragmas - see 
+	   jswig.html. These are designed for better mixing of Java and c++. It 
+	   enables the user to specify pure Java classes as bases and/or interfaces 
+	   for the wrapped c/c++.
+	   * [Java] Old pragmas renamed. Warning given for the moment if used.
+          *** POTENTIAL INCOMPATIBILITY FOR JAVA MODULE ***
+
 6/25/2001: mkoeppe
 	   * Incorporated more build changes contributed by Wyss Clemens
 	   <WYS@helbling.ch> for swig/ruby on cygwin.
