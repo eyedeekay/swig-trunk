@@ -38,4 +38,4 @@ run_testcase = \
 	
 
 clean:
-	@rm -f *_wrap* *.o *~ *.so *.dll .~* core
+	$(MAKE) -f $(TOP)/Makefile tcl_clean

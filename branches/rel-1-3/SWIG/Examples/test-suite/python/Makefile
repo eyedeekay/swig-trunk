@@ -40,10 +40,5 @@ run_testcase = \
 	@rm -f $*.py;
 
 clean:
-	@rm -f *_wrap* *.o *~ *.so *.dll *.pyc .~* core
-
-
-
-
-
+	$(MAKE) -f $(TOP)/Makefile python_clean
 

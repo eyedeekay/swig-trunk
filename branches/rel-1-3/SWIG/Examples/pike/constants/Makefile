@@ -13,6 +13,6 @@ static::
 	TARGET='mypike' INTERFACE='$(INTERFACE)' pike_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so mypike .~* core
+	$(MAKE) -f $(TOP)/Makefile pike_clean
 
 check: all

@@ -17,6 +17,6 @@ all::
 
 
 clean::
-	rm -f *_wrap* *.o *~ *.so .~* core
+	$(MAKE) -f $(TOP)/Makefile tcl_clean
 
 check: all

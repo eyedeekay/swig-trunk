@@ -15,6 +15,6 @@ static::
 	TARGET='myruby' INTERFACE='$(INTERFACE)' ruby_static
 
 clean::
-	@rm -f example_wrap.c example_wrap.o example.so
+	$(MAKE) -f $(TOP)/Makefile ruby_clean
 
 check: all

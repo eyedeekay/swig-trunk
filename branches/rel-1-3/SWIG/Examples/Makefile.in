@@ -158,6 +158,13 @@ tcl_multi_cpp: $(SRCS)
 	$(CXX) -c $(CCSHARED) $(CFLAGS) $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDES) $(TCL_INCLUDE)
 	$(CXXSHARED) $(OBJS) $(IOBJS) $(TCL_RUNTIME) $(TCL_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)$(SO)
 
+# -----------------------------------------------------------------
+# Cleaning the Tcl examples
+# -----------------------------------------------------------------
+
+tcl_clean:
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core mytclsh@EXEEXT@ 
+
 ##################################################################
 #####                       PERL 5                          ######
 ##################################################################
@@ -226,6 +233,12 @@ perl5_static_cpp: $(SRCS)
 	$(SWIG) -perl5 -c++ -static -lperlmain.i $(SWIGOPT) $(INTERFACE)
 	$(CXX) $(CFLAGS) -Dexplicit= $(SRCS) $(CXXSRCS) $(ICXXSRCS) $(INCLUDES) -I$(PERL5_INCLUDE) $(PERL5_LIB) $(LIBS) -o $(TARGET)
 
+# -----------------------------------------------------------------
+# Cleaning the Perl5 examples
+# -----------------------------------------------------------------
+
+perl5_clean:
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core myperl@EXEEXT@ *.pm
 
 ##################################################################
 #####                       PYTHON                          ######
@@ -299,7 +312,7 @@ python_static_cpp: $(SRCS)
 # -----------------------------------------------------------------
 
 python_clean:
-	rm -f *_wrap* *.@OBJEXT@ *~ *$(SO) mypython *.pyc .~* core
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core mypython@EXEEXT@ *.pyc
 
 ##################################################################
 #####                       GUILE                           ######
@@ -386,6 +399,13 @@ guile_simple_cpp: $(SRCS)
 	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) \
 	  $(GUILE_INCLUDE) $(LIBS) -L$(GUILE_LIB) $(GUILE_LIBOPTS) -o $(TARGET)-guile
 
+# -----------------------------------------------------------------
+# Cleaning the Guile examples
+# -----------------------------------------------------------------
+
+guile_clean:
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core my-guile@EXEEXT@ $(TARGET)@EXEEXT@
+
 ##################################################################
 #####                       JAVA                            ######
 ##################################################################
@@ -436,9 +456,7 @@ java_multi_cpp: $(SRCS)
 # -----------------------------------------------------------------
 
 java_clean:
-	mv main.java main.java.tmp
-	rm -f *_wrap* *.@OBJEXT@ core *~ *$(SO) *.class *.java 
-	mv main.java.tmp main.java
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core *.class `find . -name \*.java | grep -v main.java`
 
 ##################################################################
 #####                       MZSCHEME                        ######
@@ -475,6 +493,13 @@ mzscheme_multi_cpp: $(SRCS)
 	$(SWIG) -c -mzscheme -c++ $(SWIGOPT) $(INTERFACE)
 	$(MZC) ++ccf "$(INCLUDES)" --cc $(ICXXSRCS) $(SRCS) $(CXXSRCS)
 	$(MZC) --ld $(TARGET)$(SO) $(OBJS) $(IOBJS) $(MZSCHEME_RUNTIME) $(CPP_DLLIBS) 
+
+# -----------------------------------------------------------------
+# Cleaning the mzscheme examples
+# -----------------------------------------------------------------
+
+mzscheme_clean:
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core
 
 ##################################################################
 #####                          Ocaml                         #####
@@ -522,7 +547,7 @@ ocaml_static_multi_cpp: $(SRCS)
 		$(INTERFACE:%.i=%_wrap.@OBJEXT@) -cclib "$(LIBS)"
 
 ocaml_clean:
-	rm -f *_wrap* *.@OBJEXT@ *~ *$(SO) *.cmo *.cmi $(MLFILE) $(MLFILE)i .~* core
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core *.cmo *.cmi $(MLFILE) $(MLFILE)i
 
 ##################################################################
 #####                       RUBY                            ######
@@ -588,6 +613,17 @@ ruby_cpp_static: $(SRCS)
 	$(RUBY_INCLUDE) $(LIBS)  -L$(RUBY_LIB) $(RUBY_LIBOPTS) -o $(TARGET)
 
 
+# -----------------------------------------------------------------
+# Cleaning the Ruby examples
+# -----------------------------------------------------------------
+
+ruby_clean:
+	rm -f *.@OBJEXT@ *@SO@ *_wrap* *~ .~* core myruby@EXEEXT@ *.pm
+
+##################################################################
+#####                       PHP                             ######
+##################################################################
+
 # -------------------------------------------------------------------
 # Build a PHP4 dynamically loadable module (C)
 # -------------------------------------------------------------------
@@ -623,6 +659,13 @@ php4_multi_cpp: $(SRCS)
 	$(SWIG) -c -c++ -php4 -cppext cxx $(SWIGOPT) $(INTERFACE)
 	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) $(PHP4_INCLUDE)
 	$(CXXSHARED) $(OBJS) $(IOBJS) $(PHP4_RUNTIME) $(PHP4_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(TARGET)module$(SO)
+
+# -----------------------------------------------------------------
+# Cleaning the PHP4 examples
+# -----------------------------------------------------------------
+
+php4_clean:
+	rm -f *.@OBJEXT@ *$(SO) *_wrap* *~ .~* core *.php
 
 ##################################################################
 #####                       Pike                            ######
@@ -686,3 +729,11 @@ pike_cpp_static: $(SRCS)
 	$(SWIG) -c++ -pike -lembed.i $(SWIGOPT) $(INTERFACE)
 	$(CXX) $(CFLAGS) $(PIKE_CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) \
 	$(PIKE_INCLUDE) $(LIBS)  -L$(PIKE_LIB) $(PIKE_LIBOPTS) -o $(TARGET)
+
+# -----------------------------------------------------------------
+# Cleaning the Pike examples
+# -----------------------------------------------------------------
+
+pike_clean:
+	rm -f *.@OBJEXT@ *$(SO) *_wrap* *~ .~* core mypike@EXEEXT@ 
+

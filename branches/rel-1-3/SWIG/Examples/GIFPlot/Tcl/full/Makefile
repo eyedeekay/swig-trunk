@@ -18,6 +18,7 @@ static::
 	TARGET='mytclsh' INTERFACE='$(INTERFACE)' tclsh
 
 clean::
-	rm -f *_wrap* *.o *~ *.so mytclsh  .~* core *.gif
+	$(MAKE) -f $(TOP)/Makefile tcl_clean
+	rm -f *.gif
 
 check: all

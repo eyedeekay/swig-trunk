@@ -13,6 +13,6 @@ static::
 	TARGET='myruby' INTERFACE='$(INTERFACE)' ruby_cpp_static
 
 clean::
-	@rm -f *.o
+	$(MAKE) -f $(TOP)/Makefile ruby_clean
 
 check: all

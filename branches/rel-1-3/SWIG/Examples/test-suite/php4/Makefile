@@ -64,4 +64,4 @@ run_testcase = \
 	@rm -f $*.php;
 
 clean:
-	@rm -f *_wrap* *.o *~ *.so *.dll .~* core *.h
+	$(MAKE) -f $(TOP)/Makefile php4_clean

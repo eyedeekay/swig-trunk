@@ -39,4 +39,4 @@ run_testcase = \
 	@rm -f $*.pm;
 
 clean:
-	@rm -f *_wrap* *.o *~ *.so *.dll *.pm .~* core
+	$(MAKE) -f $(TOP)/Makefile perl5_clean

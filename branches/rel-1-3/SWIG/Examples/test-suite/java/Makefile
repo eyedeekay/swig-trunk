@@ -54,7 +54,7 @@ setup = \
 
 # Compiles java files then runs the testcase. A testcase is only run if
 # a file is found which has _runme.java appended after the testcase name.
-# Note Java uses LD_LIBRARY_PATH under Unix and PATH under cygwin.
+# Note Java uses LD_LIBRARY_PATH under Unix and PATH under Cygwin.
 run_testcase = \
 	(cd $*; javac *.java; ); \
 	if [ -f $*\_runme.java ]; then ( \

@@ -36,6 +36,5 @@ run_testcase = \
 # Clean
 %.clean:
 	
-
 clean:
-	@rm -f *_wrap* *.o *.so *.dll *~ ~* core
+	$(MAKE) -f $(TOP)/Makefile mzscheme_clean

@@ -13,7 +13,7 @@ $(TARGET):
 	    sub-all
 
 clean::
-	rm -f *_wrap* $(TARGET) *~ .~* core
+	$(MAKE) -f $(MKDIR)/Makefile TARGET='$(TARGET)' guile_clean
 
 check: $(TARGET)
 	./$(TARGET) -s example.scm > /dev/null

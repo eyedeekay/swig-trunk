@@ -18,6 +18,7 @@ static::
 	TARGET='myperl' INTERFACE='$(INTERFACE)' perl5_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so myperl *.pm .~* core *.gif
+	$(MAKE) -f $(TOP)/Makefile perl5_clean
+	rm -f *.gif
 
 check: all

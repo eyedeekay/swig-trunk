@@ -15,6 +15,6 @@ static::
 	SWIGOPT='$(SWIGOPT)' TARGET='myruby' INTERFACE='$(INTERFACE)' ruby_cpp_static
 
 clean::
-	@rm -f example_wrap.cxx example_wrap.o example.so
+	$(MAKE) -f $(TOP)/Makefile ruby_clean
 
 check: all

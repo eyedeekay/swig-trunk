@@ -15,6 +15,6 @@ static:
 	SWIGOPT='$(SWIGOPT)' TARGET='mypike' INTERFACE='$(INTERFACE)' pike_cpp_static
 
 clean:
-	-rm -f example_wrap.cxx example_wrap.o example.so
+	$(MAKE) -f $(TOP)/Makefile pike_clean
 
 check: all

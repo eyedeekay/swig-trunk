@@ -13,6 +13,7 @@ all::
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' php4
 
 clean::
-	rm -f *_wrap* *.o *~ *.so .~* core *.gif *.php *.h
+	$(MAKE) -f $(TOP)/Makefile php4_clean
+	rm -f *.gif
 
 check: all

@@ -57,5 +57,8 @@ include ../common.mk
 	fi
 
 %.clean:
-	@rm -f *_wrap* *.o *~ ~* core `find . -name \*.ml\* | grep -v runme` \
-		*.cmi *.cmo
+	@rm -f $*.ml $*.mli;
+
+clean:
+	$(MAKE) -f $(TOP)/Makefile ocaml_clean
+

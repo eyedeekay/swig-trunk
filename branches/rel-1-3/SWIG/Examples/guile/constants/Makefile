@@ -11,7 +11,7 @@ all::
 	    sub-all
 
 clean::
-	rm -f *_wrap* my-guile *~ .~* core
+	$(MAKE) -f $(MKDIR)/Makefile TARGET='$(TARGET)' guile_clean
 
 check: all
 	./my-guile -s constants.scm

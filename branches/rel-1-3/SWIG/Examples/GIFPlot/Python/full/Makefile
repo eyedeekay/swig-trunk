@@ -18,6 +18,8 @@ static::
 	TARGET='mypython' INTERFACE='$(INTERFACE)' python_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so mypython *.pyc .~* core *.gif
+	$(MAKE) -f $(TOP)/Makefile python_clean
+	rm -f $(TARGET).py
+	rm -f *.gif
 
 check: all

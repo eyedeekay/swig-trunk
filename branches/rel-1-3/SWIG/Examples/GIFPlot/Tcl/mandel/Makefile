@@ -18,6 +18,7 @@ static::
 	TARGET='mywish' INTERFACE='$(INTERFACE)' wish
 
 clean::
-	rm -f *_wrap* *.o *~ *.so mywish  .~* core *.gif
+	$(MAKE) -f $(TOP)/Makefile tcl_clean
+	rm -f *.gif
 
 check: all

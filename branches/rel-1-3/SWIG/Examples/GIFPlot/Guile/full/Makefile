@@ -22,6 +22,7 @@ static::
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' guile_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so gifguile .~* core *.gif
+	$(MAKE) -f $(TOP)/Makefile TARGET='$(TARGET)' guile_clean
+	rm -f *.gif
 
 check: all

@@ -21,6 +21,9 @@ clean::
 	for d in $(subdirs) ; do (cd $$d ; $(MAKE) clean) ; done
 	rm -f *~ .~*
 
+guile_clean:
+	rm -f *.@OBJEXT@ *$(SO) *_wrap* *~ .~* core my-guile $(TARGET)
+
 # This is meant to be used w/ "make -f ../Makefile" from subdirs.
 # Doesn't make sense to use it from here.
 

@@ -15,6 +15,6 @@ static::
 
 clean::
 	$(MAKE) -f $(TOP)/Makefile python_clean
-	rm -f example.py
+	rm -f $(TARGET).py
 
 check: all

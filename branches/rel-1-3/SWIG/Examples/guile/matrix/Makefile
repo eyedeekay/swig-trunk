@@ -13,6 +13,6 @@ all::
 	  sub-all
 
 clean::
-	rm -f matrix *_wrap* *~ .~* core
+	$(MAKE) -f $(MKDIR)/Makefile TARGET='$(TARGET)' guile_clean
 
 check: all

@@ -13,6 +13,6 @@ static::
 	TARGET='my-guile' INTERFACE='$(INTERFACE)' guile_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so my-guile .~* core
+	$(MAKE) -f $(TOP)/Makefile TARGET='$(TARGET)' guile_clean
 
 check: all

@@ -20,7 +20,7 @@ static::
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' ocaml_static
 
 clean::
-	rm -f *_wrap* *.o *~ *.so *.cmo *.cmi gifsimple .~* core *.gif \
-		simple.ml*
+	$(MAKE) -f $(TOP)/Makefile MLFILE='$(MLFILE)' ocaml_clean
+	rm -f *.gif
 
 check: all

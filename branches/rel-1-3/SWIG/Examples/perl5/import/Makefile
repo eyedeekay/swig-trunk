@@ -16,6 +16,6 @@ all::
 
 
 clean::
-	rm -f *_wrap* *.o *~ *.so *.pm .~* core
+	$(MAKE) -f $(TOP)/Makefile perl5_clean
 
 check: all

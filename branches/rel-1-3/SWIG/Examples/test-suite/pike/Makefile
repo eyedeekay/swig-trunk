@@ -40,10 +40,5 @@ run_testcase = \
 	@rm -f $*.pike;
 
 clean:
-	@rm -f *_wrap* *.o *~ *.so *.dll .~* core
-
-
-
-
-
+	$(MAKE) -f $(TOP)/Makefile pike_clean
 
