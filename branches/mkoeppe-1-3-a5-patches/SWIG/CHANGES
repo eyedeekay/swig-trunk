@@ -18,6 +18,9 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+6/27/2001: mkoeppe
+	   * [Perl] Another const-related portability fix.
+
 6/26/2001: cheetah (william fulton)
 	   * [Java] Added in cpp_pragma() support with a host of new pragmas - see 
 	   jswig.html. These are designed for better mixing of Java and c++. It 
