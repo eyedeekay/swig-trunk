@@ -230,13 +230,11 @@ SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
 static int
 print_swig (SCM swig_smob, SCM port, scm_print_state *pstate)
 {
-  char buf[16];
   scm_puts("#<swig ", port);
   if (SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname != NULL)
     scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname, port);
   else scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].name, port);
-  sprintf(buf, " 0x%lx>", SCM_CDR(swig_smob));
-  scm_puts(buf, port);
+  scm_intprint((scm_bits_t) SCM_CDR(swig_smob), 16, port);
   /* non-zero means success */
   return 1;
 }
