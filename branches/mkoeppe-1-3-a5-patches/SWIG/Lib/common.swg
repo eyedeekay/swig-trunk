@@ -44,9 +44,9 @@ extern "C" {
 #endif
 
 typedef struct swig_type_info {
-  char  *name;                 
+  const char  *name;                 
   void *(*converter)(void *);
-  char  *str;
+  const char  *str;
   struct swig_type_info  *next;
   struct swig_type_info  *prev;
 } swig_type_info;
