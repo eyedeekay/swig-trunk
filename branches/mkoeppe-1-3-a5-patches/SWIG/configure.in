@@ -696,33 +696,12 @@ AC_SUBST(release_suffix)
 # Miscellaneous
 #----------------------------------------------------------------
 
-# These commands are only intended for use in a development environment.
-# When one makes a fresh CVS checkout, no 'configure' scripts exist. This
-# Makes the CONFIG_SUBDIRS macro fail below. To fix this, one needs to
-# generate the configure script by calling autoconf manually.  This is
-# not an issue in non-CVS releases--the mkdist.py script creates all
-# of the configure scripts before making a tar-ball. -- beazley 2000/03/01
-
-if test ! -r $srcdir/Source/DOH/configure; then
-	(cd $srcdir/Source/DOH ; autoconf)
-fi
-
-#if test -d $srcdir/Source/SWILL/SWILL; then
-#  if test ! -r $srcdir/Source/SWILL/configure; then
-#  	(cd $srcdir/Source/SWILL ; autoconf)
-#  fi
-#fi
-
-if test ! -r $srcdir/Tools/configure ; then
-	(cd $srcdir/Tools ; autoconf)
-fi
-
 #
 #AC_OUTPUT_COMMANDS(test -f Examples/install-sh || cp install-sh Examples)
 # DB: Maybe I'm missings something, but why is it necessary to put
 # an 'install-sh' script in the Examples directory?
 
-AC_CONFIG_SUBDIRS(Source/DOH Tools)
+AC_CONFIG_SUBDIRS(Source/DOH Tools Examples/GIFPlot)
 
 # NOTE: The following ref to `Source' should NOT be prefixed w/ `$srcdir/'.
 # We can remove it if `Source' ever has a generated file but not before.

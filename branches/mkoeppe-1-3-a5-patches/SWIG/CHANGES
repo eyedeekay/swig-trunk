@@ -9,6 +9,11 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+6/08/2001: mkoeppe
+	   Another build change: The new script autogen.sh runs
+	   autoconf in the appropriate directories.  The top-level
+	   configure also configures in Examples/GIFPlot.
+
 6/07/2001: mkoeppe
 	   Made the Makefile work with non-GNU make again.
 
