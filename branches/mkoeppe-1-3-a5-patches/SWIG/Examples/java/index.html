@@ -1,0 +1,84 @@
+<html>
+<head>
+<title>SWIG:Examples:java</title>
+</head>
+
+<body bgcolor="#ffffff">
+<H1>SWIG Java Examples</H1>
+
+<tt>$Header$</tt><br>
+
+<p>
+The following examples illustrate the use of SWIG with Java.
+
+<ul>
+<li><a href="simple/index.html">simple</a>.  A minimal example showing how SWIG can
+be used to wrap a C function, a global variable, and a constant.
+<li><a href="native/index.html">native</a>. Comparing the manual and the SWIG approach to calling native code.
+<li><a href="typemap/index.html">typemap</a>. Modifying the Java module's default behaviour by using typemaps.
+<li><a href="constants/index.html">constants</a>.  This shows how preprocessor macros and
+certain C declarations are turned into constants.
+<li><a href="enum/index.html">enum</a>. Wrapping enumerations.
+</ul>
+
+<h2>Compilation Issues</h2>
+
+<ul>
+<li>To create a Java extension, SWIG is run with the following options:
+
+<blockquote>
+<pre>
+$ swig -java example.i
+</pre>
+</blockquote>
+
+<li>The compilation of examples is done using the file <tt>Example/Makefile</tt>.  This
+makefile performs a manual module compilation which is platform specific.  Typically,
+the steps look like this (Solaris):
+
+<blockquote>
+<pre>
+$ swig -java  example.i
+$ gcc -c   example.c example_wrap.c  -I/usr/java/include -I/usr/java/include/solaris
+$ ld -G example.o  example_wrap.o  -o libexample.so
+</pre>
+</blockquote>
+
+<li>The .java files next need compiling to produce .class files by using javac:
+<blockquote>
+<pre>
+$ javac *.java
+</pre>
+</blockquote>
+
+<li>The java program can then be run in the JVM. Most examples have an entry point in a main.java, for example:
+<blockquote>
+<pre>
+$ java main
+</pre>
+</blockquote>
+
+</ul>
+
+<h2>Compatibility</h2>
+
+The examples have been extensively tested on the following platforms:
+
+<ul>
+<li>Solaris
+</ul>
+
+All of the examples were last tested with the following configuration (28 May 2001):
+
+<ul>
+<li>Sparc Solaris 2.6.
+<li>gcc-2.95.2
+<li>Java jdk1.2.1
+</ul>
+
+Your mileage may vary.  If you experience a problem, please let us know by 
+sending a message to <a href="mailto:swig-dev@cs.uchicago.edu">swig-dev@cs.uchicago.edu</a>.
+</body>
+</html>
+
+
