@@ -21,6 +21,25 @@ Version 1.3.6  (not yet released)
 6/29/2001: cheetah (william fulton)
 	   * GIFPlot examples: TRANSPARENT #define multiple times on Solaris 
 	   (clashes with stream.h).
+	   * Multiple definition bug fix for shadow classes. The perl and python 
+	   modules had workarounds which have been replaced with fixes in 
+	   the core. Many of the Language::cpp_xxxx functions now set a 
+	   flag which the derived classes can access through 
+	   is_multiple_definition() to see whether or not code should be 
+	   generated.  The code below would have produced varying degrees 
+	   of incorrect shadow class code for the various modules:
+	   class TestClass
+	   {
+	   public:
+	     TestClass() {};
+	     TestClass(int a) {};
+	     ~TestClass() {};
+	     unsigned long xyz(short k) {};
+	     unsigned long xyz(int n) {};
+	     static void static_func() {};
+	     static void static_func(int a) {};
+	   };
+	   void delete_TestClass(int a);
 
 6/27/2001: mkoeppe
 	   * [Perl] Another const-related portability fix.
