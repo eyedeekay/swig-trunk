@@ -1048,7 +1048,7 @@ AC_SUBST(release_suffix)
 # an 'install-sh' script in the Examples directory?
 ###########
 
-AC_CONFIG_SUBDIRS(Source/DOH Tools Examples/GIFPlot)
+AC_CONFIG_SUBDIRS(Source/DOH Tools)
 
 # NOTE: The following ref to `Source' should NOT be prefixed w/ `$srcdir/'.
 # We can remove it if `Source' ever has a generated file but not before.

@@ -3,4 +3,3 @@
 autoconf
 (cd Source/DOH; autoconf)
 (cd Tools; autoconf)
-(cd Examples/GIFPlot; autoconf)
