@@ -4,7 +4,8 @@ subdirs		= simple matrix
 
 top_srcdir	= @top_srcdir@
 SWIG		= ../$(top_srcdir)/swig
-
+CC		= @CC@
+CFLAGS		= @CFLAGS@
 GUILEINCLUDE	= @GUILEINCLUDE@
 GUILELINK	= @GUILELINK@
 
@@ -23,6 +24,6 @@ clean::
 
 sub-all::
 	$(SWIG) -guile $(IFILE)
-	$(CC) -o $(TARGET) $(SRCS) $(WRAP) $(GUILEINCLUDE) $(GUILELINK)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(WRAP) $(GUILEINCLUDE) $(GUILELINK)
 
 # Makefile ends here

@@ -15,6 +15,13 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).
 Eventually this branch will be merged with the development on the
 trunk of the CVS tree.
 
+6/13/2001: mkoeppe
+	   When configure does not find a language, don't use default
+	   paths like /usr/local/include; this only causes build
+	   problems.
+	   New directory: Examples/Guile/test-suite, where a few
+	   preprocessor-related bugs in 1.3a5 are demonstrated. 
+
 6/12/2001: mkoeppe
 	   [Guile] VECTORLENINPUT and LISTLENINPUT now have separate
 	   list length variables. TYPEMAP_POINTER_INPUT_OUTPUT

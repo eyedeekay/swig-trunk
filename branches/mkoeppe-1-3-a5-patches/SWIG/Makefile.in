@@ -149,6 +149,7 @@ check-examples:
 	$(skip-guile) || (cd Examples/guile/matrix && $(chk))
 	$(skip-guile) || (cd Examples/guile/simple && $(chk))
 	$(skip-guile) || (cd Examples/guile/port && $(chk))
+	$(skip-guile) || (cd Examples/guile/test-suite && $(chk))
 	$(skip-mzscheme) || (cd Examples/mzscheme/simple && $(chk))
 	$(skip-ruby) || (cd Examples/ruby/class && $(chk))
 	$(skip-ruby) || (cd Examples/ruby/constants && $(chk))
