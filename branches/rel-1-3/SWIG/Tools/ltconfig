@@ -1,4 +1,0 @@
-#! /bin/sh
-echo 'ERROR: ltconfig no longer used for libtool configuration.'
-echo '       This file will be removed after cvs tagging.'
-exit 1
