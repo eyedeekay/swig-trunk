@@ -1,0 +1,56 @@
+top_srcdir	= @top_srcdir@
+SWIG		= ../$(top_srcdir)/swig@release_suffix@
+CC		= @CC@
+CXX		= @CXX@
+CFLAGS		= @CFLAGS@
+GUILEINCLUDE	= @GUILEINCLUDE@
+GUILELINK	= @GUILELINK@
+
+MAKE_EXEC = $(MAKE) -f ../Makefile SRCS='' sub-all
+MAKE_EXEC_CPLUSPLUS = $(MAKE) -f ../Makefile SRCS='' sub-all-cxx
+
+all::   macro-2.test \
+	long-long.test const-const.test \
+	cplusplus-throw.cplusplustest \
+	char-constant.runtest \
+	pointer-reference.cplusplustest \
+	import.cplusplusruntest
+
+.SUFFIXES: .i .test .cplusplustest .runtest .cplusplusruntest
+
+.i.test:
+	@echo Checking Examples/guile/test-suite/$<
+	@$(MAKE_EXEC) IFILE=$< SWIGOPT="-lguilemain.i" TARGET=$@-x || (echo "Examples/guile/test-suite/$<: FAILED"; exit 1)
+	@echo "Examples/guile/test-suite/$<: PASSED"
+
+.i.cplusplustest:
+	@echo Checking Examples/guile/test-suite/$<
+	@$(MAKE_EXEC_CPLUSPLUS) IFILE=$< SWIGOPT="-lguilemain.i" TARGET=$@-x || (echo "Examples/guile/test-suite/$<: FAILED"; exit 1)
+	@echo "Examples/guile/test-suite/$<: PASSED"
+
+.i.runtest:
+	@echo Checking Examples/guile/test-suite/$<
+	@$(MAKE_EXEC) IFILE=$< SWIGOPT="-lguilemain.i" TARGET=$@-x || echo "Examples/guile/test-suite/$<: FAILED"
+	@./$@-x -l $*.scm || (echo "Examples/guile/test-suite/$<: FAILED"; exit 1)
+	@echo "Examples/guile/test-suite/$<: PASSED"
+
+.i.cplusplusruntest:
+	@echo Checking Examples/guile/test-suite/$<
+	@$(MAKE_EXEC_CPLUSPLUS) IFILE=$< SWIGOPT="-lguilemain.i" TARGET=$@-x || (echo "Examples/guile/test-suite/$<: FAILED"; exit 1)
+	@./$@-x -l $*.scm || (echo "Examples/guile/test-suite/$<: FAILED"; exit 1)
+	@echo "Examples/guile/test-suite/$<: PASSED"
+
+import.cplusplusruntest:
+	@echo Checking Examples/guile/test-suite/import
+	@$(SWIG) -c++ -guile -c import-a.i
+	@$(SWIG) -c++ -guile -lguilemain.i import-b.i 
+	@$(CXX) -c $(CFLAGS) -DSWIG_GLOBAL -DSWIG_init=A_init -o import-a_wrap.o import-a_wrap.c $(GUILEINCLUDE)
+	@$(CXX) -c $(CFLAGS) -DSWIG_GLOBAL -DSWIG_init=B_init -DSWIGINIT='void A_init(); void B_init(); A_init(); B_init();' -o import-b_wrap.o import-b_wrap.c $(GUILEINCLUDE)
+	@$(CXX) $(CFLAGS) -o $@-x import-a_wrap.o import-b_wrap.o $(GUILELINK)
+	@./$@-x -l $*.scm || (echo "Examples/guile/test-suite/import: FAILED"; exit 1)
+	@echo "Examples/guile/test-suite/import: PASSED"
+
+clean::
+	rm -f matrix *_wrap* *test-x *~ .~* core
+
+check: all
