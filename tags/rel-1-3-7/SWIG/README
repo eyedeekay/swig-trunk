@@ -1,0 +1,191 @@
+SWIG (Simplified Wrapper and Interface Generator)
+
+Version: 1.3.7 (September 3, 2001)
+
+$Header$
+
+Tagline: SWIG is a compiler that integrates C and C++ with
+         languages including Perl, Python, Tcl, Guile, Mzscheme,
+         Java and Ruby.
+
+SWIG reads annotated C/C++ header files and creates wrapper code (glue
+code) in order to make the corresponding C/C++ libraries available to
+the listed languages, or to extend C/C++ programs with a scripting
+language.
+
+This distribution represents the new stable release of SWIG, aiming to
+replace versions 1.1p5 and 1.1-883. The guilty parties working on this
+are:
+
+ Dave Beazley (beazley@cs.uchicago.edu)                 (SWIG core)
+ William Fulton (wsf@fultondesigns.co.uk)               (Java)
+ Matthias Köppe (mkoeppe@mail.math.uni-magdeburg.de)    (Guile/MzScheme)
+ Loic Dachary (loic@ceic.com)                           (Perl5)
+ Thien-Thi Nguyen (ttn@glug.org)                        (Testing/Misc)
+ Masaki Fukushima (fukusima@goto.info.waseda.ac.jp)     (Ruby)
+
+Past contributors (see the CHANGES file for a complete list):
+
+Clark McGrew, Dustin Mitchell, Ian Cooke, Catalin Dumitrescu, Baran
+Kovuk, Gary Holt, David Fletcher, Oleg Tolmatcev, Harco de Hilster.
+
+Up-to-date SWIG related information can be found at
+
+        http://www.swig.org
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!                      IMPORTANT                         !!!!!!!
+!!!!!!!                                                        !!!!!!!
+!!!!!!! Previous SWIG users should read the documentation      !!!!!!!
+!!!!!!! file Doc/Manual/SWIG.html before trying to use SWIG1.3 !!!!!!!
+!!!!!!! on existing SWIG interfaces.  This is the most current !!!!!!!
+!!!!!!! documentation that describes new 1.3 features and      !!!!!!!
+!!!!!!! incompatibilities.                                     !!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+What's New?
+===========
+Here are the most notable changes (so far):
+
+   - Support for C++ templates.
+
+   - Improvement support for overloaded functions/methods.
+
+   - Parsing support for virtually all C/C++ datatypes.
+
+   - Pointers to members are now supported in the parser
+     and by the Python module.
+
+   - Improved support for pointers to functions and callbacks.
+
+   - SWIG now has a full C preprocessor.
+
+   - Code generation for the Tcl and Python modules has been
+     substantially improved both in terms of size and runtime
+     efficiency (Perl5 is coming along too).
+
+   - The Guile module is stable. It represents C pointers as smobs and
+     supports the Guile module system and exceptions.
+
+   - Java, Ruby, and MzScheme modules added.
+
+   - Testing framework part of the distribution ("make -k check" support).
+
+   - A lot of minor bug fixes and cleanup.
+
+   - SWIG requires an ANSI C compiler.
+
+   - Better Windows support.
+
+Here are a few missing features:
+
+   - The SWIG1.1 documentation system is gone and hasn't been
+     replaced yet.  This is on the long-term to-do list.
+
+   - The Tcl7.x and Perl4 modules are deprecated and no longer
+     included.
+
+   - The Perl5 module is need in some repair.  We are looking for
+     a maintainer to help us with this.
+
+   - A wide variety of old SWIG command-line options and
+     obscure features are gone.
+
+   - Objective C support doesn't work right now.  No ETA as to
+     when it will return.
+
+Although we are making every attempt preserve backwards compatibility
+with interfaces written for SWIG1.1, SWIG1.3 incorporates a number of
+very substantial modifications to things such as type handling,
+typemaps, and wrapper code generation.  Therefore, if you are making
+extensive use of advanced SWIG features, interfaces written for
+SWIG1.1 may not work.  We apologize for the inconvenience, but these
+changes are needed in order to fix a number of annoying "features"
+in SWIG1.1.
+
+In addition, SWIG1.3 makes no attempt to be compatible with SWIG1.1 at
+the C++ API level so language modules written for SWIG1.1 will most
+definitely not work with this release.
+
+The files NEW and CHANGES describe in some detail all of the important
+changes that have been made to the system.  Experienced users would be
+well advised to read this.
+
+Windows
+=======
+Please see the Win/Windows.html file for instructions on obtaining 
+and using SWIG on Windows.
+
+Unix Installation
+=================
+To build and install SWIG, simply type the following:
+
+     % ./configure
+     % make
+     % make -k check	# this step is optional (see note below)
+     % make install
+
+The file INSTALL details more about using configure. Also try
+
+     % ./configure --help. 
+
+The configure script will attempt to locate various packages on your 
+machine, including Tcl, Perl5, Python and other target languages that SWIG 
+uses.  Don't panic if you get 'not found' messages--SWIG does not need these 
+packages to compile or run.   The configure script is actually looking for 
+these packages so that you can try out the SWIG examples contained
+in the 'Examples' directory without having to hack Makefiles.
+
+Notes:
+
+(1) If you checked the code out via CVS, you will have to run ./autogen.sh
+    before typing 'configure'.    In addition, a full build of SWIG requires
+    the use of bison.
+
+(3) 'make -k check' is a new feature that requires at least one of the target
+    languages to be installed and which performs compile/link level testing
+    of the examples.  If it fails, it may mean that you have an uninstalled
+    language module or that the file 'Examples/Makefile' has been
+    incorrectly configured.  It may also fail due to compiler issues 
+    such as broken C++ compiler.  Even if 'make -k check' fails, there is a 
+    pretty good chance SWIG still works correctly---you will just have
+    to mess around with one of the examples and some makefiles first.
+
+Examples
+========
+The Examples directory contains a variety of examples of using SWIG
+and it has some browsable documentation.  Simply point your browser to
+the file "Example/index.html".
+
+The Examples directory now includes Visual C++ project files for
+building some of the examples on Windows (new in SWIG1.3.7).
+
+Documentation
+=============
+The Doc/Manual directory contains the most recent set of updated
+documentation for this release.  As this is an unstable development
+release, the documentation is not quite up to date and is being worked
+on.  We are working on it, but there is a lot of documentation and it
+is going to take time to complete. Please be patient.
+
+! The most up-to-date information concerning new features in SWIG1.3 is the
+! file Doc/Manual/SWIG.html.
+
+There is some technical documentation available in the Doc/Devel 
+subdirectory.  This is not necessarily up-to-date, but it has some
+information on SWIG internals.
+
+Participate!
+============
+
+Please report any errors and submit patches (if possible)!  We only
+have access to a limited variety of hardware (Linux, Solaris, and
+Windows). All contributions help.
+
+If you would like to join the SWIG development team or contribute a
+language module to the distribution, please contact beazley@cs.uchicago.edu.
+
+ -- The SWIG Maintainers
+
+
+
