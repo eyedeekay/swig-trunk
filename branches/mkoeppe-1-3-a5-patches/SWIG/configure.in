@@ -732,7 +732,6 @@ if test -n "$RUBY"; then
 	RUBYLINK="$RUBYLINK `($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBS"]]') 2>/dev/null`"
 
         RUBYLIBRUBYARG=`($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBRUBYARG"]]') 2>/dev/null`
-AC_MSG_RESULT(----->)
 AC_MSG_RESULT($RUBYLIBRUBYARG)
 else
        	AC_MSG_RESULT(could not figure out how to run ruby)
