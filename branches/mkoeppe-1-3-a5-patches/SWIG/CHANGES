@@ -9,6 +9,9 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+5/25/2001: cheetah (william fulton)
+	   [Java] HTML update for examples.
+
 5/28/2001: mkoeppe
 	   Minor changes to the build system.  Added subdirectory for
 	   Debian package control files.
@@ -32,6 +35,24 @@ will be merged with the development on the trunk of the CVS tree.
 	   from smobs in a functional style.  New typemap file
 	   "list-vector.i", providing macros that define typemaps for
 	   converting between C arrays and Scheme lists and vectors.
+
+5/25/2001: cheetah (william fulton)
+	   [Java] STL string moved into its own typemap as it is c++ code and 
+	   it break any c code using the typemaps.i file.
+	   - Fixes for wrappers around global variables - applies to primitive 
+	   types and user types (class/struct) and pointers to these.
+	   - Structure member variables and class public member variables getters 
+	   and setters pass a pointer to the member as was in 1.3a3 and 1.1 
+	   (1.3a5 was passing by value)
+	   - Parameters that were arrays and return types were incorrectly 
+	   being passed to create_function() as pointers.
+	   - Fix for arrays of enums. 
+	   [Java] Updated java examples and added two more.
+	   [Java] Java module updated from SWIG1.3a3 including code cleanup etc.
+	   [Java] enum support added.
+	   [Java] Array support implemented
+	   [Java] Shadow classes improved - Java objects used rather than 
+	   longs holding the c pointer to the wrapped structure/c++class
 
 5/22/2001: mkoeppe
 	   [Guile] Fixed extern "C" declarations in C++ mode. Thanks
