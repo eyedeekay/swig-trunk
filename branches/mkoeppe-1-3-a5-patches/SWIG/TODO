@@ -26,3 +26,7 @@
        in type handling and internal data structures may have broken
        a variety of things.
 
+** [Guile] Maybe support keyword args
+
+** [Guile] Maybe support GOOPS shadow classes
+
