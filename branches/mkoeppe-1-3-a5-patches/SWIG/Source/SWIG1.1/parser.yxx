@@ -514,7 +514,7 @@ static void dump_nested(char *parent) {
 %type <id>       pname cpptype base_specifier access_specifier typemap_name tm_method;
 %type <type>     type opt_signed opt_unsigned strict_type;
 %type <decl>     declaration nested_decl;
-%type <ivalue>   stars cpp_vend;
+%type <ivalue>   stars maybestars cpp_vend;
 %type <ilist>    initlist base_list inherit;
 %type <dtype>    definetype def_args;
 %type <dtype>    etype;
@@ -1487,17 +1487,19 @@ parm_type      : type pname {
 		   free($3);
 		}
 
-                | type AND pname {
-		  $$ = NewParm($1,$3);
+                | type maybestars AND pname {
+		  $$ = NewParm($1,$4);
 		  SwigType *pt = Gettype($$);
+		  add_pointers(Gettype($$), $2);
 		  SwigType_add_reference(pt);
 		  Setvalue($$,DefArg);
 		  if (!CPlusPlus) {
 			Printf(stderr,"%s : Line %d. Warning.  Use of C++ Reference detected.  Use the -c++ option.\n", input_file, line_number);
 		  }
 		  Delete($1);
-		  free($3);
+		  free($4);
 		}
+
                 | type LPAREN stars pname RPAREN LPAREN parms RPAREN {
 		  $$ = NewParm($1,$4);
 		  SwigType *pt = Gettype($$);
@@ -1585,6 +1587,9 @@ stars :          STAR empty { $$ = 1; }
                | STAR stars { $$ = $2 + 1;}
                ;
 
+maybestars :   empty { $$ = 0; }
+	       | stars { $$ = $1; }
+	       ;
 
 array :        LBRACKET  RBRACKET array2 {
 		 $$ = $3 + 1;
@@ -3213,17 +3218,18 @@ typemap_parm   : type typemap_name {
 		   free($3);
 		}
 
-                | type AND typemap_name {
+                | type maybestars AND typemap_name {
                   $$ = NewTMParm();
-		  $$->p = NewParm($1,$3);
+		  $$->p = NewParm($1,$4);
 		  SwigType *pt = Gettype($$->p);
+		  add_pointers(pt,$2);
 		  SwigType_add_reference(pt);
 		  if (!CPlusPlus) {
 			Printf(stderr,"%s : Line %d. Warning.  Use of C++ Reference detected.  Use the -c++ option.\n", input_file, line_number);
 		  }
 		  $$->args = tm_parm;
 		  Delete($1);
-		  free($3);
+		  free($4);
 		}
                 | type LPAREN stars typemap_name RPAREN LPAREN parms RPAREN {
                   Printf(stderr,"%s : Line %d. Error. Function pointer not allowed (remap with typedef).\n", input_file, line_number);
