@@ -730,9 +730,8 @@ if test -n "$RUBY"; then
 	RUBYLINK=`($RUBY -rrbconfig -e 'print Config::CONFIG[["RUBY_INSTALL_NAME"]]') 2>/dev/null`
 	RUBYLINK="-l$RUBYLINK"
 	RUBYLINK="$RUBYLINK `($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBS"]]') 2>/dev/null`"
-
+        RUBYCCDLFLAGS=`($RUBY -rrbconfig -e 'print Config::CONFIG[["CCDLFLAGS"]]') 2>/dev/null`
         RUBYLIBRUBYARG=`($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBRUBYARG"]]') 2>/dev/null`
-AC_MSG_RESULT($RUBYLIBRUBYARG)
 else
        	AC_MSG_RESULT(could not figure out how to run ruby)
 	RUBYINCLUDE="-I/usr/local/lib/ruby/1.4/arch"
@@ -744,6 +743,7 @@ fi
 AC_SUBST(RUBYINCLUDE)
 AC_SUBST(RUBYLIB)
 AC_SUBST(RUBYLINK)
+AC_SUBST(RUBYCCDLFLAGS)
 AC_SUBST(RUBYLIBRUBYARG)
 
 # Configure SWIG_LIB path

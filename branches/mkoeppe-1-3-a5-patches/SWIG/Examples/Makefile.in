@@ -260,7 +260,7 @@ guile: $(SRCS)
 guile_cpp: $(SRCS)
 	$(SWIG) -c++ -guile -Linkage ltdlmod $(SWIGOPT) $(INTERFACE)
 	$(CXX) -c $(CCSHARED) $(CFLAGS) $(INCLUDE) $(GUILE_INCLUDE) $(ISRCS) $(SRCS) $(CXXSRCS)
-	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) -o lib$(TARGET)$(SO)
+	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) -o lib$(TARGET)$(SO)
 
 # -----------------------------------------------------------------
 # Build statically linked Guile interpreter
@@ -329,7 +329,8 @@ mzscheme: $(SRCS)
 ##################################################################
 
 # Make sure these locate your Ruby installation
-RUBY_INCLUDE= -DHAVE_CONFIG_H @RUBYINCLUDE@
+RUBY_CFLAGS= @RUBYCCDLFLAGS@ -DHAVE_CONFIG_H
+RUBY_INCLUDE= @RUBYINCLUDE@
 RUBY_LIBRUBYARG= @RUBYLIBRUBYARG@
 # ----------------------------------------------------------------
 # Build a C dynamically loadable module
@@ -337,7 +338,7 @@ RUBY_LIBRUBYARG= @RUBYLIBRUBYARG@
 
 ruby: $(SRCS)
 	$(SWIG) -ruby $(SWIGOPT) $(INTERFACE)
-	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ISRCS) $(SRCS) $(INCLUDE) $(RUBY_INCLUDE)
 	$(LDSHARED) $(OBJS) $(IOBJS) $(LIBS) $(RUBY_LIBRUBYARG) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
@@ -346,7 +347,7 @@ ruby: $(SRCS)
 
 ruby_cpp: $(SRCS)
 	$(SWIG) -c++ -ruby $(SWIGOPT) $(INTERFACE)
-	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
+	$(CXX) -c $(CCSHARED) $(CFLAGS) $(RUBY_CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) $(RUBY_INCLUDE)
 	$(CXXSHARED) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) $(RUBY_LIBRUBYARG) -o $(TARGET)$(SO)
 
 # -----------------------------------------------------------------
@@ -361,12 +362,12 @@ RUBY_LIBOPTS = @RUBYLINK@ @LIBS@ $(SYSLIBS)
 
 ruby_static: $(SRCS)
 	$(SWIG) -ruby -lembed.i $(SWIGOPT) $(INTERFACE)
-	$(CC) $(CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDE) \
+	$(CC) $(CFLAGS) $(RUBY_CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDE) \
 	$(RUBY_INCLUDE) $(LIBS) -L$(RUBY_LIB) $(RUBY_LIBOPTS) -o $(TARGET)
 
 ruby_static_cpp: $(SRCS)
 	$(SWIG) -c++ -ruby -lembed.i $(SWIGOPT) $(INTERFACE)
-	$(CXX) $(CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
+	$(CXX) $(CFLAGS) $(RUBY_CFLAGS) $(ISRCS) $(SRCS) $(CXXSRCS) $(INCLUDE) \
 	$(RUBY_INCLUDE) $(LIBS)  -L$(RUBY_LIB) $(RUBY_LIBOPTS) -o $(TARGET)
 
 

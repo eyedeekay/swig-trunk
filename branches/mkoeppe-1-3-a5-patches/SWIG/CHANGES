@@ -18,6 +18,10 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+6/25/2001: mkoeppe
+	   * Incorporated more build changes contributed by Wyss Clemens
+	   <WYS@helbling.ch> for swig/ruby on cygwin.
+
 6/20/2001: cheetah (william fulton)
 	   * Makefile mods so that 'make check' uses the swig options in the makefiles
 	   * [Java] Removed Generating wrappers message
