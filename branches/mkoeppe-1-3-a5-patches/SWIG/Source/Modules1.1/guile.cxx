@@ -447,7 +447,17 @@ guile_do_typemap(DOHFile *file, const char *op,
     String *s = NewString(tm);
     String *descriptor = NewString("");
     String *basedescriptor = NewString("");
+    String *stardescriptor = NewString("");
     char argnum_s[10];
+    SwigType *startype = NULL;
+
+    if (SwigType_ispointer(type)) {
+      startype = Copy(type);
+      SwigType_del_pointer(startype);
+      Printf(stardescriptor, "SWIGTYPE%s",
+	     SwigType_manglestr(startype));
+    }
+    else Printf(stardescriptor, "SWIGTYPE_BAD");
     Printf(descriptor, "SWIGTYPE%s",
 	   SwigType_manglestr(type));
     Printf(basedescriptor, "SWIGTYPE%s",
@@ -461,7 +471,16 @@ guile_do_typemap(DOHFile *file, const char *op,
       SwigType_remember(type);
     if (Replace(s, "$basedescriptor",
 		basedescriptor, DOH_REPLACE_ANY))
-      SwigType_remember(SwigType_base(type));      
+      SwigType_remember(SwigType_base(type));
+    if (Replace(s, "$*descriptor", stardescriptor,
+		DOH_REPLACE_ANY)) {
+      if (!startype) {
+	Printf (stderr, "%s : Line %d. $*descriptor is meaningless for non-pointer types.\n",
+		input_file, line_number);
+	error_count++;
+      }
+      else SwigType_remember(startype);
+    }
     if (nonewline_p)
       Printv(file, s, 0);
     else Printv(file, s, "\n", 0);

@@ -1106,8 +1106,10 @@ Some non-standard typemap substitutions are supported:
 <li><code>$descriptor</code> expands to a type descriptor for use with
 the <code>SWIG_Guile_MakePtr()</code> and
 <code>SWIG_Guile_GetPtr</code> functions.
-<li>For pointer types, <code>$basedescriptor</code> expands to a
-descriptor for the base type.
+<li>For pointer types, <code>$*descriptor</code> expands to a
+descriptor for the direct base type (i.e., one pointer is stripped),
+whereas <code>$basedescriptor</code> expands to a
+descriptor for the base type (i.e., all pointers are stripped).
 </ul>
 
 <p>A function returning <code>void</code> (more precisely, a function

@@ -41,21 +41,22 @@
    for simple types. */
 
 %define SIMPLE_MAP(C_NAME, SCM_TO_C, C_TO_SCM, SCM_NAME)
- %typemap (guile, in)          C_NAME "$target = SCM_TO_C($source);";
- %typemap (guile, varin)       C_NAME "$target = SCM_TO_C($source);";
- %typemap (guile, out)         C_NAME "$target = C_TO_SCM($source);";
- %typemap (guile, varout)      C_NAME "$target = C_TO_SCM($source);";
+ %typemap (guile, in)          C_NAME {$target = SCM_TO_C($source);}
+ %typemap (guile, varin)       C_NAME {$target = SCM_TO_C($source);}
+ %typemap (guile, out)         C_NAME {$target = C_TO_SCM($source);}
+ %typemap (guile, varout)      C_NAME {$target = C_TO_SCM($source);}
  %typemap (guile, indoc)       C_NAME "($arg <SCM_NAME>)";
  %typemap (guile, varindoc)    C_NAME "($arg <SCM_NAME>)";
  %typemap (guile, outdoc)      C_NAME "<SCM_NAME>";
  %typemap (guile, varoutdoc)   C_NAME "<SCM_NAME>";
- %typemap (guile, in)          C_NAME *INPUT (C_NAME temp)
- "temp = (C_NAME) C_TO_SCM($source); $target = &temp;"
+ %typemap (guile, in)          C_NAME *INPUT (C_NAME temp) {
+   temp = (C_NAME) C_TO_SCM($source); $target = &temp;
+ }
  %typemap (guile, indoc)       C_NAME *INPUT "($arg <SCM_NAME>)";
  %typemap (guile, ignore)      C_NAME *OUTPUT (C_NAME temp)
- "$target = &temp;"
+   {$target = &temp;}
  %typemap (guile, argout)      C_NAME *OUTPUT
- "GUILE_APPEND_RESULT(C_TO_SCM(*$target));";
+   {GUILE_APPEND_RESULT(C_TO_SCM(*$target));}
  %typemap (guile, argoutdoc)   C_NAME *OUTPUT "($arg <SCM_NAME>)";
  %typemap (guile, in)          C_NAME *BOTH = C_NAME *INPUT;
  %typemap (guile, indoc)       C_NAME *BOTH = C_NAME *INPUT;

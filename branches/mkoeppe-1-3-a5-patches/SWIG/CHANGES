@@ -3,6 +3,13 @@ SWIG (Simplified Wrapper and Interface Generator)
 The Guile/MzScheme/Java Support Patch for 1.3a5
 ===============================================
 
+5/28/2001: mkoeppe
+	   [Guile] New typemap substitution $*descriptor.  Use the {}
+	   syntax, rather than the "" syntax for the standard
+	   typemaps, in order to work around strange macro-expansion
+	   behavior of the SWIG preprocessor.  This introduces some
+	   extra braces.
+
 5/27/2001: mkoeppe
 	   [Guile] Handle pointer types with typemaps, rather than
 	   hard-coded. New typemap substitutions $descriptor,
