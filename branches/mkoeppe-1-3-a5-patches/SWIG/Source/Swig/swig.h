@@ -194,6 +194,7 @@ extern String     *SwigType_default(SwigType *t);
 extern int         SwigType_type(SwigType *t);
 extern void        SwigType_remember(SwigType *t);
 extern void        SwigType_emit_type_table(File *f_headers, File *f_table);
+extern void        SwigType_emit_type_table_guile(File *f);
 
 /* --- Parameters and Parameter Lists --- */
 

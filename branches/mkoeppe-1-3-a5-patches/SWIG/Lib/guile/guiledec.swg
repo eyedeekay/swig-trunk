@@ -78,8 +78,6 @@ typedef struct swig_type_info {
   size_t tag;
 } swig_type_info;
 
-#define swig_types_initial swig_types
-
 SWIGSTATIC void
 SWIG_Guile_RegisterTypes (swig_type_info **table);
 
