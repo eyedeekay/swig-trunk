@@ -62,6 +62,10 @@
  %typemap (guile, indoc)       C_NAME *BOTH = C_NAME *INPUT;
  %typemap (guile, argout)      C_NAME *BOTH = C_NAME *OUTPUT;
  %typemap (guile, argoutdoc)   C_NAME *BOTH = C_NAME *OUTPUT;
+ %typemap (guile, in)          C_NAME *INOUT = C_NAME *INPUT;
+ %typemap (guile, indoc)       C_NAME *INOUT = C_NAME *INPUT;
+ %typemap (guile, argout)      C_NAME *INOUT = C_NAME *OUTPUT;
+ %typemap (guile, argoutdoc)   C_NAME *INOUT = C_NAME *OUTPUT;
 %enddef
  
  SIMPLE_MAP(bool, gh_scm2bool, gh_bool2scm, boolean);

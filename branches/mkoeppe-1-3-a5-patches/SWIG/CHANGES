@@ -15,6 +15,12 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).
 Eventually this branch will be merged with the development on the
 trunk of the CVS tree.
 
+6/12/2001: mkoeppe
+	   [Guile] VECTORLENINPUT and LISTLENINPUT now have separate
+	   list length variables. TYPEMAP_POINTER_INPUT_OUTPUT
+	   attaches argument documentation involving SCM_TYPE to the
+	   standard pointer typemaps. INOUT is now an alias for BOTH.
+
 6/12/2001: cheetah (william fulton)
 	   Some Java documentation added.
 	   [Java] Fixed bugs in import pragma and shadow pragma. 

@@ -53,9 +53,8 @@
        Likewise, but the Scheme wrapper will return a list instead of
        a vector.
 
-   Multiple parallel lists or vectors (sharing one length argument)
-   are also supported. 
-*/
+   Multiple parallel lists and vectors (sharing one length argument
+   each) are also supported.  */
 
 %define TYPEMAP_LIST_VECTOR_INPUT_OUTPUT(C_TYPE, SCM_TO_C, C_TO_SCM, SCM_TYPE)
 
@@ -70,11 +69,16 @@
 	initialize the array length to 0 but save its address for a
 	later change.  */
      
-     %typemap(ignore) int VECTORLENINPUT (int *sequence_length),
-		      int LISTLENINPUT (int *sequence_length)   
+     %typemap(ignore) int VECTORLENINPUT (int *vector_length)
      {		      
        $target = 0;
-       sequence_length = &$target;
+       vector_length = &$target;
+     }
+
+     %typemap(ignore) int LISTLENINPUT (int *list_length)   
+     {		      
+       $target = 0;
+       list_length = &$target;
      }
 
      /* All the work is done in IN. */
@@ -83,12 +87,12 @@
 		  const C_TYPE *VECTORINPUT
      {
        SCM_VALIDATE_VECTOR($argnum, $source);
-       *sequence_length = gh_vector_length($source);
-       if (*sequence_length > 0) {
+       *vector_length = gh_vector_length($source);
+       if (*vector_length > 0) {
 	 int i;
 	 $target = SCM_MUST_MALLOC(sizeof(C_TYPE)
-				   * (*sequence_length));
-	 for (i = 0; i<*sequence_length; i++) {
+				   * (*vector_length));
+	 for (i = 0; i<*vector_length; i++) {
 	   SCM elt = gh_vector_ref($source, gh_int2scm(i));
 	   $target[i] = SCM_TO_C(elt);
 	 }
@@ -100,14 +104,14 @@
 		  const C_TYPE *LISTINPUT
      {
        SCM_VALIDATE_LIST($argnum, $source);
-       *sequence_length = gh_length($source);
-       if (*sequence_length > 0) {
+       *list_length = gh_length($source);
+       if (*list_length > 0) {
 	 int i;
 	 SCM rest;
 	 $target = SCM_MUST_MALLOC(sizeof(C_TYPE)
-				   * (*sequence_length));
+				   * (*list_length));
 	 for (i = 0, rest = $source;
-	      i<*sequence_length;
+	      i<*list_length;
 	      i++, rest = gh_cdr(rest)) {
 	   SCM elt = gh_car(rest);
 	   $target[i] = SCM_TO_C(elt);

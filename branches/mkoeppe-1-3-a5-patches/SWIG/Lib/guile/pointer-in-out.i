@@ -55,5 +55,14 @@
 %typemap(in) PTRTYPE *BOTH = PTRTYPE *INPUT;
 %typemap(argout) PTRTYPE *BOTH = PTRTYPE *OUTPUT;
 %typemap(argoutdoc) PTRTYPE *BOTH = PTRTYPE *OUTPUT;
+%typemap(in) PTRTYPE *INOUT = PTRTYPE *INPUT;
+%typemap(argout) PTRTYPE *INOUT = PTRTYPE *OUTPUT;
+%typemap(argoutdoc) PTRTYPE *INOUT = PTRTYPE *OUTPUT;
+
+/* As a special convenience measure, also attach docs involving
+   SCM_TYPE to the standard pointer typemaps */
+
+%typemap(indoc) PTRTYPE "<($arg <SCM_TYPE>)>";
+%typemap(outdoc) PTRTYPE "<SCM_TYPE>";
 
 %enddef
