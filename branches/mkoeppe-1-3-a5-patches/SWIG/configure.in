@@ -679,6 +679,11 @@ AC_SUBST(RUBYINCLUDE)
 AC_SUBST(RUBYLIB)
 AC_SUBST(RUBYLINK)
 
+# Configure SWIG_LIB path
+
+AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
+  [swig_lib="$withval"], [swig_lib="$prefix/lib/swig1.3"])
+AC_SUBST(swig_lib)
 
 #----------------------------------------------------------------
 # Miscellaneous

@@ -20,7 +20,7 @@ RANLIB      = @RANLIB@
 
 # Note: Files in `SWIG_LIB' are machine independent so we use `prefix'
 # instead of `exec_prefix' or, derivatively, `libdir'.
-SWIG_LIB    = $(prefix)/lib/swig1.3
+SWIG_LIB    = @swig_lib@
 BIN_DIR     = @bindir@
 TARGET      = swig
 SOURCE      = Source
