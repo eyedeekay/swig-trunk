@@ -333,7 +333,7 @@ RUBY_CFLAGS= @RUBYCCDLFLAGS@ -DHAVE_CONFIG_H
 RUBY_INCLUDE= @RUBYINCLUDE@
 RUBY_LIB     = @RUBYLIB@
 RUBY_LIBOPTS = @RUBYLINK@ @LIBS@ $(SYSLIBS)
-RUBY_LIBRUBYARG= -L$(RUBY_LIB)/@RUBYLIBRUBYARG@
+RUBY_LIBRUBYARG= @RUBYLIBRUBYARG@
 
 # ----------------------------------------------------------------
 # Build a C dynamically loadable module
