@@ -549,6 +549,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   /* Declare return variable */
 
   Wrapper_add_local (f,"gswig_result", "SCM gswig_result");
+  Wrapper_add_local (f,"gswig_list_p", "SCM gswig_list_p = 0");
 
   if (procdoc)
     guile_do_doc_typemap(returns, "outdoc", d, NULL,

@@ -27,27 +27,27 @@ extern "C" {
 #define GH_NOT_PASSED    SCM_UNDEFINED
 #define GH_UNSPECIFIED   SCM_UNSPECIFIED
 
-#define GUILE_APPEND_RESULT(object)                                      \
-    if (gswig_result == GH_UNSPECIFIED)                                  \
-        gswig_result = object;                                           \
-    else {                                                               \
-        if (!gh_pair_p(gswig_result))                                    \
-	    gswig_result = gh_list(gswig_result, object, GH_NOT_PASSED); \
-        else                                                             \
-            gswig_result = gh_append2(gswig_result,                      \
-                                      gh_list(object, GH_NOT_PASSED));   \
+#define GUILE_APPEND_RESULT(object)						\
+    if (gswig_result == GH_UNSPECIFIED)						\
+        gswig_result = object;							\
+    else {									\
+        if (!gswig_list_p) {							\
+	    gswig_list_p = 1;							\
+	    gswig_result = gh_list(gswig_result, object, GH_NOT_PASSED);	\
+        }									\
+        else									\
+            gswig_result = gh_append2(gswig_result,				\
+                                      gh_list(object, GH_NOT_PASSED));		\
     }
 
 /* scm_values was implemented on C level in 1.4.1, and the prototype
    is not included in libguile.h, so play safe and lookup `values'... */
 #define GUILE_MAYBE_VALUES						\
-    if (gh_pair_p(gswig_result)) {					\
-      /* have a result list, so return multiple values */		\
-      gswig_result = gh_apply(gh_lookup("values"), gswig_result);	\
-    }
+    if (gswig_list_p)							\
+        gswig_result = gh_apply(gh_lookup("values"), gswig_result);
     
 #define GUILE_MAYBE_VECTOR				\
-    if (gh_pair_p(gswig_result))			\
+    if (gswig_list_p)					\
         gswig_result = gh_list_to_vector(gswig_result);
 
 static char *
