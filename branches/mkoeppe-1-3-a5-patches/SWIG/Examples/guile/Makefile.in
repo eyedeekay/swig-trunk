@@ -8,6 +8,7 @@ CC		= @CC@
 CFLAGS		= @CFLAGS@
 GUILEINCLUDE	= @GUILEINCLUDE@
 GUILELINK	= @GUILELINK@
+SWIGOPT		= 
 
 WRAP		= $(IFILE:.i=_wrap.c)
 
@@ -23,7 +24,7 @@ clean::
 # Doesn't make sense to use it from here.
 
 sub-all::
-	$(SWIG) -guile $(IFILE)
+	$(SWIG) -guile $(SWIGOPT) $(IFILE)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(WRAP) $(GUILEINCLUDE) $(GUILELINK)
 
 # Makefile ends here
