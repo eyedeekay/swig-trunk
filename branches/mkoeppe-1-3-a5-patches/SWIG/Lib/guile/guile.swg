@@ -7,6 +7,10 @@
 
 /* SWIG pointer structure */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct SwigCast {
   unsigned short      type;		  /* Index into SwigPtrTbl          */
   void               *(*cast)(void *);    /* Pointer casting function       */
@@ -140,7 +144,7 @@ SWIG_GetPtrType (const char *_t)
   int  start, end;
   size_t *result;
   if (!SwigPtrSort) SWIG_SortTable();
-  result = bsearch(_t, SwigPtrTbl, SwigPtrN, sizeof(size_t), swigcmp);
+  result = (size_t *) bsearch(_t, SwigPtrTbl, SwigPtrN, sizeof(size_t), swigcmp);
   if (result!=NULL) return SwigPtrList+*result;
   else return NULL;
 }
