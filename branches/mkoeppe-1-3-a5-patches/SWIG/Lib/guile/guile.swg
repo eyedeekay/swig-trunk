@@ -18,8 +18,8 @@ struct SwigCast {
 };
 
 struct SwigPtrType {
-  char               *name;               /* Datatype name                  */
-  char		     *prettyname;         /* Pretty datatype name           */
+  const char         *name;               /* Datatype name                  */
+  const char	     *prettyname;         /* Pretty datatype name           */
   unsigned short      tag;		  /* Index in SwigPtrTable          */
   struct SwigCast    *cast;		  /* List of compatible types       */
 };
@@ -49,7 +49,7 @@ swigsort (const void *data1, const void *data2)
 
 /* Register a new datatype with the type-checker */
 SWIGSTATIC size_t
-SWIG_RegisterType (char *type, char *prettyname)
+SWIG_RegisterType (const char *type, const char *prettyname)
 {
   int i;
 
@@ -94,7 +94,7 @@ SWIG_RegisterType (char *type, char *prettyname)
 
 /* Register two data types and their mapping with the type checker. */
 SWIGSTATIC void
-SWIG_RegisterMapping (char *origtype, char *newtype, void *(*cast)(void *))
+SWIG_RegisterMapping (const char *origtype, const char *newtype, void *(*cast)(void *))
 {
   int i;
   size_t t = SWIG_RegisterType(origtype, NULL);
@@ -215,12 +215,12 @@ SWIG_Guile_GetPtr(SCM s, void **result, swig_type_info *type)
 
 SWIGSTATIC void *
 SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
-			int argnum, char *func_name)
+			int argnum, const char *func_name)
 {
   void *result;
   if (SWIG_Guile_GetPtr(s, &result, type)) {
     /* type mismatch */
-    scm_wrong_type_arg(func_name, argnum, s);
+    scm_wrong_type_arg((char *) func_name, argnum, s);
   }
   return result;
 }
@@ -254,7 +254,7 @@ SWIGSTATIC void
 SWIG_Guile_Init (void)
 {
   if (swig_tag == 0) {
-    swig_tag = scm_make_smob_type_mfpe("swig", 0, NULL, NULL,
+    swig_tag = scm_make_smob_type_mfpe((char *) "swig", 0, NULL, NULL,
 				       print_swig, equalp_swig);
   }
 }
@@ -267,7 +267,7 @@ void SWIG_Guile_RegisterTypes(swig_type_info **table,
 {
   for (; *init; table++, init++) {
     swig_type_info *type = *table = *init;
-    char *origname = type->name;
+    const char *origname = type->name;
     /* Register datatype itself and store pointer back */
     type->tag = SWIG_RegisterType(origname, type->str);
     /* Register compatible types */

@@ -18,6 +18,10 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+6/19/2001: mkoeppe
+	   * [Guile]: Portability fixes for use with the Sun Forte
+	   compilers. 
+
 6/18/2001: mkoeppe
 	   * [Guile]: Don't call scm_c_export if nothing is to be
 	     exported.  Don't warn on %module if module has been set

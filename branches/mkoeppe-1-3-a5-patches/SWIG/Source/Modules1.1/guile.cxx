@@ -323,7 +323,9 @@ GUILE::emit_linkage (char *module_name)
     Append(module_func,"_module");
 
     Printf (f_init, "SCM\n%s (void)\n{\n", module_func);
-    Printf (f_init, "  SWIG_init();\n}\n");
+    Printf (f_init, "  SWIG_init();\n");
+    Printf (f_init, "  return SCM_UNSPECIFIED;\n");
+    Printf (f_init, "}\n");
     break;
   case GUILE_LSTYLE_LTDLMOD_1_4:
     Printf (f_init, "\n/* Linkage: ltdlmod */\n");

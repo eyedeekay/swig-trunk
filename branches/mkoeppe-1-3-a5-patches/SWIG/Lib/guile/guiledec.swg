@@ -84,9 +84,9 @@ GSWIG_scm2char (SCM s)
 typedef struct SwigPtrType SwigPtrType;
 
 typedef struct swig_type_info {
-  char  *name;
+  const char  *name;
   void *(*converter)(void *);
-  char  *str;
+  const char  *str;
   size_t tag;
 } swig_type_info;
 
@@ -101,7 +101,7 @@ SWIG_Guile_RegisterTypes (swig_type_info **table,
    C++).  */
 
 SWIGSTATIC void
-SWIG_RegisterMapping (char *origtype, char *newtype,
+SWIG_RegisterMapping (const char *origtype, const char *newtype,
                       void *(*cast)(void *));
 
 /* Register SWIG smobs with Guile.  */
@@ -121,7 +121,7 @@ SWIG_Guile_GetPtr (SCM s, void **result, swig_type_info *type);
    signal a wrong-type-arg error for the given argument number. */
 SWIGSTATIC void *
 SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
-			int argnum, char *func_name);
+			int argnum, const char *func_name);
 
 /* Use this convenience macro instead of the above function. */
 #define SWIG_Guile_MustGetPtr(s, type, argnum) \
