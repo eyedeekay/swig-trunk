@@ -18,10 +18,17 @@ trunk of the CVS tree.
 6/13/2001: mkoeppe
 	   Partial merge from the CVS trunk at tag
 	   "mkoeppe-merge-1". This covers the following changes:
-|
+
 | 01/16/01: ttn
 |	   Wrote table of contents for Doc/engineering.html.  Added section
 |	   on CVS tagging conventions.  Added copyright to other docs.
+| 9/25/00 : beazley
+| 	   Modified the preprocessor so that macro names can start with a '%'.
+| 	   This may allow new SWIG "directives" to be defined as macros instead
+| 	   of having to be hard-coded into the parser.  
+|
+| *** Also a yet-to-be-documented quoting mechanism with backquotes
+| *** has been implemented?
 
 6/13/2001: mkoeppe
 	 * When configure does not find a language, don't use default
@@ -32,6 +39,9 @@ trunk of the CVS tree.
 	 * Handle C++ methods that have both a "const" and a "throw"
 	   directive (see Examples/Guile/test-suite/cplusplus-throw.i); 
 	   thanks to Scott B. Drummonds for the report and the fix. 
+	 * Handle C++ pointer-reference arguments (like "int *& arg") 
+	   (see Examples/Guile/test-suite/pointer-reference.i,
+	   reported as SF bug #432224).
 	 * [Ruby] Fixed typo in rubydec.swg; thanks to Lyle Johnson!
 	 * Don't stop testing when one test fails.
 	 * [Guile, MzScheme] Don't print "Generating wrappers...".

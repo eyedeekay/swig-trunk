@@ -1,10 +1,20 @@
 						-*- outline -*-
 
-* for 1.3a4 release
+* for release 1.3.6 
 
-** [ttn] add test-suite based on Examples
+** Get %pragma directive syntax change from CVS head
 
-[open] The behavior of SWIG with respect to call/return-by-value needs
+** Maybe port other parser-related stuff from CVS head
+
+** Maybe get the 10/14/00 changes from CVS head
+
+** Fix all the bugs on SourceForge
+
+** Incorporate all the patches on SourceForge
+
+* eventually
+
+**     The behavior of SWIG with respect to call/return-by-value needs
        to be verified for all language modules.   Previously, the
        parser automatically performed the conversion of pass-by-value
        to pass-by-reference.  Unfortunately, this confused typemap
@@ -12,14 +22,7 @@
        this behavior.  However, in doing so, the handling of user
        defined types is passed on to the language modules.
 
-[open] All of the SWIG 1.1p5 examples need to be verified.  Changes
+**     All of the SWIG 1.1p5 examples need to be verified.  Changes
        in type handling and internal data structures may have broken
        a variety of things.
 
-* for 1.3a5 release
-
-* for 1.3b1 release
-
-* for 1.3b2 release
-
-* for 2.x release
