@@ -1422,7 +1422,7 @@ extern int IsVirtual;
   if (IsVirtual == PURE_VIRTUAL) {
   }
 */
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     char* realname = iname ? iname : name;
     String* java_function_name = Swig_name_member(shadow_classname, realname);
 
@@ -1433,7 +1433,7 @@ extern int IsVirtual;
 void JAVA::cpp_static_func(char *name, char *iname, SwigType *t, ParmList *l) {
   this->Language::cpp_static_func(name,iname,t,l);
 
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     char* realname = iname ? iname : name;
     String* java_function_name = Swig_name_member(shadow_classname, realname);
 
@@ -1583,88 +1583,90 @@ DelWrapper(f);
 void JAVA::cpp_constructor(char *name, char *iname, ParmList *l) {
   this->Language::cpp_constructor(name,iname,l);
 
-  if(!shadow) return;
-  if(!shadow_classdef_emitted) emit_shadow_classdef();
-
-  String *nativecall = NewString("");
-  char arg[256];
-
-  Printf(f_shadow, "  public %s(", shadow_classname);
-
-  Printv(nativecall, "    if(getCPtr() == 0) {\n", 0);
-  if (iname != NULL)
-    Printv(nativecall, tab8, " _cPtr = ", module, ".", Swig_name_construct(iname), "(", 0);
-  else
-    Printv(nativecall, tab8, " _cPtr = ", module, ".", Swig_name_construct(shadow_classname), "(", 0);
-
-  int pcount = ParmList_len(l);
-  if(pcount == 0)  // We must have a default constructor
-    have_default_constructor = 1;
-
-  /* Output each parameter */
-  Parm *p = l;
-  for (int i = 0; i < pcount ; i++, p = Getnext(p)) {
-    SwigType *pt = Gettype(p);
-    String   *pn = Getname(p);
-    String   *javaparamtype = NewString("");
-
-    /* Produce string representation of source and target arguments */
-    if(pn && *(Char(pn)))
-      strcpy(arg,Char(pn));
-    else {
-      sprintf(arg,"arg%d",i);
+  if(shadow && !is_multiple_definition()) {
+    if(!shadow_classdef_emitted) emit_shadow_classdef();
+  
+    String *nativecall = NewString("");
+    char arg[256];
+  
+    Printf(f_shadow, "  public %s(", shadow_classname);
+  
+    Printv(nativecall, "    if(getCPtr() == 0) {\n", 0);
+    if (iname != NULL)
+      Printv(nativecall, tab8, " _cPtr = ", module, ".", Swig_name_construct(iname), "(", 0);
+    else
+      Printv(nativecall, tab8, " _cPtr = ", module, ".", Swig_name_construct(shadow_classname), "(", 0);
+  
+    int pcount = ParmList_len(l);
+    if(pcount == 0)  // We must have a default constructor
+      have_default_constructor = 1;
+  
+    /* Output each parameter */
+    Parm *p = l;
+    for (int i = 0; i < pcount ; i++, p = Getnext(p)) {
+      SwigType *pt = Gettype(p);
+      String   *pn = Getname(p);
+      String   *javaparamtype = NewString("");
+  
+      /* Produce string representation of source and target arguments */
+      if(pn && *(Char(pn)))
+        strcpy(arg,Char(pn));
+      else {
+        sprintf(arg,"arg%d",i);
+      }
+  
+      if(is_shadow(pt)) {
+  	  Printv(nativecall, arg, ".getCPtr()", 0);
+      } else Printv(nativecall, arg, 0);
+  
+      /* Get the java type of the parameter */
+      SwigToJavaType(pt, pn, javaparamtype, shadow); 
+  
+      /* Add to java shadow function header */
+      Printf(f_shadow, "%s %s", javaparamtype, arg);
+  
+      if(i != pcount-1) {
+        Printf(nativecall, ", ");
+        Printf(f_shadow, ", ");
+      }
+      Delete(javaparamtype);
     }
-
-    if(is_shadow(pt)) {
-	  Printv(nativecall, arg, ".getCPtr()", 0);
-    } else Printv(nativecall, arg, 0);
-
-    /* Get the java type of the parameter */
-    SwigToJavaType(pt, pn, javaparamtype, shadow); 
-
-    /* Add to java shadow function header */
-    Printf(f_shadow, "%s %s", javaparamtype, arg);
-
-    if(i != pcount-1) {
-      Printf(nativecall, ", ");
-      Printf(f_shadow, ", ");
-    }
-    Delete(javaparamtype);
+  
+  
+    Printf(f_shadow, ") {\n");
+    Printv(nativecall,
+  	 ");\n",
+  	 tab8, " _cMemOwn = true;\n",
+  	 "    }\n",
+  	 0);
+  
+    Printf(f_shadow, "%s", nativecall);
+    Printf(f_shadow, "  }\n\n");
+    Delete(nativecall);
   }
-
-
-  Printf(f_shadow, ") {\n");
-  Printv(nativecall,
-	 ");\n",
-	 tab8, " _cMemOwn = true;\n",
-	 "    }\n",
-	 0);
-
-  Printf(f_shadow, "%s", nativecall);
-  Printf(f_shadow, "  }\n\n");
-  Delete(nativecall);
 }
 
 void JAVA::cpp_destructor(char *name, char *newname) {
   this->Language::cpp_destructor(name,newname);
 
-  if(!shadow) return;
-  if(!shadow_classdef_emitted) emit_shadow_classdef();
-
-  char *realname = (newname) ? newname : name;
-
-  if(!nofinalize) {
-    Printf(f_shadow, "  protected void finalize() {\n");
-    Printf(f_shadow, "    _delete();\n");
-    Printf(f_shadow, "  };\n\n");
+  if(shadow && !is_multiple_definition()) {
+    if(!shadow_classdef_emitted) emit_shadow_classdef();
+  
+    char *realname = (newname) ? newname : name;
+  
+    if(!nofinalize) {
+      Printf(f_shadow, "  protected void finalize() {\n");
+      Printf(f_shadow, "    _delete();\n");
+      Printf(f_shadow, "  };\n\n");
+    }
+  
+    Printf(f_shadow, "  public void _delete() {\n");
+    Printf(f_shadow, "    if(getCPtr() != 0 && _cMemOwn) {\n");
+    Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(shadow_classname));
+    Printf(f_shadow, "\t_cPtr = 0;\n");
+    Printf(f_shadow, "    }\n");
+    Printf(f_shadow, "  }\n\n");
   }
-
-  Printf(f_shadow, "  public void _delete() {\n");
-  Printf(f_shadow, "    if(getCPtr() != 0 && _cMemOwn) {\n");
-  Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(shadow_classname));
-  Printf(f_shadow, "\t_cPtr = 0;\n");
-  Printf(f_shadow, "    }\n");
-  Printf(f_shadow, "  }\n\n");
 }
 
 void JAVA::cpp_class_decl(char *name, char *rename, char *type) {

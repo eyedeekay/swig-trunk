@@ -27,7 +27,6 @@ static  int           use_kw = 0;
 static  int           noopt = 1;
 static  FILE         *f_shadow;
 static  Hash         *hash;
-static  Hash         *symbols;
 static  String       *classes;
 static  String       *func;
 static  String       *vars;
@@ -128,7 +127,6 @@ void
 PYTHON::parse() {
 
   hash           = NewHash();
-  symbols        = NewHash();
   const_code     = NewString("");
   shadow_methods = NewString("");
   classes        = NewString("");
@@ -1232,20 +1230,15 @@ void
 PYTHON::cpp_member_func(char *name, char *iname, SwigType *t, ParmList *l) {
   char *realname;
   int   oldshadow;
-  char  cname[1024];
 
   /* Create the default member function */
   oldshadow = shadow;    /* Disable shadowing when wrapping member functions */
   if (shadow) shadow = shadow | PYSHADOW_MEMBER;
   this->Language::cpp_member_func(name,iname,t,l);
   shadow = oldshadow;
-  if (shadow) {
-    realname = iname ? iname : name;
 
-    /* Check to see if we've already seen this */
-    sprintf(cname,"python:%s::%s",class_name,realname);
-    if (Getattr(symbols,cname)) return;
-    Setattr(symbols,cname,cname);
+  if (shadow && !is_multiple_definition()) {
+    realname = iname ? iname : name;
 
     if (strcmp(realname,"__repr__") == 0)
       have_repr = 1;
@@ -1292,19 +1285,13 @@ void
 PYTHON::cpp_constructor(char *name, char *iname, ParmList *l) {
   char *realname;
   int   oldshadow = shadow;
-  char  cname[1024];
 
   if (shadow) shadow = shadow | PYSHADOW_MEMBER;
   this->Language::cpp_constructor(name,iname,l);
   shadow = oldshadow;
 
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     realname = iname ? iname : class_name;
-
-    /* Check to see if we've already seen this */
-    sprintf(cname,":python:constructor:%s::%s",class_name,realname);
-    if (Getattr(symbols,cname)) return;
-    Setattr(symbols,cname,cname);
 
     if (!have_constructor) {
       if (use_kw)
@@ -1350,7 +1337,7 @@ PYTHON::cpp_destructor(char *name, char *newname) {
   if (shadow) shadow = shadow | PYSHADOW_MEMBER;
   this->Language::cpp_destructor(name,newname);
   shadow = oldshadow;
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     if (newname) realname = newname;
     else realname = class_renamed ? class_name : name;
 
@@ -1483,22 +1470,15 @@ PYTHON::cpp_variable(char *name, char *iname, SwigType *t) {
   char *realname;
   int   inhash = 0;
   int   oldshadow = shadow;
-  char  cname[512];
 
   if (shadow) shadow = shadow | PYSHADOW_MEMBER;
   this->Language::cpp_variable(name,iname,t);
   shadow = oldshadow;
 
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     have_getattr = 1;
     have_setattr = 1;
     realname = iname ? iname : name;
-
-    /* Check to see if we've already seen this */
-    sprintf(cname,"python:%s::%s:",class_name,realname);
-    if (Getattr(symbols,cname)) return;
-
-    Setattr(symbols,cname,cname);
 
     /* Figure out if we've seen this datatype before */
     if (is_shadow(t)) inhash = 1;
@@ -1523,19 +1503,13 @@ void
 PYTHON::cpp_declare_const(char *name, char *iname, SwigType *type, char *value) {
   char *realname;
   int   oldshadow = shadow;
-  char  cname[512];
 
   if (shadow) shadow = shadow | PYSHADOW_MEMBER;
   this->Language::cpp_declare_const(name,iname,type,value);
   shadow = oldshadow;
 
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     realname = iname ? iname : name;
-
-    /* Check to see if we've already seen this */
-    sprintf(cname,"python:%s::%s", class_name, realname);
-    if (Getattr(symbols,cname)) return;
-    Setattr(symbols,cname,cname);
     Printv(cinit, tab4, realname, " = ", module, ".", Swig_name_member(class_name,realname), "\n", 0);
   }
 }

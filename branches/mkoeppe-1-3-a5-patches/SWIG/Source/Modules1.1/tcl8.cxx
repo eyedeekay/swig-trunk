@@ -1019,7 +1019,7 @@ void TCL8::cpp_member_func(char *name, char *iname, SwigType *t, ParmList *l) {
   String  *rname;
 
   this->Language::cpp_member_func(name,iname,t,l);
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     realname = iname ? iname : name;
     /* Add stubs for this member to our class handler function */
 
@@ -1038,7 +1038,7 @@ void TCL8::cpp_variable(char *name, char *iname, SwigType *t) {
 
   this->Language::cpp_variable(name, iname, t);
 
-  if (shadow) {
+  if (shadow && !is_multiple_definition()) {
     realname = iname ? iname : name;
     Printv(attributes, tab4, "{ \"-", realname, "\",", 0);
 
