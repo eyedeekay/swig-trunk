@@ -15,8 +15,8 @@ configure-stamp:
 	autoconf
 	(cd Source/DOH; autoconf)
 	./configure --prefix=/usr --mandir=/usr/share/man --with-swiglibdir=/usr/share/swig1.3
-	$(MAKE)
-	$(MAKE) LIBRELEASE="-1.3" runtime
+	$(MAKE) RELEASESUFFIX="-1.3"
+	$(MAKE) RELEASESUFFIX="-1.3" runtime
 
 	touch configure-stamp
 
@@ -24,7 +24,7 @@ build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
 
-	$(MAKE) SWIG_LIB=/usr/share/swig1.3 TARGET=swig-1.3
+	$(MAKE) SWIG_LIB=/usr/share/swig1.3
 
 	touch build-stamp
 
@@ -42,7 +42,7 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	$(MAKE) install SWIG_LIB=/usr/share/swig1.3 TARGET=swig-1.3 LIBRELEASE="-1.3" DESTDIR=$(CURDIR)/debian/swig1.3
+	$(MAKE) install RELEASESUFFIX="-1.3" DESTDIR=$(CURDIR)/debian/swig1.3
 
 # Build architecture-independent files here.
 binary-indep: build install

@@ -10,6 +10,11 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
 6/ 1/2001: mkoeppe
+	   [Guile] Cast SCM_CAR() to scm_bits_t before shifting it.
+	   This is required for compiling with a Guile configured with
+	   strict C type checking.  
+
+6/ 1/2001: mkoeppe
 	   Added configure option "--with-swiglibdir".
 
 5/31/2001: mkoeppe

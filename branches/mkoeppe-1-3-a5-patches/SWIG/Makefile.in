@@ -22,7 +22,7 @@ RANLIB      = @RANLIB@
 # instead of `exec_prefix' or, derivatively, `libdir'.
 SWIG_LIB    = @swig_lib@
 BIN_DIR     = @bindir@
-TARGET      = swig
+TARGET      = swig$(RELEASESUFFIX)
 SOURCE      = Source
 SOURCEDIRS  = `ls $(SOURCE)`
 
