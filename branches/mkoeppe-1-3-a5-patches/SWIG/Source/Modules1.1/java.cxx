@@ -416,9 +416,6 @@ void JAVA::parse_args(int argc, char *argv[]) {
 // ---------------------------------------------------------------------
 
 void JAVA::parse() {
-
-  Printf(stderr,"Generating wrappers for Java\n");
-
   shadow_classes = NewHash();
   shadow_classdef = NewString("");
   registerNativesList = NewString("");
@@ -1220,18 +1217,26 @@ void JAVA::cpp_close_class() {
 
 void JAVA::cpp_member_func(char *name, char *iname, SwigType *t, ParmList *l) {
   this->Language::cpp_member_func(name,iname,t,l);
-  String* java_function_name = Swig_name_member(shadow_classname,iname);
 
-  cpp_func(iname, t, l, java_function_name);
+  if (shadow) {
+    char* realname = iname ? iname : name;
+    String* java_function_name = Swig_name_member(shadow_classname, realname);
+
+    cpp_func(iname, t, l, java_function_name);
+  }
 }
 
 void JAVA::cpp_static_func(char *name, char *iname, SwigType *t, ParmList *l) {
   this->Language::cpp_static_func(name,iname,t,l);
-  String* java_function_name = Swig_name_member(shadow_classname,iname);
 
-  static_flag = 1;
-  cpp_func(iname, t, l, java_function_name);
-  static_flag = 0;
+  if (shadow) {
+    char* realname = iname ? iname : name;
+    String* java_function_name = Swig_name_member(shadow_classname, realname);
+
+    static_flag = 1;
+    cpp_func(iname, t, l, java_function_name);
+    static_flag = 0;
+  }
 }
 
 /* 
