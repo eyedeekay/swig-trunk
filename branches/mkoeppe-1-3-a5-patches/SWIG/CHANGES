@@ -9,6 +9,14 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+6/05/2001: cheetah (william fulton)
+	   [Java] destructor (_delete()) was not aware of %name renaming
+	   [Java] extends baseclass did not know about %name renaming
+	   [Java] extends baseclass did extend even when the baseclass was not known to swig
+	   [Java] sometimes enum-declarations occured before the Java class declaration
+	   [Java] unrelated enum initialisations appearing in Java class
+	   [Java] if module ends in '_' correct JNI names are now produced
+
 6/04/2001: cheetah (william fulton)
 	   [Java] Shadow class mods - Modified constructor replaces
 	   newInstance(). _delete() now thread safe. getCPtr() replaces

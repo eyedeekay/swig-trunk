@@ -278,7 +278,8 @@ char *JAVA::makeValidJniName(char *name) {
 
   while(*c) {
     *b++ = *c;
-    if(*c == '_') *b++ = '1';
+    if(*c == '_')
+      *b++ = '1';
     c++;
   }
   *b = '\0';
@@ -422,7 +423,6 @@ void JAVA::parse() {
   shadow_classes = NewHash();
   shadow_classdef = NewString("");
   registerNativesList = NewString("");
-  shadow_enum_code = NewString("");
   java_enum_code = NewString("");
 
   headers();       // Emit header files and other supporting code
@@ -494,7 +494,12 @@ void JAVA::initialize()
 
   sprintf(bigbuf, "Java_%s%s", c_pkgstr, module);
   c_pkgstr = Swig_copy_string(bigbuf);
-  sprintf(bigbuf, "%s_%%f", c_pkgstr);
+
+  if (strchr(module + strlen(module)-1, '_')) //if module has a '_' as last character
+    sprintf(bigbuf, "%s1_%%f", c_pkgstr); //separate double underscore with 1
+  else
+    sprintf(bigbuf, "%s_%%f", c_pkgstr);
+
   Swig_name_register((char*)"wrapper", Swig_copy_string(bigbuf));
   Swig_name_register((char*)"set", (char*)"set_%v");
   Swig_name_register((char*)"get", (char*)"get_%v");
@@ -559,7 +564,6 @@ void JAVA::close(void)
   Delete(shadow_classes);
   Delete(shadow_classdef);
   Delete(registerNativesList);
-  Delete(shadow_enum_code);
   Delete(java_enum_code);
 }
 
@@ -627,9 +631,9 @@ void JAVA::create_function(char *name, char *iname, SwigType *t, ParmList *l)
   if(!classdef_emitted) emit_classdef();
 
   // Make a wrapper name for this function
-
   char *jniname = makeValidJniName(iname);
   String *wname = Swig_name_wrapper(jniname);
+
   free(jniname);
 
   /* Get the java and jni types of the return */
@@ -898,7 +902,7 @@ void JAVA::create_function(char *name, char *iname, SwigType *t, ParmList *l)
             SwigToJNIType(array_type, iname, jni_array_type);
 
             Printv(jnitype_ptr, jni_array_type, "*", 0);
-            Wrapper_add_localv(f, "jnitype_ptr", jnitype_ptr, "jnitype_ptr", "= 0");
+            Wrapper_add_localv(f, "jnitype_ptr", jnitype_ptr, "jnitype_ptr", "= 0", 0);
             Wrapper_add_localv(f, "k", "int", "k", 0);
 
             // Create a java array for return to Java subsystem, eg for int array
@@ -1020,6 +1024,7 @@ void JAVA::declare_const(char *name, char *iname, SwigType *type, char *value) {
   if(!classdef_emitted) emit_classdef();
 
   if(shadow && wrapping_member) {
+    if(!shadow_classdef_emitted) emit_shadow_classdef();
     jfile = f_shadow;
     jname = shadow_variable_name;
   } else {
@@ -1149,6 +1154,7 @@ void JAVA::cpp_open_class(char *classname, char *rename, char *ctype, int strip)
   shadow_baseclass = (char*) "";
   shadow_classdef_emitted = 0;
   have_default_constructor = 0;
+  shadow_enum_code = NewString("");
 }
 
 void JAVA::emit_shadow_classdef() {
@@ -1198,6 +1204,7 @@ void JAVA::cpp_close_class() {
 
   free(shadow_classname);
   shadow_classname = NULL;
+  Delete(shadow_enum_code);
 }
 
 void JAVA::cpp_member_func(char *name, char *iname, SwigType *t, ParmList *l) {
@@ -1413,8 +1420,8 @@ void JAVA::cpp_destructor(char *name, char *newname) {
   }
 
   Printf(f_shadow, "  synchronized public void _delete() {\n");
-  Printf(f_shadow, "    if(_cPtr != 0 && _cMemOwn) {\n", shadow_classname);
-  Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(realname));
+  Printf(f_shadow, "    if(_cPtr != 0 && _cMemOwn) {\n");
+  Printf(f_shadow, "\t%s.%s(_cPtr);\n", module, Swig_name_destroy(shadow_classname));
   Printf(f_shadow, "\t_cPtr = 0;\n");
   Printf(f_shadow, "    }\n");
   Printf(f_shadow, "  }\n\n");
@@ -1442,14 +1449,22 @@ void JAVA::cpp_inherit(char **baseclass, int) {
 
   if(!shadow) return;
 
-  int cnt = 0;
-  char **bc = baseclass;
-  while(*bc++) cnt++;
+  int i = 0;
+  while(baseclass[i]) i++;
 
-  if(cnt > 1)
+  if(i > 1)
     Printf(stderr, "Warning: %s inherits from multiple base classes. Multiple inheritance is not supported.\n", shadow_classname);
 
-  shadow_baseclass = Swig_copy_string(*baseclass);
+  i=0;
+  char *bc;
+  if (baseclass[i]) {
+    /* See if this is a class we know about */
+    String *b = NewString(baseclass[i]);
+    bc = Char(is_shadow(b));
+    Delete(b);
+    if (bc)
+      shadow_baseclass = bc;
+  }
 }
 
 void JAVA::cpp_variable(char *name, char *iname, SwigType *t) {
