@@ -1,6 +1,6 @@
 MAKE_EXEC = $(MAKE) -f ../Makefile SRCS='' TARGET=test sub-all
 
-all::  macro-1.test macro-2.test
+all::  macro-1.test macro-2.test cplusplus-throw.i
 
 .SUFFIXES: .i .test
 
