@@ -31,8 +31,10 @@ trunk of the CVS tree.
 	     typemap precedence rules.
 	   * Fixed the random-line-numbers problem reported as SF bug
 	     #217310; thanks to Michael Scharf <scharf@users.sf.net>.
-	   * [Guile]: Added a "name" pragma which allows to change the
-	     Scheme name of the generated procedures.
+	   * [Guile]: Handle the %name and %rename directives.
+	   * New syntax: %name and %rename now optionally take double
+	     quotes around the scripting name.  This is to allow scripting
+	     names that aren't valid C identifiers.
 
 6/14/2001: beazley
            Made a minor change to the way files are loaded in

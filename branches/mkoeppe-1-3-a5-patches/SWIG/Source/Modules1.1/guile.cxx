@@ -563,7 +563,7 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 {
   Parm *p;
   DOHString *proc_name = 0;
-  char source[256], target[256];
+  char source[256], target[256], wname[256];
   Wrapper *f = NewWrapper();;
   String *cleanup = NewString("");
   String *outarg = NewString("");
@@ -576,18 +576,11 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   int numopt = 0;
 
   // Make a wrapper name for this
-  char * wname = new char [strlen (prefix) + strlen (iname) + 2];
-  sprintf (wname, "%s%s", prefix, iname);
+  strcpy(wname, Char(Swig_name_wrapper(name)));
 
   // Build the name for scheme.
-  if (pragma_name) {
-    proc_name = pragma_name;
-    pragma_name = NULL;
-  }
-  else {
-    proc_name = NewString(iname);
-    Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
-  }
+  proc_name = NewString(iname);
+  Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
 
   /* Emit locals etc. into f->code; figure out which args to ignore */
   emit_args (d, l, f);
@@ -807,7 +800,6 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   Delete(returns);
   Delete(tmp);
   DelWrapper(f);
-  delete[] wname;
 }
 
 // -----------------------------------------------------------------------
@@ -832,17 +824,11 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
   f = NewWrapper();
   // evaluation function names
 
-  sprintf (var_name, "%svar_%s", prefix, iname);
+  strcpy(var_name, Char(Swig_name_wrapper(name))); 
 
   // Build the name for scheme.
-  if (pragma_name) {
-    proc_name = pragma_name;
-    pragma_name = NULL;
-  }
-  else {
-    proc_name = NewString(iname);
-    Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
-  }
+  proc_name = NewString(iname);
+  Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
 
   if ((SwigType_type(t) != T_USER) || (is_a_pointer(t))) {
 
@@ -955,7 +941,7 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
 // ------------------------------------------------------------------------
 
 void
-GUILE::declare_const (char *name, char *, SwigType *type, char *value)
+GUILE::declare_const (char *name, char *iname, SwigType *type, char *value)
 {
   int OldStatus = Status;      // Save old status flags
   DOHString *proc_name;
@@ -972,14 +958,8 @@ GUILE::declare_const (char *name, char *, SwigType *type, char *value)
   sprintf (var_name, "%sconst_%s", prefix, name);
 
   // Build the name for scheme.
-  if (pragma_name) {
-    proc_name = pragma_name;
-    pragma_name = NULL;
-  }
-  else {
-    proc_name = NewString(name);
-    Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
-  }
+  proc_name = NewString(iname);
+  Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
 
   if ((SwigType_type(type) == T_USER) && (!is_a_pointer(type))) {
     Printf (stderr, "%s : Line %d.  Unsupported constant value.\n",
@@ -1005,7 +985,7 @@ GUILE::declare_const (char *name, char *, SwigType *type, char *value)
 	    var_name, rvalue);
   }
   // Now create a variable declaration
-  link_variable (var_name, name, type);
+  link_variable (var_name, iname, type);
   Status = OldStatus;
   Delete(proc_name);
   Delete(rvalue);
@@ -1034,11 +1014,6 @@ void GUILE::pragma(char *lang, char *cmd, char *value)
       if (before_return)
 	Delete(before_return);
       before_return = NewString(value);
-    }
-    else if (strcmp(cmd, (char*)"name")==0) {
-      if (pragma_name) Delete(pragma_name);
-      if (value == NULL) pragma_name = NULL;
-      else pragma_name = NewString(value);
     }
   }
 }

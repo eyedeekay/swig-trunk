@@ -752,8 +752,22 @@ statement      : INCLUDE STRING LBRACE {
 		 Rename_true = 1;
                }
 
+/* and its string version */
+
+	       | NAME LPAREN STRING RPAREN {
+	         strcpy(yy_rename,$3);
+		 Rename_true = 1;
+	       }
+
 /* %rename directive */
                | RENAME ID ID SEMI {
+		 if (!name_hash) name_hash = NewHash();
+		 Setattr(name_hash,$2,$3);
+	       }
+
+/* and its string version */
+
+	       | RENAME ID STRING SEMI {
 		 if (!name_hash) name_hash = NewHash();
 		 Setattr(name_hash,$2,$3);
 	       }
