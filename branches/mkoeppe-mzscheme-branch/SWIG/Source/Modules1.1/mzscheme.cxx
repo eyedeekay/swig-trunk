@@ -202,6 +202,8 @@ MZSCHEME::initialize (void)
 void
 MZSCHEME::close (void)
 {
+  SwigType_emit_type_table (f_runtime, f_wrappers);
+  Printf (f_init, "SWIG_RegisterTypes(swig_types, swig_types_initial);\n");
   Printf (f_init, "}\n\n");
   Printf(f_init, "Scheme_Object *scheme_reload(Scheme_Env *env) {\n");
   Printf(f_init, "%s\n", Char(init_func_def));
@@ -254,7 +256,7 @@ mzscheme_typemap_lookup(const char *op, SwigType *type, const String_or_char *pn
   if (!tm) {
     SwigType *base = SwigType_typedef_resolve_all(type);
     if (strncmp(Char(base), "enum ", 5)==0)
-      tm = Swig_typemap_lookup((char*) op, (char*) "int", (char*)pname, source, target, f);
+      tm = Swig_typemap_lookup((char*) op, NewSwigType(T_INT), (char*)pname, source, target, f);
   }
   return tm;
 }
@@ -451,10 +453,13 @@ MZSCHEME::link_variable (char *name, char *iname, SwigType *t)
   String *tm2 = NewString("");;
   String *argnum = NewString("0");
   String *arg = NewString("argv[0]");
+  Wrapper *f;
+
+  f = NewWrapper();
 
   // evaluation function names
 
-  sprintf (var_name, "_wrap_%svar_%s", prefix, iname);
+  strcpy(var_name, Char(Swig_name_wrapper(iname)));
 
   // Build the name for scheme.
   Printv(proc_name, iname,0);
@@ -462,76 +467,41 @@ MZSCHEME::link_variable (char *name, char *iname, SwigType *t)
 
   if ((SwigType_type(t) != T_USER) || (is_a_pointer(t))) {
 
-    Printf (f_wrappers, "static Scheme_Object *%s(int argc, Scheme_Object** argv) {\n", var_name);
+    Printf (f->def, "static Scheme_Object *%s(int argc, Scheme_Object** argv) {\n", var_name);
+    Printv(f->def, "#define FUNC_NAME \"", proc_name, "\"", 0);
 
-    if ((SwigType_type(t) == T_CHAR) || (is_a_pointer(t))){
-      Printf (f_wrappers, "\t char *_temp, _ptemp[128];\n");
-      Printf (f_wrappers, "\t int  _len;\n");
-    }
-    Printf (f_wrappers, "\t Scheme_Object *swig_result;\n");
+    Wrapper_add_local (f, "swig_result", "Scheme_Object *swig_result");
 
-    // Check for a setting of the variable value
-
-    Printf (f_wrappers, "\t if (argc) {\n");
-
-    // Yup. Extract the type from argv[0] and set variable value
-
-    //      if (Status & STAT_READONLY) {
-    //        Printf (f_wrappers, "\t\t GSWIG_ASSERT(0,\"Unable to set %s.  "
-    //                 "Variable is read only.\", argv[0]);\n", iname);
-    //      }
-    if (Status & STAT_READONLY) {
-      Printf (f_wrappers, "\t\t scheme_signal_error(\"Unable to set %s.  "
-	      "Variable is read only.\");\n", iname);
-    }
-    else if ((tm = mzscheme_typemap_lookup ("varin",
-					t, name, (char*)"argv[0]", name,0))) {
-      Printv(tm2, tm,0);
-      mreplace(tm2, argnum, arg, proc_name);
-      Printv(f_wrappers, tm2, "\n",0);
-    }
-    else if (is_a_pointer(t)) {
-      if ((SwigType_type(t) == T_CHAR) && (is_a_pointer(t) == 1)) {
-	Printf (f_wrappers, "\t\t _temp = SCHEME_STR_VAL(argv[0]);\n");
-	Printf (f_wrappers, "\t\t _len = SCHEME_STRLEN_VAL(argv[0]);\n");
-	Printf (f_wrappers, "\t\t if (%s) { free(%s);}\n", name, name);
-	Printf (f_wrappers, "\t\t %s = (char *) "
-		"malloc((_len+1)*sizeof(char));\n", name);
-	Printf (f_wrappers, "\t\t strncpy(%s,_temp,_len);\n", name);
-      } else {
-	// Set the value of a pointer
-	Printf(f_wrappers, "\t\tif (!swig_get_c_pointer(argv[0], \"%s\", (void **) &%s))\n",
-	       SwigType_manglestr(t), name);
-	Printf(f_wrappers, "\t\t\tscheme_wrong_type(\"%s\", \"%s\", 0, argc, argv);", \
-	       var_name, SwigType_manglestr(t));
+    if (!(Status & STAT_READONLY)) {
+      /* Check for a setting of the variable value */
+      Printf (f->code, "if (argc) {\n");
+      if ((tm = mzscheme_typemap_lookup ("varin",
+					 t, name, (char*)"argv[0]", name,0))) {
+	Printv(tm2, tm,0);
+	mreplace(tm2, argnum, arg, proc_name);
+	Printv(f->code, tm2, "\n",0);
       }
+      else {
+	throw_unhandled_mzscheme_type_error (t);
+      }
+      Printf (f->code, "}\n");
     }
-    else {
-      throw_unhandled_mzscheme_type_error (t);
-    }
-    Printf (f_wrappers, "\t}\n");
-
+    
     // Now return the value of the variable (regardless
     // of evaluating or setting)
 
     if ((tm = mzscheme_typemap_lookup ("varout",
-				   t, name, name, (char*)"swig_result",0))) {
-      Printf (f_wrappers, "%s\n", tm);
-    }
-    else if (is_a_pointer(t)) {
-      if ((SwigType_type(t) == T_CHAR) && (is_a_pointer(t) == 1)) {
-	Printf (f_wrappers, "\t swig_result = scheme_make_string(%s);\n", name);
-      } else {
-	// Is an ordinary pointer type.
-	Printf(f_wrappers, "\tswig_result = swig_make_c_pointer(%s, \"%s\");\n",
-	       name, SwigType_manglestr(t));
-      }
+				       t, name, name, (char*)"swig_result",0))) {
+      Printf (f->code, "%s\n", tm);
     }
     else {
       throw_unhandled_mzscheme_type_error (t);
     }
-    Printf (f_wrappers, "\t return swig_result;\n");
-    Printf (f_wrappers, "}\n");
+    Printf (f->code, "\nreturn swig_result;\n");
+    Printf (f->code, "#undef FUNC_NAME\n");
+    Printf (f->code, "}\n");
+
+    Wrapper_print (f, f_wrappers);
 
     // Now add symbol to the MzScheme interpreter
 
@@ -557,6 +527,7 @@ MZSCHEME::link_variable (char *name, char *iname, SwigType *t)
   Delete(argnum);
   Delete(arg);
   Delete(tm2);
+  DelWrapper(f);
 }
 
 // -----------------------------------------------------------------------
@@ -632,151 +603,3 @@ MZSCHEME::declare_const (char *name, char *, SwigType *type, char *value)
   Delete(temp);
 }
 
-// ----------------------------------------------------------------------
-// MZSCHEME::usage_var(char *iname, SwigType *t, String &usage)
-//
-// Produces a usage string for a MzScheme variable.
-// ----------------------------------------------------------------------
-
-void
-MZSCHEME::usage_var (char *iname, SwigType *t, String *usage)
-{
-  //   char temp[1024], *c;
-
-  //   usage << "(" << iname << " [value])";
-  //   if (!((t->type != T_USER) || (t->is_pointer))) {
-  //     usage << " - unsupported";
-  //   }
-}
-
-// ---------------------------------------------------------------------------
-// MZSCHEME::usage_func(char *iname, SwigType *t, ParmList *l, String &usage)
-//
-// Produces a usage string for a function in MzScheme
-// ---------------------------------------------------------------------------
-
-void
-MZSCHEME::usage_func (char *iname, SwigType *d, ParmList *l, DOHString *usage)
-{
-  Parm *p;
-
-  // Print the function name.
-
-  Printv(usage,"(",iname,0);
-
-  // Now go through and print parameters
-
-  for (p = l; p != 0; p = Getnext(p)) {
-    SwigType *pt = Gettype(p);
-    String   *pn = Getname(p);
-
-    if (Getignore(p))
-      continue;
-
-    // Print the type.  If the parameter has been named, use that as well.
-
-    if (SwigType_type(pt) != T_VOID) {
-
-      // Print the type.
-      Printv(usage," <", Getname(pt), 0);
-      if (is_a_pointer(pt)) {
-	for (int j = 0; j < is_a_pointer(pt); j++) {
-	  Putc('*', usage);
-	}
-      }
-      Putc('>',usage);
-
-      // Print the name if it exists.
-      if (strlen (Char(pn)) > 0) {
-	Printv(usage," ", pn, 0);
-      }
-    }
-    Delete(pn);
-  }
-  Putc(')',usage);
-}
-
-
-// ---------------------------------------------------------------------------
-// MZSCHEME::usage_returns(char *iname, SwigType *t, ParmList *l, String &usage)
-//
-// Produces a usage string for a function in MzScheme
-// ---------------------------------------------------------------------------
-
-void
-MZSCHEME::usage_returns (char *iname, SwigType *d, ParmList *l, DOHString *usage)
-{
-  Parm *p;
-  DOHString *param;
-  int have_param = 0, j;
-
-  param = NewString("");
-
-  Clear(usage);
-  Printf(usage,"returns ");
-
-  // go through and see if any are output.
-
-  for (p = l; p != 0; p = Getnext(p)) {
-    SwigType *pt = Gettype(p);
-    String     *pn = Getname(p);
-
-    if (strcmp (Char(pn),"BOTH") && strcmp (Char(pn),"OUTPUT"))
-      continue;
-
-    // Print the type.  If the parameter has been named, use that as well.
-
-    if (SwigType_type(pt) != T_VOID) {
-      ++have_param;
-
-      // Print the type.
-      Printv(param," $", Getname(pt), 0);
-      if (is_a_pointer(pt)) {
-	for (j = 0; j < is_a_pointer(pt) - 1; j++) {
-	  Putc('*',param);
-	}
-      }
-      Printf(param,"# ");
-    }
-    Delete(pn);
-  }
-
-  // See if we stick on the function return type.
-  if (SwigType_type(d) != T_VOID || have_param == 0) {
-    ++have_param;
-    if (SwigType_type(d) == T_VOID)
-      Insert(param,0," unspecified");
-    else {
-      Insert(param,0,"# ");
-      Insert(param,0,SwigType_str(d,0));
-      Insert(param,0," $");
-    }
-  }
-
-  // Kill extra white space.
-  // Sorry. Not implemented: param.strip();
-  Replace(param,"$", "<", DOH_REPLACE_ANY);
-  Replace(param,"#", ">", DOH_REPLACE_ANY);
-  Replace(param,"><", "> <", DOH_REPLACE_ANY);
-
-  // If there are multiple return values put them in a list.
-  if (have_param > 1) {
-    Insert(param,0,"(");
-    Append(param,")");
-  }
-  Printv(usage,param,0);
-  Delete(param);
-}
-
-
-// ----------------------------------------------------------------------
-// MZSCHEME::usage_const(char *iname, SwigType *type, char *value, String &usage)
-//
-// Produces a usage string for a MzScheme constant
-// ----------------------------------------------------------------------
-
-void
-MZSCHEME::usage_const (char *iname, SwigType *, char *value, DOHString *usage)
-{
-  Printv(usage,"(", iname, " ", value, ")", 0);
-}

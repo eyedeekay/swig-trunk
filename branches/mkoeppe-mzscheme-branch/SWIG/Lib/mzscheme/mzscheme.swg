@@ -168,7 +168,7 @@ int swig_initialized_p = 0;
 SWIGSTATIC Scheme_Object *
 SWIG_MakePtr(void *c_pointer, swig_type_info *type) {
     struct swig_proxy *new_proxy;
-    new_proxy = scheme_malloc(sizeof(struct swig_proxy));
+    new_proxy = (struct swig_proxy *) scheme_malloc(sizeof(struct swig_proxy));
     new_proxy->type = swig_type;
     new_proxy->ptrtype = type->ptrtype;
     new_proxy->object = (void *) c_pointer;
@@ -254,3 +254,8 @@ swig_malloc(size_t size, const char *func_name)
   }
   else return p;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

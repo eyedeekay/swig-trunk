@@ -11,7 +11,7 @@
 /* Pointers */
 
 %typemap(in) SWIGPOINTER * {
-  $target = SWIG_MustGetPtr($source, $descriptor, $argnum);
+  $target = ($ltype) SWIG_MustGetPtr($source, $descriptor, $argnum);
 }
 
 %typemap(in) void * {
@@ -19,7 +19,7 @@
 }
 
 %typemap(varin) SWIGPOINTER * {
-  $target = SWIG_MustGetPtr($source, $descriptor, $argnum);
+  $target = ($ltype) SWIG_MustGetPtr($source, $descriptor, $argnum);
 }
 
 %typemap(varin) void * {
@@ -39,7 +39,7 @@
 #ifdef __cplusplus
 
 %typemap(in) SWIGREFERENCE & { 
-  $target = SWIG_MustGetPtr($source, $descriptor, $argnum);
+  $target = ($ltype) SWIG_MustGetPtr($source, $descriptor, $argnum);
 }
 
 %typemap(out) SWIGREFERENCE & {
@@ -51,7 +51,7 @@
 /* Arrays */
 
 %typemap(in) SWIGARRAY[] {
-  $target = SWIG_MustGetPtr($source, $descriptor, $argnum);
+  $target = ($ltype) SWIG_MustGetPtr($source, $descriptor, $argnum);
 }
 
 %typemap(out) SWIGARRAY[] {
