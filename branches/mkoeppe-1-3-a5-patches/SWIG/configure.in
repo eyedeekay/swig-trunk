@@ -691,6 +691,7 @@ else
 RUBY="$RUBYBIN"
 fi
 AC_MSG_CHECKING(for Ruby header files)
+RUBYLIBRUBYARG=""
 if test -n "$RUBY"; then
 	RUBYDIR=`($RUBY -rmkmf -e 'print Config::CONFIG[["archdir"]] || $archdir') 2>/dev/null`
 	if test "$RUBYDIR" != ""; then
@@ -731,13 +732,16 @@ if test -n "$RUBY"; then
 	RUBYLINK="-l$RUBYLINK"
 	RUBYLINK="$RUBYLINK `($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBS"]]') 2>/dev/null`"
         RUBYCCDLFLAGS=`($RUBY -rrbconfig -e 'print Config::CONFIG[["CCDLFLAGS"]]') 2>/dev/null`
-        RUBYLIBRUBYARG=`($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBRUBYARG"]]') 2>/dev/null`
+	# At least for cygwin the following arguments can be extracted from the CONFIG-hash
+	case $ac_sys_system/$ac_sys_release in	
+	CYGWIN*)	RUBYLIBRUBYARG=`($RUBY -rrbconfig -e 'print Config::CONFIG[["LIBRUBYARG"]]') 2>/dev/null`;;
+	*)		RUBYLIBRUBYARG="";;
+	esac
 else
        	AC_MSG_RESULT(could not figure out how to run ruby)
 	RUBYINCLUDE="-I/usr/local/lib/ruby/1.4/arch"
 	RUBYLIB="-I/usr/local/lib/ruby/1.4/arch"
 	RUBYLINK="-lruby -lm"
-        RUBYLIBRUBYARG="-L. -lruby"
 fi
 
 AC_SUBST(RUBYINCLUDE)
