@@ -18,6 +18,12 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+6/20/2001: mkoeppe
+	   * SWIG_TypeQuery from common.swg now returns a
+	   swig_type_info* rather than a void*.  This fixes a problem
+	   when using pointer.i and C++, as illustrated by the new
+	   test-suite example perl5/pointer-cxx. 
+
 6/19/2001: cheetah (william fulton)
 	   * [Java] Bug fix for SF bug #211144. This fix is a workaround 
 	     until fixed in the core.

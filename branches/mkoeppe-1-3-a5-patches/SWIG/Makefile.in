@@ -112,7 +112,7 @@ check-aliveness:
 	$(skip-ruby) || ./$(TARGET) -ruby -help
 
 TCL_EXAMPLES = class constants enum funcptr pointer reference simple value variables
-PERL5_EXAMPLES = class constants funcptr pointer reference simple value variables 
+PERL5_EXAMPLES = class constants funcptr pointer reference simple value variables pointer-cxx
 PYTHON_EXAMPLES = class constants enum funcptr pointer reference shadow simple value variables 
 JAVA_EXAMPLES = class constants enum native reference simple typemap
 GUILE_EXAMPLES = matrix simple port test-suite
