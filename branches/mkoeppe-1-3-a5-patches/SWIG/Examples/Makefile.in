@@ -32,7 +32,7 @@ INCLUDE    =
 LIBS       =
 INTERFACE  =
 SWIGOPT    =
-SWIG       = SWIG
+SWIG       = swig@release_suffix@
 
 LIBM       = @LIBM@
 LIBC       = @LIBC@

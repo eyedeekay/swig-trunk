@@ -3,7 +3,7 @@
 subdirs		= simple matrix
 
 top_srcdir	= @top_srcdir@
-SWIG		= ../$(top_srcdir)/swig
+SWIG		= ../$(top_srcdir)/swig@release_suffix@
 CC		= @CC@
 CFLAGS		= @CFLAGS@
 GUILEINCLUDE	= @GUILEINCLUDE@
