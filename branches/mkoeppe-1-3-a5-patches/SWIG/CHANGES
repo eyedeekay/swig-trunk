@@ -29,6 +29,7 @@ Version 1.3.6  (not yet released)
 	   * [Tcl]: Configure now first tries to find a tclConfig.sh
 	   file in order to find the Tcl include directory, library
 	   location and library name.
+	   * [Python]: Added a few possible library locations.
 
 6/18/2001: mkoeppe
 	   * [Guile]: Don't call scm_c_export if nothing is to be

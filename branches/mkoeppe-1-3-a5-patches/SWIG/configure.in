@@ -435,7 +435,7 @@ if test -z "$PYINCLUDE"; then
 fi
 
 AC_MSG_CHECKING(for Python library)
-dirs="$PYLIB $PYLIB/config $PYLIB/lib $PYLIB/python1.6/config $PYLIB/python1.5/config $PYLIB/python1.4/config $PYLIB/python/lib $prefix/lib/python1.6/config $prefix/lib/python1.5/config $prefix/lib/python1.4/config /usr/local/lib/python1.6/config /usr/local/lib/python1.5/config /usr/lib/python1.5 /usr/local/lib/python1.4/config /usr/lib/python1.4 $prefix/lib/python/lib /usr/local/lib/python/lib /usr/lib/python/lib /home/sci/local/lib/python"
+dirs="$PYLIB $PYLIB/config $PYLIB/lib $PYLIB/python1.6/config $PYLIB/python1.5/config $PYLIB/python1.4/config $PYLIB/python/lib $prefix/lib/python1.6/config $prefix/lib/python1.5/config $prefix/lib/python1.4/config /usr/local/lib/python1.6/config /usr/local/lib/python1.5/config /usr/lib/python1.5/config /usr/lib/python1.5 /usr/local/lib/python1.4/config /usr/lib/python1.4/config /usr/lib/python1.4 $prefix/lib/python/lib /usr/local/lib/python/lib /usr/lib/python/lib /home/sci/local/lib/python"
 
 for i in $dirs ; do
 	if test -r $i/libpython1.6.a; then
