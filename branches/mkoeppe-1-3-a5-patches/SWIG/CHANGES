@@ -26,6 +26,9 @@ trunk of the CVS tree.
 	   * [Guile]: Fix casting between class and base class; the
 	     runtime type system had it the wrong way around; see
 	     Examples/guile/test-suite/casts.i
+	   * Make typemaps for SWIGPOINTER * with arg name take
+	     precedence over those without arg name, to match normal
+	     typemap precedence rules.
 
 6/14/2001: beazley
            Made a minor change to the way files are loaded in
