@@ -96,7 +96,6 @@ SWIG_RegisterType (const char *type, const char *prettyname)
 SWIGSTATIC void
 SWIG_RegisterMapping (const char *origtype, const char *newtype, void *(*cast)(void *))
 {
-  int i;
   size_t t = SWIG_RegisterType(origtype, NULL);
 
   if (newtype!=NULL) {
@@ -122,7 +121,6 @@ SWIG_RegisterMapping (const char *origtype, const char *newtype, void *(*cast)(v
 static void
 SWIG_SortTable (void)
 {
-  int i;
   qsort ((void *) SwigPtrTbl, SwigPtrN, sizeof(size_t), swigsort);
   /* Indicate that everything is sorted */
   SwigPtrSort = 1;
@@ -141,7 +139,6 @@ swigcmp (const void *key, const void *data)
 static SwigPtrType *
 SWIG_GetPtrType (const char *_t)
 {
-  int  start, end;
   size_t *result;
   if (!SwigPtrSort) SWIG_SortTable();
   result = (size_t *) bsearch(_t, SwigPtrTbl, SwigPtrN, sizeof(size_t), swigcmp);

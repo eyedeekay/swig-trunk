@@ -16,11 +16,11 @@ void foo4(unsigned long long int x) {}
 void foo5(signed long long x) {}
 void foo6(unsigned long long x) {}
 
-long long bar1() {}
-long long int bar2() {}
-signed long long int bar3() {}
-unsigned long long int bar4() {}
-signed long long bar5() {}
-unsigned long long bar6() {}
+long long bar1() {return 0;}
+long long int bar2() {return 0;}
+signed long long int bar3() {return 0;}
+unsigned long long int bar4() {return 0;}
+signed long long bar5() {return 0;}
+unsigned long long bar6() {return 0;}
 %}
 

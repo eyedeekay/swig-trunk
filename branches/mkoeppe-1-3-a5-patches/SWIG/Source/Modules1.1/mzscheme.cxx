@@ -292,9 +292,6 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   String *build = NewString("");
   SwigType *t;
   char  *tm;
-  int need_len = 0;
-  int need_tempc = 0;
-  int have_build = 0;
   int argout_set = 0;
   int i = 0;
 
@@ -315,9 +312,8 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   // they are called arg0, arg1, ...
   // the return value is called result
 
-  int pcount = emit_args(d, l, f);
+  /* pcount = */ emit_args(d, l, f);
   int numargs = 0;
-  int numopt = 0;
 
   // adds local variables
   Wrapper_add_local(f, "_tempc", "char *_tempc");
