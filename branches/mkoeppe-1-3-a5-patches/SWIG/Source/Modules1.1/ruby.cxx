@@ -14,6 +14,7 @@ static char cvsroot[] = "$Header$";
 
 #include "mod11.h"
 #include "ruby.h"
+#include "swigconfig.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -92,6 +93,7 @@ class RClass {
 
 static char *usage = (char*)"\
 Ruby Options (available with -ruby)\n\
+     -ldflags        - Print runtime libraries to link with\n\
      -module name    - Set module name\n\
      -feature name   - Set feature name (used by `require')\n";
 
@@ -155,6 +157,9 @@ void RUBY::parse_args(int argc, char *argv[]) {
 	}
       } else if (strcmp(argv[i],"-help") == 0) {
 	Printf(stderr,"%s\n", usage);
+      } else if (strcmp (argv[i], "-ldflags") == 0) {
+	printf("%s\n", SWIG_RUBY_RUNTIME);
+	SWIG_exit (EXIT_SUCCESS);
       }
     }
   }

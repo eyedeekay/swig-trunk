@@ -19,9 +19,11 @@ static char cvsroot[] = "$Header$";
 
 #include "mod11.h"
 #include "perl5.h"
+#include "swigconfig.h"
 
 static char *usage = (char*)"\
 Perl5 Options (available with -perl5)\n\
+     -ldflags        - Print runtime libraries to link with\n\
      -module name    - Set module name\n\
      -interface name - Set interface name\n\
      -package name   - Set package prefix\n\
@@ -134,6 +136,9 @@ PERL5::parse_args(int argc, char *argv[]) {
 	    Swig_mark_arg(i);
 	  } else if (strcmp(argv[i],"-help") == 0) {
 	    fputs(usage,stderr);
+	  } else if (strcmp (argv[i], "-ldflags") == 0) {
+	    printf("%s\n", SWIG_PERL_RUNTIME);
+	    SWIG_exit (EXIT_SUCCESS);
 	  }
       }
   }

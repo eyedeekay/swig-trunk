@@ -682,8 +682,15 @@ AC_SUBST(RUBYLINK)
 # Configure SWIG_LIB path
 
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
-  [swig_lib="$withval"], [swig_lib="$prefix/lib/swig1.3"])
+  [swig_lib="$withval"], [swig_lib="\$(prefix)/lib/swig1.3"])
 AC_SUBST(swig_lib)
+
+# Configure RELEASESUFFIX (for setups having both SWIG 1.1 and 1.3 on a system...)
+
+AC_ARG_WITH(release-suffix, 
+  [  --with-release-suffix=SUFFIX    Attach SUFFIX to the binary and the runtime libs. ],
+  [release_suffix="$withval"], [release_suffix=""])
+AC_SUBST(release_suffix)
 
 #----------------------------------------------------------------
 # Miscellaneous
@@ -728,7 +735,6 @@ configure_substituted_files=`echo	\
     Examples/guile/Makefile		\
     Makefile				\
     Runtime/Makefile			\
-    Source/Include/swigconfig.h		\
     Source/Include/swigver.h		\
     Source/LParse/Makefile		\
     Source/Modules/Makefile		\

@@ -13,6 +13,7 @@ static char cvsroot[] = "$Header$";
 
 #include "mod11.h"
 #include "python.h"
+#include "swigconfig.h"
 
 static  String       *const_code = 0;
 static  String       *shadow_methods = 0;
@@ -37,6 +38,7 @@ static  char         *class_name;
 
 static char *usage = (char *)"\
 Python Options (available with -python)\n\
+     -ldflags        - Print runtime libraries to link with\n\
      -globals name   - Set name used to access C global variable ('cvar' by default).\n\
      -module name    - Set module name\n\
      -interface name - Set the lib name\n\
@@ -108,6 +110,9 @@ PYTHON::parse_args(int argc, char *argv[]) {
 	    Swig_mark_arg(i);
 	  } else if (strcmp(argv[i],"-help") == 0) {
 	    fputs(usage,stderr);
+	  } else if (strcmp (argv[i], "-ldflags") == 0) {
+	    printf("%s\n", SWIG_PYTHON_RUNTIME);
+	    SWIG_exit (EXIT_SUCCESS);
 	  }
       }
   }

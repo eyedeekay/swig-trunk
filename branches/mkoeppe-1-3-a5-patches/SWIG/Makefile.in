@@ -22,6 +22,7 @@ RANLIB      = @RANLIB@
 # instead of `exec_prefix' or, derivatively, `libdir'.
 SWIG_LIB    = @swig_lib@
 BIN_DIR     = @bindir@
+RELEASESUFFIX = @release_suffix@
 TARGET      = swig$(RELEASESUFFIX)
 SOURCE      = Source
 SOURCEDIRS  = `ls $(SOURCE)`
@@ -45,36 +46,43 @@ experiment: Swig Preprocessor LParse DOH Modules
 	$(SOURCE)/DOH/libdoh.a \
 	$(LIBS)
 
-SWIG1.1:
-	@cd $(SOURCE)/SWIG1.1; $(MAKE)
+SWIG1.1: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/SWIG1.1
 
-Modules1.1:
-	@cd $(SOURCE)/Modules1.1; $(MAKE)
+Modules1.1: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/Modules1.1
 
-Swig:
-	@cd $(SOURCE)/Swig; $(MAKE)
+Swig: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/Swig
 
-Preprocessor:
-	@cd $(SOURCE)/Preprocessor; $(MAKE)
+Preprocessor: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/Preprocessor
 
-LParse:
-	@cd $(SOURCE)/LParse; $(MAKE)
+LParse: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/LParse
 
-DOH:
-	@cd $(SOURCE)/DOH; $(MAKE)
+DOH: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/DOH
 
-Modules:
-	@cd $(SOURCE)/Modules; $(MAKE)
+Modules: Source/Include/swigconfig.h
+	$(MAKE) -C $(SOURCE)/Modules
 
 .PHONY: SWIG1.1 Modules1.1 Swig Preprocessor LParse \
         Experiment Swim SWILL DOH Swithe
+
+# Config file must be generated at make time, rather than at configure
+# time because it paths need to be substituted.
+
+Source/Include/swigconfig.h: Source/Include/swigconfig.h.in Makefile.in config.status
+	sed 's|@-swig_lib-@|$(SWIG_LIB)|g;s|@-exec_prefix-@|$(exec_prefix)|g;s|@-release_suffix-@|$(RELEASESUFFIX)|g' $< > $@
+
 
 #####################################################################
 # Runtime libraries
 #####################################################################
 
 runtime:
-	@cd Runtime; $(MAKE)
+	$(MAKE) -C Runtime
 
 #####################################################################
 # CHECK
@@ -175,7 +183,7 @@ clean:
 		(cd $(SOURCE)/$$i; $(MAKE) clean) ; \
 	   fi \
 	done;
-	@cd Runtime; $(MAKE) clean
+	$(MAKE) -C Runtime clean
 	rm -f swig
 
 distclean-dead = config.status config.log config.cache \
@@ -260,7 +268,7 @@ install-lib:
 	    done;
 
 install-runtime:
-	@cd Runtime; $(MAKE) install
+	$(MAKE) -C Runtime install
 
 ############################################################################
 # DIST and other maintenance

@@ -13,6 +13,7 @@ VPATH       = @srcdir@
 CC          = @CC@
 LIBTOOL     = ../Tools/libtool
 SWIGLIB     = ../Lib
+RELEASESUFFIX = @release_suffix@
 LIBS        = libswigpl$(RELEASESUFFIX).la libswigpy$(RELEASESUFFIX).la \
 	      libswigtcl8$(RELEASESUFFIX).la libswigrb$(RELEASESUFFIX).la \
 	      libswigguile$(RELEASESUFFIX).la

@@ -25,13 +25,15 @@ static char cvsroot[] = "$Header$";
 
 #include "mod11.h"
 #include "guile.h"
+#include "swigconfig.h"
 
 static char *guile_usage = (char*)"\
 Guile Options (available with -guile)\n\
+     -ldflags        - Print runtime libraries to link with\n\
      -module name    - Set name of module [default \"swig\"]\n\
      -prefix name    - Use NAME as prefix [default \"gswig_\"]\n\
      -package name   - Set the path of the module [default NULL]\n\
-     -Linkage lstyle - Use linkage protocol LSTYLE [default `module']\n\
+     -linkage lstyle - Use linkage protocol LSTYLE [default `module']\n\
      -procdoc file   - Output procedure documentation to FILE\n\
 \n\
      -procdocformat format - Output procedure documentation in FORMAT;\n\
@@ -122,10 +124,13 @@ GUILE::parse_args (int argc, char *argv[])
 	  Swig_arg_error();
 	}
       }
-      /* Bogus upcase requirement due to top-level parsing not respecting
-         language specification.  Top-level should stop when it sees "-guile"
-         or other languages.  */
-      else if (strcmp (argv[i], "-Linkage") == 0) {
+      else if (strcmp (argv[i], "-ldflags") == 0) {
+	printf("%s\n", SWIG_GUILE_RUNTIME);
+	SWIG_exit (EXIT_SUCCESS);
+      }
+      /* The upcase variant is a historic artefact. */
+      else if (strcmp (argv[i], "-Linkage") == 0
+	       || strcmp (argv[i], "-linkage") == 0) {
         if (argv[i + 1]) {
           if (0 == strcmp (argv[i + 1], "ltdlmod"))
             linkage = GUILE_LSTYLE_LTDLMOD_1_4;
