@@ -203,7 +203,7 @@ SWIG_Guile_GetPtr(SCM s, void **result, swig_type_info *type)
 	   && (unsigned long) SCM_TYP16(s) == swig_tag) {
     if (type) 
       return !SWIG_Cast((void *) SCM_CDR(s),
-			SCM_CAR(s) >> 16,
+			(scm_bits_t) SCM_CAR(s) >> 16,
 			result, type->tag);
     else {
       *result = (void *) SCM_CDR(s);
@@ -232,9 +232,9 @@ print_swig (SCM swig_smob, SCM port, scm_print_state *pstate)
 {
   char buf[16];
   scm_puts("#<swig ", port);
-  if (SwigPtrList[SCM_CAR(swig_smob) >> 16].prettyname != NULL)
-    scm_puts(SwigPtrList[SCM_CAR(swig_smob) >> 16].prettyname, port);
-  else scm_puts(SwigPtrList[SCM_CAR(swig_smob) >> 16].name, port);
+  if (SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname != NULL)
+    scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].prettyname, port);
+  else scm_puts(SwigPtrList[(scm_bits_t) SCM_CAR(swig_smob) >> 16].name, port);
   sprintf(buf, " 0x%lx>", SCM_CDR(swig_smob));
   scm_puts(buf, port);
   /* non-zero means success */
