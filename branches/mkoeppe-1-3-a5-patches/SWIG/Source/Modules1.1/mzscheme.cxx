@@ -116,9 +116,6 @@ void
 MZSCHEME::parse ()
 {
   init_func_def = NewString("");
-  printf ("Generating wrappers for Mzscheme\n");
-
-  init_func_def = NewString("");
 
   // Print out MZSCHEME specific headers
 
