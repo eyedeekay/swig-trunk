@@ -1,5 +1,5 @@
 TOP        = ../..
-SWIG       = $(TOP)/../swig -shadow -finalize
+SWIG       = $(TOP)/../swig -shadow
 SRCS       = example.cxx
 TARGET     = libexample
 INTERFACE  = example.i

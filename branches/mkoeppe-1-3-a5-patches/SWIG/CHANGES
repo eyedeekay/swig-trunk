@@ -9,6 +9,18 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+6/04/2001: cheetah (william fulton)
+	   [Java] Shadow class mods - Modified constructor replaces
+	   newInstance(). _delete() now thread safe. getCPtr() replaces
+	   _self. _selfClass() removed as now redundant. 
+          *** POTENTIAL INCOMPATIBILITY FOR JAVA MODULE ***
+
+	   [Java] Not all output java files had SWIG banner. New banner.
+
+	   [Java] Shadow class finalizers are output by default: Command
+	   line option -finalize deprecated and replaced with -nofinalize.
+          *** POTENTIAL INCOMPATIBILITY FOR JAVA MODULE ***
+
 6/ 1/2001: mkoeppe
 	   [Guile] Cast SCM_CAR() to scm_bits_t before shifting it.
 	   This is required for compiling with a Guile configured with
