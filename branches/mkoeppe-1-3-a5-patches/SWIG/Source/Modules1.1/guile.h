@@ -45,6 +45,7 @@ private:
   int	 emit_setters;
   int    struct_member;
   String *before_return;
+  String *pragma_name;
   String *exported_symbols;
   void   emit_linkage(char *module_name);
   void   write_doc(const String *proc_name,

@@ -580,8 +580,14 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   sprintf (wname, "%s%s", prefix, iname);
 
   // Build the name for scheme.
-  proc_name = NewString(iname);
-  Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
+  if (pragma_name) {
+    proc_name = pragma_name;
+    pragma_name = NULL;
+  }
+  else {
+    proc_name = NewString(iname);
+    Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
+  }
 
   /* Emit locals etc. into f->code; figure out which args to ignore */
   emit_args (d, l, f);
@@ -829,8 +835,14 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
   sprintf (var_name, "%svar_%s", prefix, iname);
 
   // Build the name for scheme.
-  proc_name = NewString(iname);
-  Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
+  if (pragma_name) {
+    proc_name = pragma_name;
+    pragma_name = NULL;
+  }
+  else {
+    proc_name = NewString(iname);
+    Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
+  }
 
   if ((SwigType_type(t) != T_USER) || (is_a_pointer(t))) {
 
@@ -960,8 +972,14 @@ GUILE::declare_const (char *name, char *, SwigType *type, char *value)
   sprintf (var_name, "%sconst_%s", prefix, name);
 
   // Build the name for scheme.
-  proc_name = NewString(name);
-  Replace(proc_name,"_", "-", DOH_REPLACE_ANY);
+  if (pragma_name) {
+    proc_name = pragma_name;
+    pragma_name = NULL;
+  }
+  else {
+    proc_name = NewString(name);
+    Replace(proc_name,"_", "-",DOH_REPLACE_ANY);
+  }
 
   if ((SwigType_type(type) == T_USER) && (!is_a_pointer(type))) {
     Printf (stderr, "%s : Line %d.  Unsupported constant value.\n",
@@ -1016,6 +1034,11 @@ void GUILE::pragma(char *lang, char *cmd, char *value)
       if (before_return)
 	Delete(before_return);
       before_return = NewString(value);
+    }
+    else if (strcmp(cmd, (char*)"name")==0) {
+      if (pragma_name) Delete(pragma_name);
+      if (value == NULL) pragma_name = NULL;
+      else pragma_name = NewString(value);
     }
   }
 }
