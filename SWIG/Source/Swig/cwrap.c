@@ -17,6 +17,14 @@ static char cvsroot[] = "$Header$";
 
 #include "swig.h"
 
+static Parm *nonvoid_parms(Parm *p) {
+  if (p) {
+    SwigType *t = Gettype(p);
+    if (SwigType_type(t) == T_VOID) return 0;
+  }
+  return p;
+}
+
 /* -----------------------------------------------------------------------------
  * Swig_parm_name()
  *
@@ -41,9 +49,8 @@ Swig_cparm_name(Parm *p, int i) {
 
 String *
 Swig_clocal(SwigType *t, String_or_char *name, String_or_char *value) {
-  String *decl = 0;
+  String *decl;
 
-  /*  *((char *) decl) = 'x';*/
   decl = NewString("");
   switch(SwigType_type(t)) {
   case T_USER:
@@ -75,7 +82,7 @@ Swig_clocal(SwigType *t, String_or_char *name, String_or_char *value) {
  * Swig_clocal_type()
  *
  * Creates a string that declares a C local variable type.  Converts references
- * and user defined types to pointers.
+ * and user defined types and arrays to pointers.
  * ----------------------------------------------------------------------------- */
 
 SwigType *
@@ -89,6 +96,27 @@ Swig_clocal_type(SwigType *t) {
     break;
   default:
     ty = SwigType_ltype(t);
+    break;
+  }
+  return ty;
+}
+
+/* -----------------------------------------------------------------------------
+ * Swig_wrapped_var_convert()
+ *
+ * Converts a member variable for use in the get and set wrapper methods.
+ * This function only converts user defined types to pointers.
+ * ----------------------------------------------------------------------------- */
+
+SwigType *
+Swig_wrapped_var_type(SwigType *t) {
+  SwigType *ty;
+  ty = Copy(t);
+  switch(SwigType_type(t)) {
+  case T_USER:
+    SwigType_add_pointer(ty);
+    break;
+  default:
     break;
   }
   return ty;
@@ -156,12 +184,14 @@ int Swig_cargs(Wrapper *w, ParmList *p) {
   while (p != 0) {
     lname  = Swig_cparm_name(p,i);
     pt     = Gettype(p);
-    pname  = Getname(p);
-    pvalue = Getvalue(p);
-    local  = Swig_clocal(pt,lname,pvalue);
-    Wrapper_add_localv(w,lname,local,0);
-    i++;
-    p = Getnext(p);
+    if (SwigType_type(pt) != T_VOID) {
+      pname  = Getname(p);
+      pvalue = Getvalue(p);
+      local  = Swig_clocal(pt,lname,pvalue);
+      Wrapper_add_localv(w,lname,local,0);
+      i++;
+    }
+    p = nextSibling(p);
   }
   return(i);
 }
@@ -215,8 +245,8 @@ void Swig_cresult(Wrapper *w, SwigType *t, String_or_char *name, String_or_char 
     Printf(fcall,"%s = (%s) &_result_ref;\n", name, SwigType_lstr(t,0));
   }
 
-  if (Replace(w,"$function",fcall, DOH_REPLACE_ANY) == 0) {
-    Printv(w, fcall, 0);
+  if (Replace(w->code,"$function",fcall, DOH_REPLACE_ANY) == 0) {
+    Printv(w->code, fcall, 0);
   }
   Delete(fcall);
 }
@@ -278,8 +308,8 @@ void Swig_cppresult(Wrapper *w, SwigType *t, String_or_char *name, String_or_cha
     break;
   }
 
-  if (Replace(w,"$function",fcall, DOH_REPLACE_ANY) == 0) {
-    Printv(w, fcall, 0);
+  if (Replace(w->code,"$function",fcall, DOH_REPLACE_ANY) == 0) {
+    Printv(w->code, fcall, 0);
   }
   Delete(fcall);
 }
@@ -306,10 +336,12 @@ Swig_cfunction_call(String_or_char *name, ParmList *parms) {
   while (p) {
     String *pname;
     pt = Gettype(p);
-    pname = Swig_cparm_name(p,i);
-    Printf(func,"%s", Swig_clocal_deref(pt, pname));
-    i++;
-    p = Getnext(p);
+    if (SwigType_type(pt) != T_VOID) {
+      pname = Swig_cparm_name(p,i);
+      Printf(func,"%s", Swig_clocal_deref(pt, pname));
+      i++;
+    }
+    p = nextSibling(p);
     if (p) 
       Printf(func,",");
   }
@@ -337,14 +369,16 @@ Swig_cmethod_call(String_or_char *name, ParmList *parms) {
   if (!p) return Swig_temp_result(func);
   Printf(func,"%s->%s(", Swig_cparm_name(p,0), name);
   i++;
-  p = Getnext(p);
+  p = nextSibling(p);
   while (p) {
     String *pname;
     pt = Gettype(p);
-    pname = Swig_cparm_name(p,i);
-    Printf(func,"%s", Swig_clocal_deref(pt, pname));
-    i++;
-    p = Getnext(p);
+    if (SwigType_type(pt) != T_VOID) {
+      pname = Swig_cparm_name(p,i);
+      Printf(func,"%s", Swig_clocal_deref(pt, pname));
+      i++;
+    }
+    p = nextSibling(p);
     if (p) 
       Printf(func,",");
   }
@@ -391,10 +425,12 @@ Swig_cppconstructor_call(String_or_char *name, ParmList *parms) {
   while (p) {
     String *pname;
     pt = Gettype(p);
-    pname = Swig_cparm_name(p,i);
-    Printf(func,"%s", Swig_clocal_deref(pt, pname));
-    i++;
-    p = Getnext(p);
+    if (SwigType_type(pt) != T_VOID) {
+      pname = Swig_cparm_name(p,i);
+      Printf(func,"%s", Swig_clocal_deref(pt, pname));
+      i++;
+    }
+    p = nextSibling(p);
     if (p) 
       Printf(func,",");
   }
@@ -496,7 +532,7 @@ static void fix_parm_names(ParmList *p) {
       Setname(p,temp);
     }
     i++;
-    p = Getnext(p);
+    p = nextSibling(p);
   }
 }
 
@@ -515,22 +551,27 @@ Swig_cfunction_wrapper(String_or_char *funcname,
 {
   Wrapper *w;
   ParmList *l;
+  String   *tmp;
 
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,funcname);
+  Wrapper_Setname(w,funcname);
 
   l = CopyParmList(parms);
   fix_parm_names(l);
-  Printf(w,"%s %s(%s) {\n", SwigType_str(rtype,0), funcname, ParmList_str(l));
+  tmp = NewStringf("%s(%s)", funcname, ParmList_str(l));
+  Printf(w->def,"%s {", SwigType_str(rtype,tmp));
+  Delete(tmp);
+
+  /*  Printf(w->def,"%s %s(%s) {", SwigType_str(rtype,0), funcname, ParmList_str(l)); */
   if (code) {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
 
-  Printf(w,"}\n");
-  Setattr(w,"type",rtype);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,rtype);
+  Wrapper_Setparms(w,l);
   Delete(l);
   return w;
 }
@@ -553,46 +594,50 @@ Swig_cmethod_wrapper(String_or_char *classname,
   ParmList *l;
   Parm     *p;
   SwigType *t;
-
+  String *tmp;
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_member(classname, methodname));
+  Wrapper_Setname(w,Swig_name_member(classname, methodname));
 
-  l = CopyParmList(parms);
+  l = CopyParmList(nonvoid_parms(parms));
   t = NewString(classname);
   SwigType_add_pointer(t);
   p = NewParm(t,"self");
-  Setnext(p,l);
+  set_nextSibling(p,l);
   Delete(t);
 
   l = p;
   fix_parm_names(l);
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(rtype,0), Swig_name_member(classname, methodname), ParmList_str(l));
+  tmp = NewStringf("%s(%s)", Swig_name_member(classname,methodname), ParmList_str(l));
+  Printf(w->def,"%s {", SwigType_str(rtype,tmp));
+  Delete(tmp);
+
+  /*  Printf(w->def,"%s %s(%s) {", SwigType_str(rtype,0), Swig_name_member(classname, methodname), ParmList_str(l)); */
 
   if (!code) {
     /* No code supplied.  Write a function manually */
     if (SwigType_type(rtype) != T_VOID) {
-      Printf(w,"return ");
+      Printf(w->code,"return ");
     }
     
-    Printf(w,"self->%s(", methodname);
-    p = Getnext(l);
+    Printf(w->code,"self->%s(", methodname);
+    p = nextSibling(l);
     while (p) {
-      Printf(w,"%s", Getname(p));
-      p = Getnext(p);
+      Printf(w->code,"%s", Getname(p));
+      p = nextSibling(p);
       if (p) 
-	Printf(w,",");
+	Printf(w->code,",");
     }
-    Printf(w,");\n");
-    Printf(w,"}\n");
+    Printf(w->code,");\n");
+    Printf(w->code,"}\n");
   } else {
-    Printv(w, code, "\n", 0);
-    Printf(w,"}\n");
+    Printv(w->code, code, "\n", 0);
+    Printf(w->code,"}\n");
   }
-  Setattr(w,"type",rtype);
-  Setattr(w,"parms",l);
+  Wrapper_Settype(w,rtype);
+  Wrapper_Setparms(w,l);
   Delete(l);
   return w;
 }
@@ -616,26 +661,26 @@ Swig_cconstructor_wrapper(String_or_char *classname,
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_construct(classname));
+  Wrapper_Setname(w,Swig_name_construct(classname));
 
-  l = CopyParmList(parms);
+  l = CopyParmList(nonvoid_parms(parms));
   t = NewString(classname);
   SwigType_add_pointer(t);
 
   /* Patch up the argument names */
   fix_parm_names(l);
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(t,0), Swig_name_construct(classname), ParmList_str(l));
+  Printf(w->def,"%s %s(%s) {", SwigType_str(t,0), Swig_name_construct(classname), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"return (%s) calloc(1,sizeof(%s));\n", SwigType_str(t,0), classname);
+    Printf(w->code,"return (%s) calloc(1,sizeof(%s));\n", SwigType_str(t,0), classname);
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",t);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,t);
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(t);
   return w;
@@ -660,38 +705,38 @@ Swig_cppconstructor_wrapper(String_or_char *classname,
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_construct(classname));
+  Wrapper_Setname(w,Swig_name_construct(classname));
 
-  l = CopyParmList(parms);
+  l = CopyParmList(nonvoid_parms(parms));
   t = NewString(classname);
   SwigType_add_pointer(t);
 
   /* Patch up the argument names */
   fix_parm_names(l);
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(t,0), Swig_name_construct(classname), ParmList_str(l));
+  Printf(w->def,"%s %s(%s) {", SwigType_str(t,0), Swig_name_construct(classname), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"return new %s", SwigType_str(t,0));
+    Printf(w->code,"return new %s", SwigType_str(t,0));
     p = l;
     if (p) {
-      Printf(w,"(");
+      Printf(w->code,"(");
       while (p) {
-	Printf(w,"%s", Getname(p));
-	p = Getnext(p);
+	Printf(w->code,"%s", Getname(p));
+	p = nextSibling(p);
 	if (p)
-	  Printf(w,",");
+	  Printf(w->code,",");
       }
-      Printf(w,")");
+      Printf(w->code,")");
     }
-    Printf(w,";\n");
+    Printf(w->code,";\n");
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",t);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,t);
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(t);
   return w;
@@ -716,7 +761,7 @@ Swig_cdestructor_wrapper(String_or_char *classname,
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w, Swig_name_destroy(classname));
+  Wrapper_Setname(w,Swig_name_destroy(classname));
 
   t = NewString(classname);
   SwigType_add_pointer(t);
@@ -726,17 +771,17 @@ Swig_cdestructor_wrapper(String_or_char *classname,
 
   t = NewString("void");
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(t,0), Swig_name_destroy(classname), ParmList_str(l));
+  Printf(w->def,"%s %s(%s) {", SwigType_str(t,0), Swig_name_destroy(classname), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"free((char *) self);\n");
+    Printf(w->code,"free((char *) self);\n");
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",t);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,t);
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(t);
   return w;
@@ -761,7 +806,7 @@ Swig_cppdestructor_wrapper(String_or_char *classname,
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w, Swig_name_destroy(classname));
+  Wrapper_Setname(w,Swig_name_destroy(classname));
 
   t = NewString(classname);
   SwigType_add_pointer(t);
@@ -772,17 +817,17 @@ Swig_cppdestructor_wrapper(String_or_char *classname,
 
   t = NewString("void");
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(t,0), Swig_name_destroy(classname), ParmList_str(l));
+  Printf(w->def,"%s %s(%s) {", SwigType_str(t,0), Swig_name_destroy(classname), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"delete self;\n");
+    Printf(w->code,"delete self;\n");
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",t);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,t);
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(t);
   return w;
@@ -805,11 +850,12 @@ Swig_cmemberset_wrapper(String_or_char *classname,
   Parm     *p;
   SwigType *t;
   SwigType *lt;
+  SwigType *ty;
 
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w, Swig_name_member(classname, Swig_name_set(membername)));
+  Wrapper_Setname(w,Swig_name_member(classname, Swig_name_set(membername)));
 
   t = NewString(classname);
   SwigType_add_pointer(t);
@@ -818,24 +864,26 @@ Swig_cmemberset_wrapper(String_or_char *classname,
   Delete(t);
 
   lt = Swig_clocal_type(type);
-  p = NewParm(lt,"value");
-  Setnext(l,p);
+  ty = Swig_wrapped_var_type(type);
+  p = NewParm(ty,"value");
+
+  set_nextSibling(l,p);
   
-  Printf(w,"void %s(%s) {\n", Getname(w), ParmList_str(l));
+  Printf(w->def,"void %s(%s) {", Wrapper_Getname(w), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"self->%s = %s;\n", membername, Swig_clocal_deref(lt,"value"));
-    Printf(w,"return %s self->%s;\n", Swig_clocal_assign(lt,""), membername);
+    Printf(w->code,"self->%s = %s;\n", membername, Swig_clocal_deref(lt,"value"));
+    Printf(w->code,"return %s self->%s;\n", Swig_clocal_assign(lt,""), membername);
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  /*  Wrapper_Settype(w,lt); */
-  Setattr(w,"type","void");
-  Setattr(w,"parms", l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,"void");
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(lt);
+  Delete(ty);
   return w;
 }
 
@@ -857,11 +905,13 @@ Swig_cmemberget_wrapper(String_or_char *classname,
   Parm     *p;
   SwigType *t;
   SwigType *lt;
+  SwigType *ty;
+  String   *tmp;
 
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_member(classname, Swig_name_get(membername)));
+  Wrapper_Setname(w,Swig_name_member(classname, Swig_name_get(membername)));
 
   t = NewString(classname);
   SwigType_add_pointer(t);
@@ -870,19 +920,24 @@ Swig_cmemberget_wrapper(String_or_char *classname,
   Delete(t);
 
   lt = Swig_clocal_type(type);
-  Printf(w,"%s %s(%s) {\n", SwigType_str(lt,0), Getname(w), ParmList_str(l));
+  tmp = NewStringf("%s(%s)", Wrapper_Getname(w), ParmList_str(l));
+  Printf(w->def,"%s {", SwigType_str(lt,tmp));
+  Delete(tmp);
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"return %s self->%s;", Swig_clocal_assign(lt,""), membername);
+    Printf(w->code,"return %s self->%s;", Swig_clocal_assign(lt,""), membername);
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",lt);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  ty = Swig_wrapped_var_type(type);
+  Wrapper_Settype(w,ty);
+
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(lt);
+  Delete(ty);
   return w;
 }
 
@@ -901,34 +956,36 @@ Swig_cvarset_wrapper(String_or_char *varname,
   ParmList *l;
   Parm     *p;
   SwigType *lt;
+  SwigType *ty;
 
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_set(varname));
+  Wrapper_Setname(w,Swig_name_set(varname));
 
   lt = Swig_clocal_type(type);
-  p = NewParm(lt,"value");
+  ty = Swig_wrapped_var_type(type);
+  p = NewParm(ty,"value");
   l = p;
   
-  Printf(w,"%s %s(%s) {\n", SwigType_str(lt,0), Getname(w), ParmList_str(l));
+  Printf(w->def,"void %s(%s) {", Wrapper_Getname(w), ParmList_str(l));
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"%s = %s;\n", varname, Swig_clocal_deref(lt,"value"));
-    Printf(w,"return %s;\n", Swig_clocal_assign(lt,varname));
+    Printf(w->code,"%s = %s;\n", varname, Swig_clocal_deref(type,"value"));
   } else {
-    Printv(w, code, "\n", 0);
-    Replace(w,"$target",varname, DOH_REPLACE_ANY);
-    Replace(w,"$source","value", DOH_REPLACE_ANY);
-    Replace(w,"$ltype", SwigType_str(lt,""), DOH_REPLACE_ANY);
-    Replace(w,"$rtype", SwigType_str(type,""), DOH_REPLACE_ANY);
+    Printv(w->code, code, "\n", 0);
+    Replace(w->code,"$target",varname, DOH_REPLACE_ANY);
+    Replace(w->code,"$source","value", DOH_REPLACE_ANY);
+    Replace(w->code,"$ltype", SwigType_str(lt,""), DOH_REPLACE_ANY);
+    Replace(w->code,"$rtype", SwigType_str(type,""), DOH_REPLACE_ANY);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",lt);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  Wrapper_Settype(w,"void");
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(lt);
+  Delete(ty);
   return w;
 }
 
@@ -946,27 +1003,33 @@ Swig_cvarget_wrapper(String_or_char *varname,
   Wrapper *w;
   ParmList *l = 0;
   SwigType *lt;
+  SwigType *ty;
+  String *tmp;
 
   w = NewWrapper();
 
   /* Set the name of the function */
-  Setname(w,Swig_name_get(varname));
+  Wrapper_Setname(w, Swig_name_get(varname));
 
   lt = Swig_clocal_type(type);
 
-  Printf(w,"%s %s(%s) {\n", SwigType_str(lt,0), Getname(w), ParmList_str(l));
+  tmp = NewStringf("%s(%s)", Wrapper_Getname(w), ParmList_str(l));
+  Printf(w->def,"%s {", SwigType_str(lt,tmp));
+  Delete(tmp);
 
   if (!code) {
     /* No code supplied.  Write a function manually */
-    Printf(w,"return %s;", Swig_clocal_assign(type,varname));
+    Printf(w->code,"return %s;", Swig_clocal_assign(type,varname));
   } else {
-    Printv(w, code, "\n", 0);
+    Printv(w->code, code, "\n", 0);
   }
-  Printf(w,"}\n");
-  Setattr(w,"type",lt);
-  Setattr(w,"parms",l);
+  Printf(w->code,"}\n");
+  ty = Swig_wrapped_var_type(type);
+  Wrapper_Settype(w,ty);
+  Wrapper_Setparms(w,l);
   Delete(l);
   Delete(lt);
+  Delete(ty);
   return w;
 }
 

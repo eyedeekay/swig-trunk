@@ -1,32 +1,55 @@
 /* -----------------------------------------------------------------------------
  * swig.swg
  *
- * Common macro definitions and other definitions used by the SWIG parser.
+ * $Header$
+ *
+ * Common macro definitions for various SWIG directives.  This file is always 
+ * included at the top of each input file.
  * ----------------------------------------------------------------------------- */
 
-#define %init       %insert("init")
-#define %wrapper    %insert("wrapper")
-#define %runtime    %insert("runtime")
-#define %shadow     %insert("shadow")
+/* Deprecated SWIG directives */
 
-#define %readonly   %scope("readonly")
+#define %disabledoc     %echo "$file:$line. Warning: %disabledoc is deprecated"
+#define %enabledoc      %echo "$file:$line. Warning: %enabledoc is deprecated"
+#define %doconly        %echo "$file:$line. Warning: %doconly is deprecated"
+#define %style          %echo "$file:$line. Warning: %style is deprecated" /##/
+#define %localstyle     %echo "$file:$line. Warning: %localstyle is deprecated" /##/
+#define %title          %echo "$file:$line. Warning: %title is deprecated" /##/
+#define %section        %echo "$file:$line. Warning: %section is deprecated" /##/
+#define %subsection     %echo "$file:$line. Warning: %subsection is deprecated" /##/
+#define %subsubsection  %echo "$file:$line. Warning: %subsubsection is deprecated" /##/
+#define %text           %insert("null")
 
-#define %new        %pragma "new";
-#define %name(x)    %pragma "name" `x`;
-#define %disabledoc %pragma "disabledoc";
-#define %enabledoc  %pragma "enabledoc";
-#define %doconly    %pragma "doconly";
+/* Code insertion directives such as %wrapper %{ ... %} */
 
-#define %alpha      %echo "$file.$line. %alpha directive is obsolete"
-#define %raw        %echo "$file:$line. %raw directive is obsolete"
+#define %init        %insert("init")
+#define %wrapper     %insert("wrapper")
+#define %header      %insert("header")
+#define %runtime     %insert("runtime")
 
-#define %title          /##/
-#define %localstyle     /##/
-#define %style          /##/
-#define %section        /##/
-#define %subsection     /##/
-#define %subsubsection  /##/
+/* Access control directives */
 
-#define %text       %insert("doc")
-#define %native     %scope("native")
+#define %readonly    %pragma(swig) readonly;
+#define %readwrite   %pragma(swig) readwrite;
+
+/* Directives for callback functions */
+
+#define %callback(x) %pragma(swig) callback=`x`;
+#define %nocallback  %pragma(swig) nocallback;
+
+/* Directives for attribute functions */
+#define %attributefunc(_x,_y)  %pragma(swig)   attributefunction=`_x`":"`_y`;
+#define %noattributefunc       %pragma(swig)   noattributefunction;
+
+
+/* %ignore directive */
+#define %ignore   %rename($ignore)
+
+/* Set up the typemap for handling new return strings */
+
+#ifdef __cplusplus
+%typemap(newfree) char * "delete [] $source;";
+#else
+%typemap(newfree) char * "free($source);";
+#endif
 

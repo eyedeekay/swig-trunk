@@ -22,6 +22,7 @@ static char cvsroot[] = "$Header$";
 
 static DOHHash  *cpp = 0;                /* C preprocessor data */
 static int       include_all = 0;        /* Follow all includes */
+static int       import_all = 0;         /* Follow all includes, but as %import statements */
 static int       single_include = 1;     /* Only include each file once */
 static int       silent_errors = 0;
 static DOHHash  *included_files = 0;
@@ -33,7 +34,7 @@ static void cpp_error(DOHString *file, int line, char *fmt, ...) {
   if (silent_errors) return;
   va_start(ap,fmt);
   if (line > 0) {
-    Printf(stderr,"%s:%d ", file, line);
+    Printf(stderr,"%s:%d. ", file, line);
   } else {
     Printf(stderr,"%s:EOF ",file);
   }
@@ -121,6 +122,12 @@ void Preprocessor_init() {
  * ----------------------------------------------------------------------------- */
 void Preprocessor_include_all(int a) {
   include_all = a;
+  if (import_all) import_all = 0;
+}
+
+void Preprocessor_import_all(int a) {
+  import_all = a;
+  if (include_all) include_all = 0;
 }
 
 /* -----------------------------------------------------------------------------
@@ -495,12 +502,15 @@ expand_macro(DOHString_or_char *name, DOHList *args)
   if (Getattr(macro,"swigmacro")) {
     DOHString *g;
     DOHString *f = NewString("");
-    Printf(f,"%%macro %s, \"%s\", %d {\n", name, Getfile(macro), Getline(macro));
+    /*    Printf(f," %%macro \"%s\",\"%s\",%d\n ", name, Getfile(macro), Getline(macro)); */
     Seek(e,0,SEEK_SET);
     copy_location(macro,e);
     g = Preprocessor_parse(e);
-    Printf(f,"%s\n", g);
-    Printf(f,"}\n");
+
+    /* Drop the macro in place, but with a marker around it */
+    Printf(f,"/*@%s,%d,%s@*/%s/*@@*/", Getfile(macro), Getline(macro), name, g);
+
+    /*    Printf(f," }\n"); */
     Delete(g);
     Delete(e);
     e = f;
@@ -922,6 +932,12 @@ Preprocessor_parse(DOH *s)
 	state = 50;
       } else if (c == '/') {
 	state = 45;
+      } else if (c == '\"') {
+	Putc(c,value);
+	skip_tochar(s,'\"',value);
+      } else if (c == '\'') {
+	Putc(c,value);
+	skip_tochar(s,'\'',value);
       } else {
 	Putc(c,value);
 	if (c == '\\') state = 44;
@@ -1087,13 +1103,16 @@ Preprocessor_parse(DOH *s)
   	}
       } else if (Cmp(id,"line") == 0) {
       } else if (Cmp(id,"include") == 0) {
-  	if ((include_all) && (allow)) {
+  	if (((include_all) || (import_all)) && (allow)) {
   	  DOH *s1, *s2, *fn;
   	  Seek(value,0,SEEK_SET);
   	  fn = get_filename(value);
 	  s1 = cpp_include(fn);
 	  if (s1) {
-  	    Printf(ns,"%%file(\"include\") \"%s\" {\n", Swig_last_file());
+	    if (include_all) 
+	      Printf(ns,"%%includefile \"%s\" {\n", Swig_last_file());
+	    else if (import_all) 
+	      Printf(ns,"%%importfile \"%s\" {\n", Swig_last_file());
   	    s2 = Preprocessor_parse(s1);
   	    addline(ns,s2,allow);
   	    Printf(ns,"\n}\n");
@@ -1164,17 +1183,25 @@ Preprocessor_parse(DOH *s)
   	  /* Got some kind of file inclusion directive  */
   	  if (allow) {
   	    DOH *s1, *s2, *fn;
+
+	    if (Cmp(decl,"%extern") == 0) {
+	      Printf(stderr,"%s:%d. %%extern is deprecated. Use %%import instead.\n",Getfile(s),Getline(s));
+	      Clear(decl);
+	      Printf(decl,"%%import");
+	    }
   	    fn = get_filename(s);
 	    s1 = cpp_include(fn);
 	    if (s1) {
   	      add_chunk(ns,chunk,allow);
   	      copy_location(s,chunk);
-  	      Printf(ns,"%%file(\"%s\") \"%s\" {\n", Char(decl)+1, Swig_last_file());
+  	      Printf(ns,"%sfile \"%s\" {\n", decl, Swig_last_file());
 	      if ((Cmp(decl,"%import") == 0) || (Cmp(decl,"%extern") == 0)) {
 		Preprocessor_define("WRAPEXTERN 1", 0);
+		Preprocessor_define("SWIGIMPORT 1", 0);
 	      }
   	      s2 = Preprocessor_parse(s1);
 	      if ((Cmp(decl,"%import") == 0) || (Cmp(decl,"%extern") == 0)) {
+		Preprocessor_undef("SWIGIMPORT");
 		Preprocessor_undef("WRAPEXTERN");
 	      }
   	      addline(ns,s2,allow);

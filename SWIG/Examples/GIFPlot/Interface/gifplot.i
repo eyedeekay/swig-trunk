@@ -11,8 +11,6 @@
 typedef unsigned char Pixel;
 typedef float Zvalue;
 
-%disabledoc
-
 /* ------------------------------------------------------------------------
    ColorMap
 
@@ -119,9 +117,9 @@ extern PixMap   *new_PixMap(int width, int height, int centerx, int centery);
 extern void      delete_PixMap(PixMap *pm);
 extern void      PixMap_set(PixMap *pm, int x, int y, int pix);
 
-#define   TRANSPARENT  0
-#define   FOREGROUND   1
-#define   BACKGROUND   2
+#define   GIFPLOT_TRANSPARENT  0
+#define   GIFPLOT_FOREGROUND   1
+#define   GIFPLOT_BACKGROUND   2
 
 /* --------------------------------------------------------------------------
    Plot2D
@@ -264,12 +262,10 @@ typedef struct Plot3D {
 /* These directives create constants of a specific type.  They
    do not correspond to any C variable or declared constant in the
    header file */
-%constant(PixMap *) SQUARE = &PixMap_SQUARE;
-%constant(PixMap *) TRIANGLE = &PixMap_TRIANGLE;
-%constant(PixMap *) CROSS = &PixMap_CROSS;
+%constant PixMap * SQUARE = &PixMap_SQUARE;
+%constant PixMap * TRIANGLE = &PixMap_TRIANGLE;
+%constant PixMap * CROSS = &PixMap_CROSS;
 #endif
-
-%enabledoc
 
 
 

@@ -18,7 +18,7 @@ public :
   void initialize(void);
   void headers(void);
   void close(void);
-  void set_module(char *,char **);
+  void set_module(char *);
   void create_command(char *, char *);
 
   void pragma(char *lang, char *code, char *value);
@@ -34,16 +34,19 @@ public :
   void cpp_variable(char *name, char *iname, SwigType *t);
   void cpp_static_var(char *, char *, SwigType *);
   void cpp_declare_const(char *name, char *iname, SwigType *type, char *value);
+  void import_start(char *modulename);
+  void import_end();
 
   /* Java Module methods */
   void emit_classdef();
   void emit_shadow_classdef();
   char *JNICALL(DOHString_or_char *func);
-  char *SwigTcToJniType(SwigType *t, int ret);
-  char *SwigTcToJavaType(SwigType *t, int ret, int inShadow);
-  char *SwigTcToJniScalarType(SwigType *t);
-  char *JavaTypeFromTypemap(char *op, char *lang, SwigType *t, char *pname);
-  char *makeValidJniName(char *name);
+  void SwigToJNIType(SwigType *t, String_or_char *pname, String* jni_type);
+  void SwigToJavaType(SwigType *t, String_or_char *pname, String* java_type, int shadow_flag);
+  char *SwigToJavaArrayType(SwigType *t);
+  char *JavaTypeFromTypemap(char *op, SwigType *t, String_or_char *pname);
+  char *makeValidJniName(const char *name);
   char *JavaMethodSignature(SwigType *t, int ret, int inShadow);
   void writeRegisterNatives();
+  void cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function_name, int is_virtual);
 };

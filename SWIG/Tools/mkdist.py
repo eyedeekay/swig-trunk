@@ -19,7 +19,7 @@ os.system("rm -rf "+dirname)
 # Do a CVS export on the directory name
 
 print "Checking out SWIG"
-os.system("cvs export -D now -d "+dirname+ " SWIG")
+os.system("cvs export -D now -r rel-1-3 -d "+dirname+ " SWIG")
 
 # Now clean the source directory
 
@@ -58,11 +58,6 @@ f = open(dirname+"/configure.in","w")
 f.write(s)
 f.close()
 
-# Clean the documentation directory
-
-print "Cleaning the Doc directory"
-os.system("rm -rf "+dirname+"/Doc/*")
-
 # Blow away all .cvsignore files
 
 print "Blowing away .cvsignore files"
@@ -73,6 +68,7 @@ os.system("find "+dirname+" -name .cvsignore -exec rm {} \\;");
 os.system("cd "+dirname+"; autoconf")
 os.system("cd "+dirname+"/Source/DOH; autoconf")
 os.system("cd "+dirname+"/Tools; autoconf")
+os.system("cd "+dirname+"/Examples/GIFPlot; autoconf")
 os.system("cd "+dirname+"/Source/SWIG1.1; bison -y -d parser.yxx; mv y.tab.c parser.cxx; mv y.tab.h parser.h")
 
 os.system("tar -cf "+string.lower(dirname)+".tar "+dirname)
