@@ -1,0 +1,9 @@
+aclocal.m4
+config.*
+Makefile
+swig*
+*.tar.gz
+configure
+autom4te.cache
+.gdbinit
+mkmf.log
