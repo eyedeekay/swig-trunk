@@ -3,7 +3,10 @@ SWIG (Simplified Wrapper and Interface Generator)
 The Guile Support Patch for 1.3a5
 =================================
 
-2/2/2001 : mkoeppe 
+3/12/2001: mkoeppe
+	   [Guile] Fixed typemaps for char **OUTPUT, char **BOTH.
+
+3/2/2001 : mkoeppe 
 	   [Guile] Every wrapper function now gets a boolean variable
 	   gswig_list_p which indicates whether multiple values are
 	   present. The macros GUILE_APPEND_RESULT, GUILE_MAYBE_VALUES
