@@ -29,6 +29,8 @@ trunk of the CVS tree.
 	   * Make typemaps for SWIGPOINTER * with arg name take
 	     precedence over those without arg name, to match normal
 	     typemap precedence rules.
+	   * Fixed the random-line-numbers problem reported as SF bug
+	     #217310; thanks to Michael Scharf <scharf@users.sf.net>.
 
 6/14/2001: beazley
            Made a minor change to the way files are loaded in
