@@ -1,5 +1,29 @@
 SWIG (Simplified Wrapper and Interface Generator)
 
+The Guile Support Patch for 1.3a5
+=================================
+
+3/1/2001 : mkoeppe
+	   [Guile] Added support for Guile 1.4.1 procedure
+	   documentation formats.
+
+2/26/2001: mkoeppe
+	   [Guile] Made the wrapper code compile with C++ if the
+	   "-c++" command-line switch is given.  Thanks to
+	   <monkeyiq@dingoblue.net.au>. 
+
+2/26/2001: mkoeppe
+	   [Guile] Now two type tables, swig_types and
+	   swig_types_initial, are used, as all other SWIG language
+	   modules do.  This removes the need for the tricky
+	   construction used before that the broken Redhat 7.0 gcc
+	   doesn't parse. Reported by <monkeyiq@dingoblue.net.au>. 
+
+2/26/2001: mkoeppe
+	   [Guile] Fixed typemaps for char *OUTPUT, char *BOTH; a bad
+	   free() would be emitted.  Added typemap for SCM.
+
+
 Version 1.3 Alpha 5 
 ===================
 
