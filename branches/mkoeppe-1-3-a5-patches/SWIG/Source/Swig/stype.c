@@ -812,6 +812,8 @@ SwigType_lstr(SwigType *s, const String_or_char *id)
       Append(result,")");
       Delete(parms);
     } else if (SwigType_isqualifier(element)) {
+    } else if (SwigType_isenum(element)) {
+      Insert(result,0," int ");
     } else {
       Insert(result,0," ");
       Insert(result,0,element);
