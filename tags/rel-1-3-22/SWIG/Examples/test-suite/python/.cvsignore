@@ -1,0 +1,8 @@
+*wrap*
+*.py
+*.pyc
+*.so
+*.dll
+*.exp
+*.lib
+Makefile
