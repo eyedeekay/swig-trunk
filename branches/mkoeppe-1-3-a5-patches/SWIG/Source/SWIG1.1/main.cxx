@@ -245,10 +245,12 @@ int SWIG_main(int argc, char *argv[], Language *l) {
 		Swig_arg_error();
 	      }
 	  } else if (strcmp(argv[i],"-version") == 0) {
- 	      fprintf(stderr,"\nSWIG Version %s %s\n",
-		      SWIG_VERSION, SWIG_SPIN);
-	      fprintf(stderr,"Copyright (c) 1995-98\n");
+ 	      fprintf(stderr,"\nSWIG Version %s\n",
+		      SWIG_VERSION);
+	      fprintf(stderr,"Copyright (c) 1995-1998\n");
 	      fprintf(stderr,"University of Utah and the Regents of the University of California\n");
+              fprintf(stderr,"Copyright (c) 1998-2001\n");
+	      fprintf(stderr,"University of Chicago\n");
 	      fprintf(stderr,"\nCompiled with %s\n", SWIG_CC);
 	      SWIG_exit (EXIT_SUCCESS);
 	  } else if (strncmp(argv[i],"-l",2) == 0) {
