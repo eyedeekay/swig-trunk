@@ -661,7 +661,8 @@ void JAVA::create_function(char *name, char *iname, SwigType *t, ParmList *l)
   Printf(f_java, "  %s ", method_modifiers);
   Printf(f_java, "native %s %s(", javarettype, iname);
 
-  if(!jnic) Printv(f->def, "extern \"C\"\n", 0);
+  if(!jnic) 
+    Printv(f->def, "extern \"C\"{\n", 0);
   Printv(f->def, "JNIEXPORT ", jnirettype, " JNICALL ", wname, "(JNIEnv *jenv, jclass jcls", 0);
 
   // Emit all of the local variables for holding arguments.
@@ -977,6 +978,8 @@ void JAVA::create_function(char *name, char *iname, SwigType *t, ParmList *l)
   // Wrap things up (in a manner of speaking)
   if(SwigType_type(t) != T_VOID)
     Printv(f->code, tab4, "return jresult;\n", 0);
+  if(!jnic)
+    Printf(f->code, "}");
   Printf(f->code, "}\n");
 
   // Substitute the cleanup code (some exception handlers like to have this)
