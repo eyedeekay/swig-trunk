@@ -13,7 +13,8 @@ all::   macro-2.test \
 	pointer-reference.cplusplustest \
 	casts.cplusplusruntest \
 	import.cplusplusruntest \
-	name.runtest
+	name.runtest \
+	template-whitespace.cplusplustest
 
 .SUFFIXES: .i .test .cplusplustest .runtest .cplusplusruntest
 
