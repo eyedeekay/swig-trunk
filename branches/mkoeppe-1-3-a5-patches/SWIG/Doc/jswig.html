@@ -1,0 +1,412 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; I; IRIX 6.2 IP22) [Netscape]">
+</head>
+<body bgcolor="#FFFFFF">
+
+<h1>
+JSwig: The Java JNI wrapper generator.</h1>
+
+<h1>
+1% pure Java</h1>
+
+<h2>
+Introduction</h2>
+JSwig is a Java module extension for <a href="http://www.swig.org/">SWIG</a> (Simplified
+Wrapper Interface Generator). It generates
+Java and JNI wrapper code based
+<br>on an interface definition file.
+<p>See the 1.1 release SWIG documentation for a full description of the interface
+format. Only the issues specific to the
+<br>Java implementation are addressed here.
+<p>The 100% Pure Java
+effort is a great idea however, in the real world programmers either need to re-use their existing code or in some situations want to take advantage 
+of Java but have to use some native code.
+With this Java extension to SWIG it is very easy to plumb in existing c/c++ code for access from Java, as SWIG writes the JNI code for you.
+It is different to using the 'javah' tool as SWIG will wrap existing c/c++ code, whereas javah takes java functions and creates c/c++ function prototypes.
+<br>&nbsp;
+
+<h2>Usage</h2>
+swig -java [options] &lt;interface file&gt;
+<br>
+swig -java -help 
+<table>
+<tr>
+<th>Java specific options</th>
+</tr>
+
+<tr>
+<td>-module</td>
+<td>&lt;module&gt;</td>
+<td>use a module name other than the one specified in %module</td>
+</tr>
+
+<tr>
+<td>-package</td>
+<td>&lt;java package&gt;</td>
+<td>put the generated classes in this package</td>
+</tr>
+
+<tr>
+<td>-jnic</td>
+<td></td>
+<td>generate c calling interface (default depends on -c++ flag)</td>
+</tr>
+
+<tr>
+<td>-jnicpp</td>
+<td></td>
+<td>generate c++ calling interface (default depends on -c++ flag)</td>
+</tr>
+
+<tr>
+<td>-shadow</td>
+<td></td>
+<td>generate shadow classes</td>
+</tr>
+
+<tr>
+<td>-nofinalize</td>
+<td></td>
+<td>do not emit finalizers in shadow classes</td>
+</tr>
+
+<tr>
+<th>Useful SWIG options</th>
+</tr>
+
+<tr>
+<td>-c++</td>
+<td></td>
+<td>accept c++ syntax in input file</td>
+</tr>
+
+<tr>
+<td>-o</td>
+<td>&lt;output file></td>
+<td>name the generate c output file (defaults to &lt;module>_wrap.c)</td>
+</tr>
+</table>
+
+<h2>
+Quick Introduction</h2>
+
+The directory Examples/java has a number of examples which is the best way to learn how the SWIG Java extension works. The <a href="../Examples/index.html">SWIG Examples Documentation</a> in the parent directory is a useful starting point.
+
+<h2>
+Argument mapping</h2>
+&nbsp;
+<table BORDER>
+<tr>
+<td>c type</td>
+<td>Java type</td>
+<td>JNI type</td>
+</tr>
+
+<tr>
+<td>char</td>
+<td>byte</td>
+<td>jbyte</td>
+</tr>
+
+<tr>
+<td>unsigned char</td>
+<td>short</td>
+<td>jshort</td>
+</tr>
+
+<tr>
+<td>short</td>
+<td>short</td>
+<td>jshort</td>
+</tr>
+
+<tr>
+<td>unsigned short</td>
+<td>int</td>
+<td>jint</td>
+</tr>
+
+<tr>
+<td>int</td>
+<td>int</td>
+<td>jint</td>
+</tr>
+
+<tr>
+<td>unsigned int</td>
+<td>long</td>
+<td>jlong</td>
+</tr>
+
+<tr>
+<td>long</td>
+<td>long</td>
+<td>jlong</td>
+</tr>
+
+<tr>
+<td>long</td>
+<td>long</td>
+<td>jlong</td>
+</tr>
+
+<tr>
+<td>float</td>
+<td>float</td>
+<td>jfloat</td>
+</tr>
+
+<tr>
+<td>double</td>
+<td>double</td>
+<td>jdouble</td>
+</tr>
+
+<tr>
+<td>bool</td>
+<td>int</td>
+<td>jint</td>
+</tr>
+
+<tr>
+<td>void</td>
+<td>void</td>
+<td>void</td>
+</tr>
+
+</table>
+<br>
+Arrays are implemented using the same mappings, for example a c array, char[size], is mapped to a Java array, byte[size].
+<br><br>
+When SWIG is being used without shadow classes, longs are used for all pointers. All complex types (c/c++ structs and classes) are accessible using a Java long which contains a pointer to the underlying c/c++ object. Arrays of complex types are mapped as arrays of pointers to the type, that is a Java long[].
+<br><br>
+The output is different when SWIG is being used to generate shadow classes. Primitive types and pointers to these types remain the same; so a Java long is used for pointers to primitive types. However, for complex types, the shadow classes use a Java class which wraps the struct/class instead of a Java long. This applies to both argument parameters and return types that are complex types or pointers to complex types. Arrays of complex types turn into arrays of Java classes rather than arrays of longs.
+<br><br>
+For example, given the following c++ function call:
+<blockquote> <pre>
+void AClass::func(int a, int* b, SomeClass c, SomeClass* d, SomeClass& e, SomeClass f[10]);
+</blockquote> </pre>
+The non shadow access from Java is shown below, where the first parameter, ptr, is a long containing the pointer to an object of type AClass:
+<blockquote> <pre>
+public final static native void AClass_func(long ptr, int a, long b, long c, long d, long e, long[] f);
+</blockquote> </pre>
+The Java shadow class, AClass, will contain the following function:
+<blockquote> <pre>
+public void func(int a, long b, SomeClass c, SomeClass d, SomeClass e, SomeClass f[]) {...}
+</blockquote> </pre>
+
+Also note that SWIG converts c/c++ enums into integers.
+<br>
+<h2>
+Typemaps</h2>
+With typemaps, you can change the default conversion (input, output and
+return value) for a specific type.
+<p>The following typemaps are supported.
+<br>&nbsp;
+<table BORDER>
+<tr>
+<td><b>typemap</b></td>
+
+<td><b>description</b></td>
+</tr>
+
+<tr>
+<td>typemap(java,in)</td>
+
+<td>Converts function arguments from the java representation to a C representation.</td>
+</tr>
+
+<tr>
+<td>typemap(java,argout)</td>
+
+<td>Return values through function arguments</td>
+</tr>
+
+<tr>
+<td>typemap(java,out)</td>
+
+<td>Converts the result of a C function to a java representation.</td>
+</tr>
+
+<tr>
+<td>typemap(java,jtype)</td>
+<td>Override the default mapping of basic types from C to Java. Always provide jni, in, argout and out typemaps if you use this typemap.</td>
+</tr>
+
+<tr>
+<td>typemap(java,jni)</td>
+<td>Override the default mapping of basic types from C to jni. Always provide jtype, in, argout and out typemaps if you use this typemap.</td>
+</tr>
+</table>
+
+Other typemaps might work (check, freearg, newfree, ret), but are not tested.
+
+<br>&nbsp;
+<p>The following typemaps are predefined, but user defined typemaps can
+be included in the interface file.
+<br>&nbsp;
+<table BORDER>
+<tr VALIGN=TOP>
+<td><b>C Type</b></td>
+<td><b>Typemap</b></td>
+<td><b>Kind</b></td>
+<td><b>Java Type</b></td>
+<td><b>Function</b></td>
+</tr>
+
+<tr>
+<td>char *</td>
+<td>STRING</td>
+<td>input
+<br>output
+<br>return</td>
+
+<td>String</td>
+<td VALIGN=TOP>\0 terminated string&nbsp;
+<br>Java string is converted to c string, which is released afterwards</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+<td>BYTE</td>
+<td>input
+<br>output</td>
+<td>byte[]</td>
+
+<td VALIGN=TOP>Java byte array is converted to char array which
+is release afterwards</td>
+</tr>
+
+<tr>
+<td>char **</td>
+<td>STRING_IN</td>
+<td>input</td>
+<td>String[]</td>
+<td>\0 terminated array of \0 terminated strings
+<br>the array is malloc-ed and released afterwards</td>
+</tr>
+
+<tr>
+<td></td>
+<td>STRING_OUT</td>
+<td>output</td>
+<td>String[]</td>
+<td>&amp;char*
+<br>the argument is the address of an '\0' terminated string</td>
+</tr>
+
+<tr>
+<td></td>
+<td>STRING_RET</td>
+<td>return</td>
+<td>String[]</td>
+<td>\0 terminated array of \0 terminated strings
+<br>the array is not free-ed.</td>
+</tr>
+
+<tr>
+<td>int *</td>
+<td>INT_OUT</td>
+<td>output</td>
+<td>int[]</td>
+<td>&amp;int
+
+<br>value is returned in an int, which is stored in the Java int[0]</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<h2>
+Pragma</h2>
+The following pragma's are accepted:
+<dl>
+<dt>
+<b>pragma(java) import</b></dt>
+
+<dd>
+Import statements are generated in all generated Java classes which could
+be useful in combination with the %native feature.</dd>
+
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pragma(java) import="java.io.*"</pre>
+
+<dt>
+<b>pragma(java) module</b></dt>
+
+<dd>
+All text is copied verbatim to the (Java) module file.</dd>
+
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pragma(java) module="
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; static {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.loadLibrary(\"junixcall\");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } catch (UnsatisfiedLinkError e) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.printStackTrace();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.exit(1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "</pre>
+
+<dt>
+<b>pragma(java) shadow</b></dt>
+
+<dd>
+All text is copied verbatim to the (Java) shadow file, that is currently
+active. A new shadow file is opened just after the declaration of a struct/class.
+<pre>
+</pre>
+</dd>
+
+<dt>
+<b> pragma(java) modifiers</b></dt>
+<dd>
+Change the modifiers of the generated native calls. The default is "public final static"
+<pre>
+	%pragma(java) modifiers="public final static synchronized"
+</pre>
+</dd>
+
+</dl>
+
+<h2>
+Tips</h2>
+
+<ul>
+<li>
+Use %name to rename the shadow classes.</li>
+
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; %name(JPasswd) struct passwd {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ....
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</pre>
+<li>
+The %native directive can be used to mix hand written JNI functions with the auto generated functions.
+</ul>
+
+<h2>
+Caveats</h2>
+
+<ul>
+<li>
+Pointers are stored in a Java long, which is represented as a c long long
+on most machines. The pointer address is stored in the high order long
+of the long long, and cannot be manipulated directly from Java.</li>
+
+<li>
+If a typemap(java,in) is specified, the typemap(java,argout) must also
+be specified, because the default 'argout' code depends on the default
+'in' code.</li>
+</ul>
+
+<h2>
+Bugs</h2>
+<ul>
+<li>Static c++ functions do not work.</li>
+<li>Global arrays do not work.</li>
+</ul>
+
+<h2>Contact</h2>
+Use the SWIG mailing list for all queries <a href=mailto:swig@cs.uchicago.edu>swig@cs.uchicago.edu</a> or have a look at <a href=http://www.swig.org>http://www.swig.org</a>.
+</body>
+</html>
