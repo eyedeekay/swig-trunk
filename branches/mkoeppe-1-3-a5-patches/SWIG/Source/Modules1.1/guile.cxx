@@ -202,8 +202,6 @@ GUILE::parse_args (int argc, char *argv[])
 void
 GUILE::parse ()
 {
-  printf ("Generating wrappers for Guile\n");
-
   // Print out GUILE specific headers
 
   headers();
