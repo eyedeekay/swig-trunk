@@ -120,10 +120,8 @@ void JAVA::SwigToJavaType(SwigType *t, String_or_char *pname, String* java_type,
                         Printf(java_type, "%s[]", Char(is_shadow(t)));
                       else {
                         SwigType* array_type = get_array_type(t);
-                        /*Arrays of arrays, pointers or references not shadowed properly*/
-                        if (SwigType_type(array_type) != T_ARRAY && 
-                            SwigType_type(array_type) != T_POINTER && 
-                            SwigType_type(array_type) != T_REFERENCE)
+                        /* Arrays of arrays not shadowed properly yet */
+                        if (SwigType_type(array_type) != T_ARRAY)
                           SwigToJavaType(array_type, pname, java_type, shadow_flag);
                         else 
                           Printf(java_type, "long");  
@@ -1244,16 +1242,15 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
 
   Printf(f_shadow, "  public %s %s %s(", (static_flag ? "static":""), shadowrettype, iname);
 
-  if(SwigType_type(t) != T_VOID) {
-    if(SwigType_type(t) == T_ARRAY && SwigType_type(get_array_type(t)) == T_USER && is_shadow(get_array_type(t))) {
-      /* handle return types that are arrays of structures/classes */
-      Printf(nativecall, "long[] cArray = ");
-    }
-    else {
+  if(SwigType_type(t) == T_ARRAY && is_shadow(get_array_type(t))) {
+    Printf(nativecall, "long[] cArray = ");
+  }
+  else {
+    if(SwigType_type(t) != T_VOID) {
       Printf(nativecall,"return ");
-      /* If java wrapped object create new reference to it using new Long(...) */
-      if (is_shadow(t))
-          Printv(nativecall, "new ", shadowrettype, "(", 0);
+    }
+    if(is_shadow(t)) {
+      Printv(nativecall, "new ", shadowrettype, "(", 0);
     }
   }
 
@@ -1282,9 +1279,8 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
   
       if(!(i==0 && (static_flag || variable_wrapper_flag))) 
         Printv(nativecall, ", ", 0);
-  
-      if(SwigType_type(pt) == T_ARRAY && SwigType_type(get_array_type(pt)) == T_USER && is_shadow(get_array_type(pt))) {
-      /* handle parameters that are arrays of structures/classes */
+
+      if(SwigType_type(pt) == T_ARRAY && is_shadow(get_array_type(pt))) {
         Printv(user_arrays, tab4, "long[] $arg_cArray = new long[$arg.length];\n", 0);
         Printv(user_arrays, tab4, "for (int i=0; i<$arg.length; i++)\n", 0);
         Printv(user_arrays, tab4, "  $arg_cArray[i] = $arg[i].getCPtr();\n", 0);
@@ -1308,8 +1304,7 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
     }
   }
 
-  if(SwigType_type(t) == T_ARRAY && SwigType_type(get_array_type(t)) == T_USER && is_shadow(get_array_type(t))) {
-    /* handle return types that are arrays of structures/classes */
+  if(SwigType_type(t) == T_ARRAY && is_shadow(get_array_type(t))) {
     String* array_ret = NewString("");
     String* user_return_type = NewString("");
     SwigType *array_type = get_array_type(t);
@@ -1326,8 +1321,20 @@ void JAVA::cpp_func(char *iname, SwigType *t, ParmList *l, String* java_function
     Delete(user_return_type);
   }
   else {
-    if((SwigType_type(t) != T_VOID) && is_shadow(t))
-      Printf(nativecall, "), false");
+    if(is_shadow(t)) {
+      switch(SwigType_type(t)) {
+      case T_USER:
+        Printf(nativecall, "), true");
+        break;
+      case T_REFERENCE:
+      case T_POINTER:
+        Printf(nativecall, "), false");
+        break;
+      default:
+        Printf(stderr, "Internal Error: unknown shadow type: %s\n", SwigType_str(t,0));
+        break;
+      }
+    }
     Printf(nativecall,");\n");
   }
 

@@ -9,6 +9,13 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+6/07/2001: cheetah (william fulton)
+	   [Java] Class/struct members that are arrays of pointers to classes/structs -
+	   Shadow class's get/set accessors now use Java classes instead of longs (pointers).
+	   [Java] Shadow classes will now clean up memory if function return type 
+	   is a class/struct.
+	   [Java] New example called reference based on the same example from other modules.
+
 6/06/2001: mkoeppe
 	   New configure option --with-release-suffix allows for
 	   attaching a suffix to the swig binary and the swig runtime
