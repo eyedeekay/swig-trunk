@@ -23,42 +23,20 @@ certain C declarations are turned into constants.
 <li><a href="reference/index.html">reference</a>. C++ references.
 </ul>
 
-<h2>Compilation Issues</h2>
-
-<ul>
-<li>To create a Java extension, SWIG is run with the following options:
-
+<h2>Running the examples</h2>
+Most of the examples work by making the Makefile before executing the program main.java. The Makefile will output the swig generated JNI c code as well as the java wrapper classes. Additionally the JNI c/c++ code is compiled into the shared object (dynamic link library) which is needed for dynamic linking to the native code. The Makefiles also compile the java files using javac. 
+<p>
+Ensure that the dynamic link library file is in the appropriate path before executing the java program. For example in unix, libexample.so must be in the LD_LIBRARY_PATH. 
+<p>
+An example:
 <blockquote>
 <pre>
-$ swig -java example.i
-</pre>
-</blockquote>
-
-<li>The compilation of examples is done using the file <tt>Example/Makefile</tt>.  This
-makefile performs a manual module compilation which is platform specific.  Typically,
-the steps look like this (Solaris):
-
-<blockquote>
-<pre>
-$ swig -java  example.i
-$ gcc -c   example.c example_wrap.c  -I/usr/java/include -I/usr/java/include/solaris
-$ ld -G example.o  example_wrap.o  -o libexample.so
-</pre>
-</blockquote>
-
-<li>The .java files next need compiling to produce .class files by using javac:
-<blockquote>
-<pre>
-$ javac *.java
-</pre>
-</blockquote>
-
-<li>The java program can then be run in the JVM. Most examples have an entry point in a main.java, for example:
-<blockquote>
-<pre>
+$ make
+$ export LD_LIBRARY_PATH=. #ksh 
 $ java main
 </pre>
 </blockquote>
+<p>
 
 </ul>
 

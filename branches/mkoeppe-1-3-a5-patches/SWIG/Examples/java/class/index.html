@@ -88,23 +88,6 @@ Note: when creating a C++ extension, you must run SWIG with the <tt>-c++</tt> op
 </pre>
 </blockquote>
 
-<h2>Running the example</h2>
-Run the makefile. This will output the swig generated JNI c code as well as the java wrapper classes. Additionally the JNI c code is compiled into the shared object (dynamic link library) which is needed for dynamic linking to the native code.
-<blockquote>
-<pre>
-make
-</pre>
-</blockquote>
-<p>
-Compile all the java files to create the class files before running <a href="main.java">main.java</a> in the JVM.  Ensure that the dynamic link library file is in the appropriate path. For example in unix, libexample.so must be in the LD_LIBRARY_PATH. Example:
-<blockquote>
-<pre>
-export LD_LIBRARY_PATH=. #ksh 
-javac *.java
-java main
-</pre>
-</blockquote>
-
 <h2>A sample Java script</h2>
 
 Click <a href="main.java">here</a> to see a script that calls the C++ functions from Java.
