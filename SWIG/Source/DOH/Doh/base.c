@@ -1,756 +1,623 @@
-/* -----------------------------------------------------------------------------
- * base.c 
+/****************************************************************************
+ * DOH (Dynamic Object Hack)
+ * 
+ * Author : David Beazley
  *
- *     This file contains the function entry points for dispatching methods on
- *     DOH objects.  A number of small utility functions are also included.
+ * Department of Computer Science        
+ * University of Chicago
+ * 1100 E 58th Street
+ * Chicago, IL  60637
+ * beazley@cs.uchicago.edu
  *
- * Author(s) : David Beazley (beazley@cs.uchicago.edu)
+ * Please read the file LICENSE for the copyright and terms by which SWIG
+ * can be used and distributed.
+ ****************************************************************************/
+
+/*******************************************************************************
+ * $Header$
  *
- * Copyright (C) 1999-2000.  The University of Chicago
- * See the file LICENSE for information on usage and redistribution.
- * ----------------------------------------------------------------------------- */
+ * File : base.c
+ *
+ * Methods for base objects
+ *******************************************************************************/
 
-static char cvsroot[] = "$Header$";
+#include "doh.h"
 
-#include "dohint.h"
+static DohObjInfo DohBaseType = {
+  "Base",     /* objname */
+  0,          /* objsize */
+  0,          /* doh_del */
+  0,          /* doh_copy */
+  0,          /* doh_clear */
+  0,          /* doh_str */
+  0,          /* doh_aschar */
+  0,          /* doh_len */
+  0,          /* doh_hash    */
+  0,          /* doh_cmp */
+  0,          /* doh_mapping */
+  0,          /* doh_sequence */
+  0,          /* doh_file  */
+  0,          /* reserved2 */
+  0,          /* reserved3 */
+  0,          /* reserved4 */
+  { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+};
 
-static DohObjInfo *dohtypes[MAX_DOHTYPE];
-
-/* -----------------------------------------------------------------------------
- * DohRegisterType()
- * ----------------------------------------------------------------------------- */
-
-void
-DohRegisterType(int type, DohObjInfo *objinfo) {
-  dohtypes[type] = objinfo;
-}
-
-/* -----------------------------------------------------------------------------
- * DohDelete()
- * ----------------------------------------------------------------------------- */
-
-void
-DohDelete(DOH *obj) {
+int DohCheck(DOH *obj) {
   DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-
-  if (!obj) return;
-  if (!DohCheck(b)) {
-    fprintf(stderr,"DOH: Fatal error. Attempt to delete a non-doh object.\n");
-    abort();
-  }
-  if (b->flag_intern) return;
-  assert(b->refcount > 0);
-  b->refcount--;
-  if (b->refcount <= 0) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_del) {
-      (objinfo->doh_del)(b);
-    } else {
-      if (b->data) DohFree(b->data);
-    }
-    DohObjFree(b);
-  }
-}
-
-/* -----------------------------------------------------------------------------
- * DohCopy()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohCopy(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-
-  if (!obj) return 0;
-  objinfo = dohtypes[b->type];
-  if (objinfo->doh_copy) 
-    return (objinfo->doh_copy)(b);
-  return 0;
-}
-
-void
-DohIncref(DOH *obj) {
-  Incref(obj);
-}
-
-/* -----------------------------------------------------------------------------
- * DohClear()
- * ----------------------------------------------------------------------------- */
-
-void
-DohClear(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_clear)
-    (objinfo->doh_clear)(b);
-}
-
-/* -----------------------------------------------------------------------------
- * DohStr()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohStr(const DOH *obj) {
-  char buffer[512];
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(b)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_str) {
-      return (objinfo->doh_str)(b);
-    }
-    sprintf(buffer,"<Object '%s' at %x>", objinfo->objname, b);
-    return NewString(buffer);
-  } else {
-    return NewString(obj);
-  }
-}
-
-/* -----------------------------------------------------------------------------
- * DohDump()
- * ----------------------------------------------------------------------------- */
-
-int
-DohDump(const DOH *obj, DOH *out) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_dump) {
-    return (objinfo->doh_dump)(b,out);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohLen() - Defaults to strlen() if not a DOH object
- * ----------------------------------------------------------------------------- */
-int
-DohLen(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
   if (!b) return 0;
-  if (DohCheck(b)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_len) {
-      return (objinfo->doh_len)(b);
-    }
-    return 0;
-  } else {
-    return strlen((char *) obj);
-  }
-}
-
-/* -----------------------------------------------------------------------------
- * DohHashVal()
- * ----------------------------------------------------------------------------- */
-
-int
-DohHashval(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(b)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_hashval) {
-      return (objinfo->doh_hashval)(b);
-    }
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohData()
- * ----------------------------------------------------------------------------- */
-
-void *
-DohData(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_data) {
-      return (objinfo->doh_data)(b);
-    }
-    return 0;
-  }
-  return (void *) obj;
-}
-
-/* -----------------------------------------------------------------------------
- * DohCmp()
- * ----------------------------------------------------------------------------- */
-
-int
-DohCmp(const DOH *obj1, const DOH *obj2) {
-  DohBase *b1, *b2;
-  DohObjInfo *b1info, *b2info;
-  b1 = (DohBase *) obj1;
-  b2 = (DohBase *) obj2;
-  if ((!DohCheck(b1)) || (!DohCheck(b2))) {
-    if ((b1 == 0) && (b2 == 0)) return 0;
-    if (b1 && !b2) return 1;
-    if (!b1 &&  b2) return -1;
-    return strcmp((char *) DohData(b1),(char *) DohData(b2));
-  }
-  b1info = dohtypes[b1->type];
-  b2info = dohtypes[b2->type];
-  if ((b1info == b2info) && (b1info->doh_cmp)) 
-    return (b1info->doh_cmp)(b1,b2);
+  if (b->magic != DOH_MAGIC) return 0;
+  if (!b->objinfo) return 0;
   return 1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohIsMapping()
- * ----------------------------------------------------------------------------- */
-int
-DohIsMapping(const DOH *obj) {
+int DohIsMapping(DOH *obj) {
   DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
   if (!DohCheck(b)) return 0;
-  objinfo = dohtypes[b->type];
-  if (objinfo->doh_hash) return 1;
+  if (b->objinfo->doh_mapping) return 1;
+  else return 0;
+}
+
+int DohIsSequence(DOH *obj) {
+  DohBase *b = (DohBase *) obj;
+  if (!DohCheck(b)) return 0;
+  if (b->objinfo->doh_sequence) return 1;
   else return 0;
 }
 
 /* -----------------------------------------------------------------------------
- * DohGetattr()
- * ----------------------------------------------------------------------------- */
+   String objects
 
-DOH *
-DohGetattr(DOH *obj, const DOH *name) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_hash && objinfo->doh_hash->doh_getattr) {
-    return (objinfo->doh_hash->doh_getattr)(b,(DOH *) name);
+   The following structure maps raw char * entries to string objects.
+   ----------------------------------------------------------------------------- */
+
+typedef struct StringNode {
+    char   *cstr;
+    DOH    *sstr;
+    struct StringNode *left;
+    struct StringNode *right;
+} StringNode;
+
+static StringNode *root = 0;
+
+static DOH *find_internal(DOH *co) {
+  StringNode *r, *s;
+  int d;
+  char *c;
+  if (DohCheck(co)) return co;
+  c = (char *) co;
+  r = root;
+  s = 0;
+  while (r) {
+    s = r;
+    /*    printf("checking %s\n", r->cstr);*/
+    d = strcmp(r->cstr,c);
+    if (d == 0) return r->sstr;
+    if (d < 0) r = r->left;
+    else r = r->right;
   }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetattr()
- * ----------------------------------------------------------------------------- */
-
-int
-DohSetattr(DOH *obj, const DOH *name, const DOH *value) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_hash && objinfo->doh_hash->doh_setattr) {
-    return (objinfo->doh_hash->doh_setattr)(b,(DOH *) name,(DOH *) value);
+  r = (StringNode *) malloc(sizeof(StringNode));
+  r->cstr = (char *) malloc(strlen(c)+1);
+  strcpy(r->cstr,c);
+  r->sstr = NewString(c);
+  Incref(r->sstr);
+  r->left = 0;
+  r->right = 0;
+  if (!s) { root = r; }
+  else {
+    if (d < 0) s->left = r;
+    else s->right = r;
   }
-  return 0;
+  return r->sstr;
 }
 
-/* -----------------------------------------------------------------------------
- * DohDelattr()
- * ----------------------------------------------------------------------------- */
-
-void
-DohDelattr(DOH *obj, const DOH *name) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_hash && objinfo->doh_hash->doh_delattr) {
-    (objinfo->doh_hash->doh_delattr)(b,(DOH *) name);
-  }
-}
-
-/* -----------------------------------------------------------------------------
- * DohFirstkey()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohFirstkey(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_hash && objinfo->doh_hash->doh_firstkey) {
-    return (objinfo->doh_hash->doh_firstkey)(b);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohNextkey()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohNextkey(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo && objinfo->doh_hash->doh_nextkey) {
-    return (objinfo->doh_hash->doh_nextkey)(b);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohGetInt()
- * ----------------------------------------------------------------------------- */
-
-int
-DohGetInt(DOH *obj, const DOH *name) {
-  DOH *val;
-  val = Getattr(obj,(DOH *) name);
-  if (!val) return 0;
-  if (DohIsString(val)) {
-    return atoi((char *) Data(val));
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohGetDouble()
- * ----------------------------------------------------------------------------- */
-
-double
-DohGetDouble(DOH *obj, const DOH *name) {
-  DOH *val;
-  val = Getattr(obj,(DOH *) name);
-  if (!val) return 0;
-  if (DohIsString(val)) {
-    return atof((char *) Data(val));
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohGetChar()
- * ----------------------------------------------------------------------------- */
-
-char *
-DohGetChar(DOH *obj, const DOH *name) {
-  DOH *val;
-  val = Getattr(obj,(DOH *) name);
-  if (!val) return 0;
-  if (DohIsString(val)) {
-    return (char *) Data(val);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohGetVoid()
- * ----------------------------------------------------------------------------- */
-
-void *
-DohGetVoid(DOH *obj, const DOH *name) {
-  DOH *val;
-  val = Getattr(obj,(DOH *) name);
-  if (!val) return 0;
-  return (void *) Data(val);
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetInt()
- * ----------------------------------------------------------------------------- */
-
-void
-DohSetInt(DOH *obj, const DOH *name, int value) {
-  DOH *temp;
-  temp = NewString("");
-  Printf(temp,"%d",value);
-  Setattr(obj,(DOH *) name,temp);
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetDouble()
- * ----------------------------------------------------------------------------- */
-
-void
-DohSetDouble(DOH *obj, const DOH *name, double value) {
-  DOH *temp;
-  temp = NewString("");
-  Printf(temp,"%0.17f",value);
-  Setattr(obj,(DOH *) name,temp);
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetChar()
- * ----------------------------------------------------------------------------- */
-
-void
-DohSetChar(DOH *obj, const DOH *name, char *value) {
-  Setattr(obj,(DOH *) name,NewString(value));
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetVoid()
- * ----------------------------------------------------------------------------- */
-
-void
-DohSetVoid(DOH *obj, const DOH *name, void *value) {
-  Setattr(obj,(DOH *) name,NewVoid(value,0));
-}
-
-/* -----------------------------------------------------------------------------
- * DohIsSequence()
- * ----------------------------------------------------------------------------- */
-
-int
-DohIsSequence(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (!DohCheck(b)) return 0;
-  objinfo = dohtypes[b->type];
-  if (objinfo->doh_list) return 1;
-  else return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohGetitem()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohGetitem(DOH *obj, int index) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_getitem) {
-    return (objinfo->doh_list->doh_getitem)(b,index);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohSetitem()
- * ----------------------------------------------------------------------------- */
-
-int
-DohSetitem(DOH *obj, int index, const DOH *value) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_setitem) {
-    return (objinfo->doh_list->doh_setitem)(b,index,(DOH *) value);
-  }
-  return -1;
-}
-
-/* -----------------------------------------------------------------------------
- * DohDelitem()
- * ----------------------------------------------------------------------------- */
-
-int
-DohDelitem(DOH *obj, int index) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_delitem) {
-    return (objinfo->doh_list->doh_delitem)(b,index);
-  }
-  return -1;
-}
-
-/* -----------------------------------------------------------------------------
- * DohInsertitem()
- * ----------------------------------------------------------------------------- */
-
-int
-DohInsertitem(DOH *obj, int index, const DOH *value) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_insitem) {
-    return (objinfo->doh_list->doh_insitem)(b,index,(DOH *) value);
-  }
-  return -1;
-}
-
-/* -----------------------------------------------------------------------------
- * DohFirstitem()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohFirstitem(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_firstitem) {
-    return (objinfo->doh_list->doh_firstitem)(b);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohNextitem()
- * ----------------------------------------------------------------------------- */
-
-DOH *
-DohNextitem(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo = dohtypes[b->type];
-  if (objinfo->doh_list && objinfo->doh_list->doh_nextitem) {
-    return (objinfo->doh_list->doh_nextitem)(b);
-  }
-  return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohIsFile()
- * ----------------------------------------------------------------------------- */
-
-int
-DohIsFile(const DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (!DohCheck(b)) return 0;
-  objinfo = dohtypes[b->type];
-  if (objinfo->doh_file) return 1;
-  else return 0;
-}
-
-/* -----------------------------------------------------------------------------
- * DohRead()
- * ----------------------------------------------------------------------------- */
-
-int
-DohRead(DOH *obj, void *buffer, int length) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if ((objinfo->doh_file) && (objinfo->doh_file->doh_read)) {
-      return (objinfo->doh_file->doh_read)(b,buffer,length);
+/* Destroy an object */
+void DohDestroy(DOH *obj) {
+    DohBase *b = (DohBase *) obj;
+    if (!DohCheck(b)) return;
+    b->refcount--;
+    if (b->refcount <= 0) {
+      if (b->objinfo->doh_del) {
+	(b->objinfo->doh_del)(obj);
+	return;
+      } 
+      free(b);
     }
-    return -1;
-  }
-  /* Hmmm.  Not a file.  Maybe it's a real FILE */
-  return fread(buffer,1,length,(FILE *) b);
 }
 
-/* -----------------------------------------------------------------------------
- * DohWrite()
- * ----------------------------------------------------------------------------- */
-
-int
-DohWrite(DOH *obj, void *buffer, int length) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if ((objinfo->doh_file) && (objinfo->doh_file->doh_write)) {
-      return (objinfo->doh_file->doh_write)(b,buffer,length);
+/* Copy an object */
+DOH *DohCopy(DOH *obj) {
+    DOH  *result;
+    DohBase *b = (DohBase *) obj;
+    if (!DohCheck(b)) return 0;
+    if (b->objinfo->doh_copy) {
+      return (b->objinfo->doh_copy)(obj);
     }
-    return -1;
-  }
-  /* Hmmm.  Not a file.  Maybe it's a real FILE */
-  return fwrite(buffer,1,length,(FILE *) b);
+    printf("No copy method defined for type '%s'\n", b->objinfo->objname);
+    return 0;
 }
 
-/* -----------------------------------------------------------------------------
- * DohSeek()
- * ----------------------------------------------------------------------------- */
-
-int
-DohSeek(DOH *obj, long offset, int whence) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if ((objinfo->doh_file) && (objinfo->doh_file->doh_seek)) {
-      return (objinfo->doh_file->doh_seek)(b,offset,whence);
+void DohClear(DOH *obj) {
+    DohBase *b = (DohBase *) obj;
+    if (!DohCheck(b)) return;
+    if (b->objinfo->doh_clear) {
+      (b->objinfo->doh_clear)(obj);
+      return;
     }
-    return -1;
-  }
-  return fseek((FILE *) b, offset, whence);
+    printf("No clear method defined for type '%s'\n", b->objinfo->objname);
 }
 
-/* -----------------------------------------------------------------------------
- * DohTell()
- * ----------------------------------------------------------------------------- */
-
-long
-DohTell(DOH *obj) {
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if ((objinfo->doh_file) && (objinfo->doh_file->doh_tell)) {
-      return (objinfo->doh_file->doh_tell)(b);
+/* Turn an object into a string */
+DOH *DohStr(DOH *obj) {
+    DOH *s;
+    DohBase *b = (DohBase *) obj; 
+    if (DohCheck(b)) {
+	if (b->objinfo->doh_str) {
+	  return (b->objinfo->doh_str)(b);
+	}
+	s = NewString("<Object ");
+	Appendf(s,"'%s' at %x>", b->objinfo->objname, b);
+	return s;
+    } else {
+      return NewString(obj);
     }
-    return -1;
-  }
-  return ftell((FILE *) b);
 }
 
-/* -----------------------------------------------------------------------------
- * DohGetc()
- * ----------------------------------------------------------------------------- */
-
-int
-DohGetc(DOH *obj) {
-  static DOH *lastdoh = 0;
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (obj == lastdoh) {
-    objinfo = dohtypes[b->type];
-    return (objinfo->doh_file->doh_getc)(b);
-  }
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_file->doh_getc) {
-      lastdoh = obj;
-      return (objinfo->doh_file->doh_getc)(b);
+/* Get the length */
+int DohLen(DOH *obj) {
+    int s;
+    DohBase *b = (DohBase *) obj;
+    if (DohCheck(b)) {
+      if (b->objinfo->doh_len) {
+	return (b->objinfo->doh_len)(obj);
+      }
     }
-    return EOF;
-  }
-  return fgetc((FILE *) b);
+    printf("No len method defined for type '%s'\n", b->objinfo->objname);
+    return 0;
 }
 
-/* -----------------------------------------------------------------------------
- * DohPutc()
- * ----------------------------------------------------------------------------- */
-
-int
-DohPutc(int ch, DOH *obj) {
-  static DOH *lastdoh = 0;
-  DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-
-  if (obj == lastdoh) {
-    objinfo = dohtypes[b->type];
-    return (objinfo->doh_file->doh_putc)(b,ch);
-  }
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_file->doh_putc) {
-      lastdoh = obj;
-      return (objinfo->doh_file->doh_putc)(b,ch);
+/* Get the hash value */
+int DohHashval(DOH *obj) {
+    int s;
+    DohBase *b = (DohBase *) obj;
+    if (DohCheck(b)) {
+      if (b->objinfo->doh_hash) {
+	return (b->objinfo->doh_hash)(obj);
+      }
+      printf("No hash method defined for type '%s'\n", b->objinfo->objname);
     }
-    return EOF;
-  }
-  return fputc(ch,(FILE *) b);
+    return 0;
 }
 
-/* -----------------------------------------------------------------------------
- * DohUngetc()
- * ----------------------------------------------------------------------------- */
+/* Get raw data */
+void *DohData(DOH *obj) {
+    char *c;
+    char *s;
+    DohBase *b = (DohBase *) obj;
+    c = (char *) obj;
+    if (!c) return 0;
+    if (*c == DOH_MAGIC) {
+      if (b->objinfo) {
+	if (b->objinfo->doh_data) {
+	  return (b->objinfo->doh_data)(obj);
+	}
+      }
+      printf("No data method defined for type '%s'\n", b->objinfo->objname);
+      return 0;
+    } 
+    return c;
+}
 
-int
-DohUngetc(int ch, DOH *obj) {
+/* Get the line number */
+int DohGetline(DOH *obj) {
   DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
   if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_file->doh_ungetc) {
-      return (objinfo->doh_file->doh_ungetc)(b,ch);
+    return b->line;
+  }
+  return 0;
+}
+
+/* Set the line number */
+void DohSetline(DOH *obj, int line) {
+  DohBase *b = (DohBase *) obj;
+  if (DohCheck(obj)) {
+    b->line = line;
+  }
+}
+
+/* Get the file name */
+DOH *DohGetfile(DOH *obj) {
+  DohBase *b = (DohBase *) obj;
+  if (DohCheck(obj)) {
+    return b->file;
+  }
+  return 0;
+}
+
+/* Set the file */
+void DohSetfile(DOH *obj, DOH *file) {
+  DOH *nf;
+  DohBase *b = (DohBase *) obj;
+  if (DohCheck(obj)) {
+    if (file) {
+      nf = find_internal(file);
+      Incref(nf);
+      if (b->file) Delete(b->file);
+      b->file = nf;
+    } else {
+      Delete(b->file);
+      b->file = 0;
     }
-    return EOF;
   }
-  return ungetc(ch,(FILE *) b);
 }
 
-/* -----------------------------------------------------------------------------
- * DohClose()
- * ----------------------------------------------------------------------------- */
+/* Get an attribute from an object */
+int DohCmp(DOH *obj1, DOH *obj2) {
+    int s;
+    DohBase *b1, *b2;
+    b1 = (DohBase *) obj1;
+    b2 = (DohBase *) obj2;
+    if (!DohCheck(b1)) {
+	b1 = find_internal(b1);
+    }
+    if (!DohCheck(b2)) {
+	b2 = find_internal(b2);
+    }
+    if (b1->objinfo == b2->objinfo) {
+	if (b1->objinfo->doh_cmp) {
+	    return (b1->objinfo->doh_cmp)(b1,b2);
+	}
+	printf("No cmp method defined for type '%s'\n", b1->objinfo->objname);
+    }
+    printf("Can't compare type '%s' with type '%s'\n", b1->objinfo->objname, b2->objinfo->objname);
+    return 0;
+}
 
-int
-DohClose(DOH *obj) {
+/* ----------------------------------------------------------------------
+ * Mapping Interface 
+ * ---------------------------------------------------------------------- */
+
+/* Get an attribute from an object */
+DOH *DohGetattr(DOH *obj, DOH *name) {
+  DOH  *s;
+  DOH  *name_obj;
   DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
-  if (DohCheck(obj)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_file->doh_close) {
-      return (objinfo->doh_file->doh_close)(b);
+  if (DohIsMapping(b)) {
+    name_obj = find_internal(name);
+    if (b->objinfo->doh_mapping->doh_getattr) {
+      return (b->objinfo->doh_mapping->doh_getattr)(obj,name_obj);
     }
     return 0;
   }
-  return fclose((FILE *) obj);
+  return 0;
+}
+
+/* Set an attribute in an object */
+int DohSetattr(DOH *obj, DOH *name, DOH *value) {
+    int s;
+    DOH *name_obj, *value_obj;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsMapping(b)) {
+      name_obj = find_internal(name);
+      value_obj = find_internal(value);
+      if (b->objinfo->doh_mapping->doh_setattr) {
+	return (b->objinfo->doh_mapping->doh_setattr)(obj,name_obj,value_obj);
+      }
+      printf("No setattr method defined for type '%s'\n", b->objinfo->objname);
+    }
+    return 0;
+}
+
+/* Delete an attribute from an object */
+void DohDelattr(DOH *obj, DOH *name) {
+  DOH *name_obj;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsMapping(obj)) {
+    name_obj = find_internal(name);
+    if (b->objinfo->doh_mapping->doh_delattr) {
+      (b->objinfo->doh_mapping->doh_delattr)(obj,name_obj);
+      return;
+    }
+    printf("No delattr method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+
+/* Get first item in an object */
+DOH *DohFirst(DOH *obj) {
+    DOH *s;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsMapping(obj)) {
+      if (b->objinfo->doh_mapping->doh_firstkey) {
+	return DohGetattr(obj,(b->objinfo->doh_mapping->doh_firstkey)(obj));
+      }
+      printf("No firstkey method defined for type '%s'\n", b->objinfo->objname);
+      return 0;
+    }
+    return 0;
+}
+
+/* Get next item in an object */
+DOH *DohNext(DOH *obj) {
+    DOH *s;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsMapping(obj)) {
+      if (b->objinfo->doh_mapping->doh_nextkey) {
+	return DohGetattr(obj,(b->objinfo->doh_mapping->doh_nextkey)(obj));
+      }
+      printf("No nextkey method defined for type '%s'\n", b->objinfo->objname);
+      return 0;
+    }
+    return 0;
+}
+
+
+/* Get first item in an object */
+DOH *DohFirstkey(DOH *obj) {
+    DOH *s;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsMapping(obj)) {
+      if (b->objinfo->doh_mapping->doh_firstkey) {
+	return (b->objinfo->doh_mapping->doh_firstkey)(obj);
+      }
+      printf("No firstkey method defined for type '%s'\n", b->objinfo->objname);
+      return 0;
+    }
+    return 0;
+}
+
+/* Get next item in an object */
+DOH *DohNextkey(DOH *obj) {
+    DOH *s;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsMapping(obj)) {
+      if (b->objinfo->doh_mapping->doh_nextkey) {
+	return (b->objinfo->doh_mapping->doh_nextkey)(obj);
+      }
+      printf("No nextkey method defined for type '%s'\n", b->objinfo->objname);
+      return 0;
+    }
+    return 0;
+}
+
+/* ----------------------------------------------------------------------
+ * Sequence Interface
+ * ----------------------------------------------------------------------
+
+/* Get an item from an object */
+DOH *DohGetitem(DOH *obj, int index) {
+    DOH  *s;
+    DohBase *b = (DohBase *) obj;
+    if (DohIsSequence(obj)) {
+      if (b->objinfo->doh_sequence->doh_getitem) {
+	return (b->objinfo->doh_sequence->doh_getitem)(obj,index);
+      }
+      printf("No getitem method defined for type '%s'\n", b->objinfo->objname);
+    }
+    return 0;
+}
+
+/* Set an item in an object */
+void DohSetitem(DOH *obj, int index, DOH *value) {
+  DOH *value_obj;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    value_obj = find_internal(value);
+    if (b->objinfo->doh_sequence->doh_setitem) {
+      (b->objinfo->doh_sequence->doh_setitem)(obj,index,value_obj);
+      return;
+    }
+    printf("No setitem method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Delete an item from an object */
+void DohDelitem(DOH *obj, int index) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    if (b->objinfo->doh_sequence->doh_delitem) {
+      (b->objinfo->doh_sequence->doh_delitem)(obj,index);
+      return;
+    }
+    printf("No delitem method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Set an item in an object */
+void DohInsertitem(DOH *obj, int index, DOH *value) {
+  DOH *value_obj;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    value_obj = find_internal(value);
+    if (b->objinfo->doh_sequence->doh_insitem) {
+      (b->objinfo->doh_sequence->doh_insitem)(obj,index,value_obj);
+      return;
+    }
+    printf("No insitem method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Set an item in an object */
+void DohInsertitemf(DOH *obj, int index, char *format, ...) {
+  va_list ap;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    if (b->objinfo->doh_sequence->doh_insertf) {
+      va_start(ap,format);
+      (b->objinfo->doh_sequence->doh_insertf)(obj,index,format,ap);
+      va_end(ap);
+      return;
+    }
+    printf("No insertf method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Set an item in an object */
+void DohvInsertitemf(DOH *obj, int index, char *format, va_list ap) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    if (b->objinfo->doh_sequence->doh_insertf) {
+      (b->objinfo->doh_sequence->doh_insertf)(obj,index,format,ap);
+      return;
+    }
+    printf("No insertf method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Append an item to an object */
+void DohAppendf(DOH *obj, char *format, ...) {
+  va_list ap;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    if (b->objinfo->doh_sequence->doh_insertf) {
+      va_start(ap,format);
+      (b->objinfo->doh_sequence->doh_insertf)(obj,DOH_END,format,ap);
+      va_end(ap);
+      return;
+    }
+    printf("No appendf method defined for type '%s'\n", b->objinfo->objname);
+  }
+}
+
+/* Append an item to an object */
+void DohvAppendf(DOH *obj, char *format, va_list ap) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsSequence(obj)) {
+    if (b->objinfo->doh_sequence->doh_insertf) {
+      (b->objinfo->doh_sequence->doh_insertf)(obj,DOH_END,format,ap);
+      return;
+    }
+    printf("No appendf method defined for type '%s'\n", b->objinfo->objname);
+  }
 }
 
 /* -----------------------------------------------------------------------------
- * DohIsString()
+ * File methods 
  * ----------------------------------------------------------------------------- */
 
-int
-DohIsString(const DOH *obj) {
+int DohIsFile(DOH *obj) {
   DohBase *b = (DohBase *) obj;
-  DohObjInfo *objinfo;
   if (!DohCheck(b)) return 0;
-  objinfo = dohtypes[b->type];
-  if (objinfo->doh_string) return 1;
+  if (b->objinfo->doh_file) return 1;
   else return 0;
 }
 
-/* -----------------------------------------------------------------------------
- * DohReplace()
- * ----------------------------------------------------------------------------- */
-
-int
-DohReplace(DOH *src, const DOH *token, const DOH *rep, int flags) {
-  DohBase *b = (DohBase *) src;
-  DohObjInfo *objinfo;
-  if (DohIsString(src)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_string->doh_replace) {
-      return (objinfo->doh_string->doh_replace)(b,(DOH *) token, (DOH *) rep,flags);
+/* Read */
+int DohRead(DOH *obj, void *buffer, int length) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_read) {
+      return (b->objinfo->doh_file->doh_read)(obj,buffer,length);
     }
+    printf("No read method defined for type '%s'\n", b->objinfo->objname);
   }
-  return 0;
+  return -1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohChop()
- * ----------------------------------------------------------------------------- */
-
-void
-DohChop(DOH *src) {
-  DohBase *b = (DohBase *) src;
-  DohObjInfo *objinfo;
-  if (DohIsString(src)) {
-    objinfo = dohtypes[b->type];
-    if (objinfo->doh_string->doh_chop) {
-      (objinfo->doh_string->doh_chop)(b);
+/* Write */
+int DohWrite(DOH *obj, void *buffer, int length) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_write) {
+      return (b->objinfo->doh_file->doh_write)(obj,buffer,length);
     }
+    printf("No write method defined for type '%s'\n", b->objinfo->objname);
   }
+  return -1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohSetFile()
- * ----------------------------------------------------------------------------- */
-void
-DohSetfile(DOH *ho, DOH *file) {
-  DohBase *h = (DohBase *) ho;
-  DohObjInfo *objinfo;
-  if (!h) return;
-  objinfo = dohtypes[h->type];
-  if (objinfo->doh_setfile)
-    (objinfo->doh_setfile)(h,file);
+/* Seek */
+int DohSeek(DOH *obj, long offset, int whence) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_seek) {
+      return (b->objinfo->doh_file->doh_seek)(obj,offset,whence);
+    }
+    printf("No seek method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohGetFile()
- * ----------------------------------------------------------------------------- */
-DOH *
-DohGetfile(DOH *ho) {
-  DohBase *h = (DohBase *) ho;
-  DohObjInfo *objinfo;
-  if (!h) return 0;
-  objinfo = dohtypes[h->type];
-  if (objinfo->doh_getfile) 
-    return (objinfo->doh_getfile)(h);
-  return 0;
+/* Tell */
+long DohTell(DOH *obj) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_tell) {
+      return (b->objinfo->doh_file->doh_tell)(obj);
+    }
+    printf("No tell method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohSetLine()
- * ----------------------------------------------------------------------------- */
-void
-DohSetline(DOH *ho, int l) {
-  DohBase *h = (DohBase *) ho;
-  DohObjInfo *objinfo;
-  if (!h) return;
-  objinfo = dohtypes[h->type];
-  if (objinfo->doh_setline) 
-    (objinfo->doh_setline)(h,l);
+/* Printf */
+int DohPrintf(DOH *obj, char *format, ...) {
+  va_list ap;
+  int ret;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_printf) {
+      va_start(ap,format);
+      ret = (b->objinfo->doh_file->doh_printf)(obj,format,ap);
+      va_end(ap);
+      return ret;
+    }
+    printf("No printf method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
 }
 
-/* -----------------------------------------------------------------------------
- * DohGetLine()
- * ----------------------------------------------------------------------------- */
-int
-DohGetline(DOH *ho) {
-  DohBase *h = (DohBase *) ho;
-  DohObjInfo *objinfo;
-  if (!h) return 0;
-  objinfo = dohtypes[h->type];
-  if (objinfo->doh_getline) 
-    return (objinfo->doh_getline)(h);
-  return 0;
+/* vPrintf */
+int DohvPrintf(DOH *obj, char *format, va_list ap) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_printf) {
+      return (b->objinfo->doh_file->doh_printf)(obj,format,ap);
+    }
+    printf("No printf method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
 }
 
 
+/* Printf */
+int DohScanf(DOH *obj, char *format, ...) {
+  va_list ap;
+  int ret;
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_scanf) {
+      va_start(ap,format);
+      ret = (b->objinfo->doh_file->doh_scanf)(obj,format,ap);
+      va_end(ap);
+      return ret;
+    }
+    printf("No scanf method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
+}
+
+/* vPrintf */
+int DohvScanf(DOH *obj, char *format, va_list ap) {
+  DohBase *b = (DohBase *) obj;
+  if (DohIsFile(obj)) {
+    if (b->objinfo->doh_file->doh_scanf) {
+      return (b->objinfo->doh_file->doh_scanf)(obj,format,ap);
+    }
+    printf("No scanf method defined for type '%s'\n", b->objinfo->objname);
+  }
+  return -1;
+}
 
 
+void DohInit(DOH *b) {
+    DohBase *bs = (DohBase *) b;
+    bs->refcount =0;
+    bs->objinfo = &DohBaseType;
+    bs->magic = DOH_MAGIC;
+    bs->moremagic[0] = 0;
+    bs->moremagic[1] = 0;
+    bs->moremagic[2] = 0;
+    bs->line = 0;
+    bs->file = 0;
+}

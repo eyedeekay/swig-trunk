@@ -1,192 +1,194 @@
-/* ----------------------------------------------------------------------------- 
- * file.c
- *
- *     This file implements a file-like object that can be built around an 
- *     ordinary FILE * or integer file descriptor.
+/****************************************************************************
+ * DOH (Dynamic Object Hack)
  * 
- * Author(s) : David Beazley (beazley@cs.uchicago.edu)
+ * Author : David Beazley
  *
- * Copyright (C) 1999-2000.  The University of Chicago
- * See the file LICENSE for information on usage and redistribution.	
- * ----------------------------------------------------------------------------- */
-
-static char cvsroot[] = "$Header$";
-
-#include "dohint.h"
-
-typedef struct {
-  FILE     *filep;       
-  int       closeondel;
-} DohFile;
-
-/* -----------------------------------------------------------------------------
- * DelFile()
- * ----------------------------------------------------------------------------- */
-
-static void
-DelFile(DOH *fo) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  if (f->closeondel)
-    fclose(f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_read()
- * ----------------------------------------------------------------------------- */
-
-static int
-File_read(DOH *fo, void *buffer, int len) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return fread(buffer,1,len,f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_write()
- * ----------------------------------------------------------------------------- */
-
-static int
-File_write(DOH *fo, void *buffer, int len) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return fwrite(buffer,1,len,f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_seek()
- * ----------------------------------------------------------------------------- */
-
-static int
-File_seek(DOH *fo, long offset, int whence) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return fseek(f->filep,offset,whence);
-}
-
-/* -----------------------------------------------------------------------------
- * File_tell()
- * ----------------------------------------------------------------------------- */
-
-static long
-File_tell(DOH *fo) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return ftell(f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_putc()
- * ----------------------------------------------------------------------------- */
-
-static int 
-File_putc(DOH *fo, int ch) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return fputc(ch,f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_getc()
- * ----------------------------------------------------------------------------- */
-
-static int 
-File_getc(DOH *fo) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return fgetc(f->filep);
-}
-
-/* -----------------------------------------------------------------------------
- * File_ungetc()
+ * Department of Computer Science        
+ * University of Chicago
+ * 1100 E 58th Street
+ * Chicago, IL  60637
+ * beazley@cs.uchicago.edu
  *
- * Put a character back onto the input
- * ----------------------------------------------------------------------------- */
+ * Please read the file LICENSE for the copyright and terms by which SWIG
+ * can be used and distributed.
+ ****************************************************************************/
 
-static int 
-File_ungetc(DOH *fo, int ch) {
-  DohFile *f = (DohFile *) ObjData(fo);
-  return ungetc(ch, f->filep);
-}
+#include "doh.h"
+
+/* ---------------------------------------------------------------------------
+ * $Header$
+ * string.c
+ *
+ * String support.
+ * --------------------------------------------------------------------------- */
+
+typedef struct File {
+    DOHCOMMON;
+    FILE     *filep;       
+} File;
+
+/* Forward references */
+
+void    DelFile(DOH *s);
+int     File_read(DOH *s, void *buffer, int length);
+int     File_write(DOH *s, void *buffer, int length);
+int     File_seek(DOH *s, long offset, int whence);
+long    File_tell(DOH *s);
+int     File_printf(DOH *s, char *fmt, va_list ap);
 
 static DohFileMethods FileFileMethods = {
-  File_read, 
+  File_read,
   File_write,
-  File_putc,
-  File_getc,
-  File_ungetc,
   File_seek,
   File_tell,
-  0,              /* close */
+  File_printf,
 };
 
-static DohObjInfo DohFileType = {
-    "DohFile",          /* objname      */
-    DelFile,         /* doh_del      */
-    0,               /* doh_copy     */
-    0,               /* doh_clear    */
-    0,               /* doh_str      */
-    0,               /* doh_data     */
-    0,               /* doh_dump     */
-    0,               /* doh_len      */
-    0,               /* doh_hash     */
-    0,               /* doh_cmp      */
-    0,               /* doh_setfile  */
-    0,               /* doh_getfile  */
-    0,               /* doh_setline  */
-    0,               /* doh_getline  */
-    0,               /* doh_mapping  */
-    0,               /* doh_sequence */
-    &FileFileMethods,/* doh_file     */
-    0,               /* doh_string   */
-    0,               /* doh_callable */
-    0,               /* doh_position */
+static DohObjInfo FileType = {
+    "File",          /* objname */
+    0,
+    DelFile,         /* sm_del */
+    0,               /* sm_copy */
+    0,               /* sm_clear */
+    0,               /* sm_str */
+    0,               /* doh_data */
+    0,               /* sm_len */
+    0,               /* sm_hash    */
+    0,               /* doh_cmp */
+    0,                 /* doh_mapping */
+    0, /* doh_sequence */
+    &FileFileMethods,/* doh_file */
+    0,
+    0,
+    0,
+    0,
 };
+
+DohObjInfo *File_type() {
+  return &FileType;
+}
 
 /* -----------------------------------------------------------------------------
- * NewFile()
- *
- * Create a new file from a given filename and mode.
+ * NewFile(char *filename, char *mode)
  * ----------------------------------------------------------------------------- */
-
 DOH *
-NewFile(DOH *fn, char *mode)
+NewFile(char *filename, char *mode)
 {
-  DohFile *f;
+  File *f;
   FILE *file;
-  char *filename;
-  static int init = 0;
-
-  if (!init) {
-    DohRegisterType(DOHTYPE_FILE, &DohFileType);
-    init = 1;
-  }
-
-  filename = Char(fn);
   file = fopen(filename,mode);
   if (!file) return 0;
 
-  f = (DohFile *) DohMalloc(sizeof(DohFile));
-  if (!f) {
-    fclose(file);
-    return 0;
-  }
+  f = (File *) malloc(sizeof(File));
+  DohInit(f);
+  f->objinfo = &FileType;
   f->filep = file;
-  f->closeondel = 1;
-  return DohObjMalloc(DOHTYPE_FILE,f);
+  return (DOH *) f;
 }
 
 /* -----------------------------------------------------------------------------
- * NewFileFromFile()
+ * NewFileFromFile(FILE *f)
  *
- * Create a file object from an already open FILE *.
  * ----------------------------------------------------------------------------- */
 
 DOH *
 NewFileFromFile(FILE *file) 
 {
-  DohFile *f;
-  static int init = 0;
-  if (!init) {
-    DohRegisterType(DOHTYPE_FILE, &DohFileType);
-    init = 1;
-  }
-  f = (DohFile *) DohMalloc(sizeof(DohFile));
-  if (!f) return 0;
+  File *f;
+  f = (File *) malloc(sizeof(File));
+  DohInit(f);
+  f->objinfo = &FileType;
   f->filep = file;
-  f->closeondel = 0;
-  return DohObjMalloc(DOHTYPE_FILE,f);
+  return (DOH *) f;
 }
+
+/* -----------------------------------------------------------------------------
+ * DelFile(DOH *s) - Delete a file
+ * ----------------------------------------------------------------------------- */
+void
+DelFile(DOH *so) {
+  File *f = (File *) so;
+  assert(f->refcount <= 0);
+  fclose(f->filep);
+  free(f);
+}
+
+/* -----------------------------------------------------------------------------
+ * int File_check(DOH *f) - Check if f is a file
+ * ----------------------------------------------------------------------------- */
+int
+File_check(DOH *f) 
+{
+  return 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * int File_read(DOH *so, void *buffer, int len)
+ * 
+ * Read data from the File
+ * ----------------------------------------------------------------------------- */
+int
+File_read(DOH *so, void *buffer, int len) {
+  File *s = (File *) so;
+  return (size_t) fread(buffer,len,1,s->filep);
+}
+
+/* -----------------------------------------------------------------------------
+ * int File_write(DOH *so, void *buffer, int len)
+ * 
+ * Write data to the File
+ * ----------------------------------------------------------------------------- */
+int
+File_write(DOH *so, void *buffer, int len) {
+  File *s = (File *) so;
+  return (size_t) fwrite(buffer,len,1,s->filep);
+}
+
+/* -----------------------------------------------------------------------------
+ * int File_seek(DOH *so, long offset, int whence)
+ * 
+ * Seek to a new position
+ * ----------------------------------------------------------------------------- */
+int
+File_seek(DOH *so, long offset, int whence) {
+  File *s = (File *) so;
+  return fseek(s->filep,offset,whence);
+}
+
+/* -----------------------------------------------------------------------------
+ * long File_tell(DOH *so)
+ * 
+ * Return current position
+ * ----------------------------------------------------------------------------- */
+long
+File_tell(DOH *so) {
+  File *s = (File *) so;
+  return ftell(s->filep);
+}
+
+/* -----------------------------------------------------------------------------
+ * int File_printf(DOH *so, char *format, ...)
+ *
+ * ----------------------------------------------------------------------------- */
+
+int
+File_printf(DOH *so, char *format, va_list ap) 
+{
+  int len, wlen;
+  DOH    *nso;
+  File *s = (File *) so;
+  nso = NewString("");
+  vAppendf(nso,format,ap);
+  len = Len(nso);
+  wlen = File_write(so,Data(nso),len);
+  Delete(nso);
+  return wlen;
+}
+
+    
+
+
+
+
+
+

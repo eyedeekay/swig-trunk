@@ -1,373 +1,360 @@
-/* ----------------------------------------------------------------------------- 
- * list.c
- *
- *     Implements a simple list object.
+/****************************************************************************
+ * Simplified Wrapper and Interface Generator  (SWIG)
  * 
- * Author(s) : David Beazley (beazley@cs.uchicago.edu)
+ * Author : David Beazley
  *
- * Copyright (C) 1999-2000.  The University of Chicago
- * See the file LICENSE for information on usage and redistribution.	
- * ----------------------------------------------------------------------------- */
+ * Department of Computer Science        
+ * University of Chicago
+ * 1100 E 58th Street
+ * Chicago, IL  60637
+ * beazley@cs.uchicago.edu
+ *
+ * Please read the file LICENSE for the copyright and terms by which SWIG
+ * can be used and distributed.
+ ****************************************************************************/
 
-static char cvsroot[] = "$Header$";
+/*******************************************************************************
+ * $Header$
+ *
+ * File : list.c
+ *
+ * General purpose structure for keeping a list of reference counted Swig objects.
+ *******************************************************************************/
 
-#include "dohint.h"
+#include "doh.h"
 
 typedef struct List {
+    DOHCOMMON;
     int          maxitems;        /* Max size  */
     int          nitems;          /* Num items */
     int          iter;            /* Iterator  */
-    DOH         *file;
-    int          line;
     DOH        **items;
 } List;
 
-/* Doubles amount of memory in a list */
+/* Forward references */
+
+DOH      *CopyList(DOH *);
+void     DelList(DOH *);
+void     List_clear(DOH *);
+DOH      *List_get(DOH *, int pos);
+int      List_set(DOH *, int pos, DOH *obj);
+int      List_insert(DOH *, int pos, DOH *item);
+int      List_remove(DOH *, int pos);
+int      List_len(DOH *);
+DOH      *List_first(DOH *);
+DOH      *List_next(DOH *);
+DOH      *List_str(DOH *);
+
+#define MAXLISTITEMS 8
+
+static DohSequenceMethods ListSeqMethods = {
+  List_get,
+  List_set,
+  List_remove,
+  List_insert,
+  0,
+  List_first,
+  List_next,
+};
+
+static DohObjInfo ListType = {
+    "List",          /* objname */
+    0,
+    DelList,         /* sm_del */
+    CopyList,        /* sm_copy */
+    List_clear,      /* sm_clear */
+    List_str,        /* sm_str */
+    0,               /* doh_data */
+    List_len,        /* sm_len */
+    0,               /* sm_hash    */
+    0,               /* doh_cmp */
+    0,               /* doh_mapping */
+    &ListSeqMethods, /* doh_sequence */
+    0,
+    0,
+    0,
+    0,
+    0,
+};
+
+DohObjInfo *List_type() {
+  return &ListType;
+}
+
+/* Internal function.   Doubles amount of memory in a list */
 static 
 void more(List *l) {
-    l->items = (void **) DohRealloc(l->items, l->maxitems*2*sizeof(void *));
-    assert(l->items);
+    int    i;
+    void   **newitems;
+  
+    newitems = (void **) malloc(l->maxitems*2*sizeof(void *));
+    for (i = 0; i < l->maxitems; i++) {
+	newitems[i] = l->items[i];
+    }
+    for (i = l->maxitems; i < 2*l->maxitems; i++) {
+	newitems[i] = (void *) 0;
+    }
     l->maxitems *= 2;
+    free(l->items);
+    l->items = newitems;
 }
 
 /* -----------------------------------------------------------------------------
- * CopyList()
- *
- * Make a shallow copy of a list.
+ * List_check(DOH *lo) - Check to see if an object is a list
  * ----------------------------------------------------------------------------- */
-static DOH *
+
+int
+List_check(DOH *lo) {
+    List *l = (List *) lo;
+    if (!l) return 0;
+    if (l->magic != DOH_MAGIC) return 0;
+    if (l->objinfo != &ListType) return 0;
+    return 1;
+}
+
+/* -----------------------------------------------------------------------------
+ * NewList() - Create a new list
+ * ----------------------------------------------------------------------------- */
+
+DOH *
+NewList() {
+    List *l;
+    int   i;
+    l = (List *) malloc(sizeof(List));
+    DohInit(l);
+    l->objinfo = &ListType;
+    l->nitems = 0;
+    l->maxitems = MAXLISTITEMS;
+    l->items = (void **) malloc(l->maxitems*sizeof(void *));
+    for (i = 0; i < MAXLISTITEMS; i++) {
+	l->items[i] = 0;
+    }
+    l->iter = 0;
+    return (DOH *) l;
+}
+
+/* -----------------------------------------------------------------------------
+ * DOH *CopyList(DOH *l)   - Copy a list
+ * ----------------------------------------------------------------------------- */
+
+DOH *
 CopyList(DOH *lo) {
     List *l,*nl;
     int i;
-    l = (List *) ObjData(lo);
-    nl = (List *) DohMalloc(sizeof(List));
+    l = (List *) lo;
+    nl = (List *) malloc(sizeof(List));
+    DohInit(nl);
+    nl->objinfo = l->objinfo;
     nl->nitems = l->nitems;
     nl->maxitems = l->maxitems;
-    nl->items = (void **) DohMalloc(l->maxitems*sizeof(void *));
+    nl->items = (void **) malloc(l->maxitems*sizeof(void *));
     nl->iter = 0;
-    for (i = 0; i < l->nitems; i++) {
+    for (i = 0; i < l->maxitems; i++) {
 	nl->items[i] = l->items[i];
-	Incref(nl->items[i]);
+	if (nl->items[i]) {
+	    Incref(nl->items[i]);
+	}
     }
-    nl->file = l->file;
-    if (nl->file) Incref(nl->file);
-    nl->line = l->line;
-    return DohObjMalloc(DOHTYPE_LIST, nl);
+    return (DOH *) nl;
 }
 
 /* -----------------------------------------------------------------------------
- * DelList()
- *
- * Delete a list.
+ * void DelList(DOH *l) - Delete a list
  * ----------------------------------------------------------------------------- */
 
-static void
+void
 DelList(DOH *lo) {
-    List *l = (List *) ObjData(lo);
+    List *l;
     int i;
-    for (i = 0; i < l->nitems; i++)
-	Delete(l->items[i]);
-    DohFree(l->items);
-    DohFree(l);
-}
-
-/* -----------------------------------------------------------------------------
- * List_clear()
- *
- * Remove all of the list entries, but keep the list object intact.
- * ----------------------------------------------------------------------------- */
-
-static void
-List_clear(DOH *lo) {
-    List *l = (List *) ObjData(lo);
-    int i;
+    l = (List *) lo;
+    assert(l->refcount <= 0);
     for (i = 0; i < l->nitems; i++) {
 	Delete(l->items[i]);
+    }
+    free(l->items);
+    free(l);
+}
+
+/* -----------------------------------------------------------------------------
+ * void List_clear(DOH *l) - Clear all elements in the list
+ * ----------------------------------------------------------------------------- */
+
+void
+List_clear(DOH *lo) {
+    List *l;
+    int i;
+    l = (List *) lo;
+    for (i = 0; i < l->nitems; i++) {
+	Delete(l->items[i]);
+	l->items[i] = 0;
     }
     l->nitems = 0;
 }
 
 /* -----------------------------------------------------------------------------
- * List_insert()
- *
- * Insert an item into the list. If the item is not a DOH object, it is assumed
- * to be a 'char *' and is used to construct an equivalent string object.
+ * void List_insert(DOH *lo, int pos, DOH *item) - Insert an element
  * ----------------------------------------------------------------------------- */
 
-static int 
-List_insert(DOH *lo, int pos, DOH *item) {
-  List *l = (List *) ObjData(lo);
-  int i;
-  
-  if (!item) return -1;
-  if (!DohCheck(item)) {
-    item = NewString(item);
-    Decref(item);
-  }
-  if (pos == DOH_END) pos = l->nitems;
-  if (pos < 0) pos = 0;
-  if (pos > l->nitems) pos = l->nitems;
-  if (l->nitems == l->maxitems) more(l);
-  for (i = l->nitems; i > pos; i--) {
-    l->items[i] = l->items[i-1];
-  }
-  l->items[pos] = item;
-  Incref(item);
-  l->nitems++;
-  return 0;
+int 
+List_insert(DOH *lo, int pos, DOH *item)
+{
+    List *l;
+    DohBase *b;
+    int i;
+
+    if (!item) return;
+    b = (DohBase *) item;
+    l = (List *) lo;
+
+    if (pos == DOH_END) pos = l->nitems;
+    if (pos < 0) pos = 0;
+    if (pos > l->nitems) pos = l->nitems;
+    if (l->nitems == l->maxitems) more(l);
+    for (i = l->nitems; i > pos; i--) {
+	l->items[i] = l->items[i-1];
+    }
+    l->items[pos] = item;
+    b->refcount++;
+    l->nitems++;
+    return 0;
 }
 
 /* -----------------------------------------------------------------------------
- * List_remove()
- *
- * Remove an item from a list.
+ * void List_remove(DOH *lo, int pos) - Remove an element
  * ----------------------------------------------------------------------------- */
     
-static int
-List_remove(DOH *lo, int pos) {
-    List *l = (List *) ObjData(lo);
+int
+List_remove(DOH *lo, int pos)
+{
+    List *l;
+    DOH *item;
     int   i;
+
+    l = (List *) lo;
     if (pos == DOH_END) pos = l->nitems-1;
     if (pos == DOH_BEGIN) pos = 0;
-    assert(!((pos < 0) || (pos >= l->nitems)));
-    Delete(l->items[pos]);
+    if ((pos < 0) || (pos >= l->nitems)) return;
+    item = l->items[pos];
     for (i = pos; i < l->nitems-1; i++) {
 	l->items[i] = l->items[i+1];
     }
     l->nitems--;
+    Delete(item);
     return 0;
 }
 
 /* -----------------------------------------------------------------------------
- * List_len()
- *
- * Return the number of elements in the list
+ * int List_len(DOH *l) - List length
  * ----------------------------------------------------------------------------- */
 
-static int 
-List_len(DOH *lo) {
-  List *l = (List *) ObjData(lo);
-  return l->nitems;
+int 
+List_len(DOH *lo) 
+{
+    return ((List *) lo)->nitems;
 }
 
 /* -----------------------------------------------------------------------------
- * List_get()
- *
- * Get the nth item from the list.
+ * DOH *List_get(DOH *lo, int n) - Get an item
  * ----------------------------------------------------------------------------- */
 
-static DOH *
-List_get(DOH *lo, int n) {
-    List *l = (List *) ObjData(lo);
+DOH *
+List_get(DOH *lo, int n) 
+{
+    List *l;
+    l = (List *) lo;
     if (n == DOH_END) n = l->nitems-1;
     if (n == DOH_BEGIN) n = 0;
-    assert(!((n < 0) || (n >= l->nitems)));
+    if ((n < 0) || (n >= l->nitems)) {
+	printf("List_get : Invalid list index %d\n", n);
+    }
     return l->items[n];
 }
 
 /* -----------------------------------------------------------------------------
- * List_set()
- *
- * Set the nth item in the list replacing any previous item. 
+ * int List_set(DOH *lo, int n, DOH *val) - Set an item
  * ----------------------------------------------------------------------------- */
 
-static int
-List_set(DOH *lo, int n, DOH *val) {
-    List *l = (List *) ObjData(lo);
-    if (!val) return -1;
-    assert(!((n < 0) || (n >= l->nitems)));
-    if (!DohCheck(val)) {
-      val = NewString(val);
-      Decref(val);
+int
+List_set(DOH *lo, int n, DOH *val) 
+{
+    List *l;
+
+    l = (List *) lo;
+    if ((n < 0) || (n >= l->nitems)) {
+	printf("List_set : Invalid list index %d\n", n);
     }
     Delete(l->items[n]);
     l->items[n] = val;
     Incref(val);
-    Delete(val);
     return 0;
 }
 
 /* -----------------------------------------------------------------------------
- * List_first()
- *
- * Return the first item in the list.
+ * Iterators 
  * ----------------------------------------------------------------------------- */
 
-static DOH *
-List_first(DOH *lo) {
-    List *l = (List *) ObjData(lo);
+DOH *
+List_first(DOH *lo)
+{
+    List *l;
+    l = (List *) lo;
     l->iter = 0;
     if (l->iter >= l->nitems) return 0;
     return l->items[l->iter];
 }
 
-/* -----------------------------------------------------------------------------
- * List_next()
- * 
- * Return the next item in the list.
- * ----------------------------------------------------------------------------- */
-
-static DOH *
-List_next(DOH *lo) {
-    List *l = (List *) ObjData(lo);
+DOH *
+List_next(DOH *lo)
+{
+    List *l;
+    l = (List *) lo;
     l->iter++;
     if (l->iter >= l->nitems) return 0;
     return l->items[l->iter];
 }
 
 /* -----------------------------------------------------------------------------
- * List_str()
- *
- * Create a string representation of the list.
+ * String *List_str() - Create a string representation
  * ----------------------------------------------------------------------------- */
-static DOH *
-List_str(DOH *lo) {
+
+DOH *
+List_str(DOH *lo) 
+{
     DOH *s;
     int i;
-    List *l = (List *) ObjData(lo);
+
+    List *l = (List *) lo;
     s = NewString("");
-    if (ObjGetMark(lo)) {
-      Printf(s,"List(%x)", lo);
-      return s;
-    }
-    ObjSetMark(lo,1);
-    Printf(s,"List[ ");
     for (i = 0; i < l->nitems; i++) {
-      Printf(s, "%s", l->items[i]);
+      Appendf(s, "%o", l->items[i]);
       if ((i+1) < l->nitems)
-	Printf(s,", ");
+	Append(s,", ");
     }
-    Printf(s," ]\n");
-    ObjSetMark(lo,0);
     return s;
 }
 
+#ifdef SORT
 /* -----------------------------------------------------------------------------
- * List_dump()
+ * void List_sort(DOH *DOH)
  *
- * Dump the items to an output stream.
+ * Sorts a list 
  * ----------------------------------------------------------------------------- */
 
-static int 
-List_dump(DOH *lo, DOH *out) {
-  int nsent = 0;
-  int i,ret;
-  List *l = (List *) ObjData(lo);
-  for (i = 0; i < l->nitems; i++) {
-    ret = Dump(l->items[i],out);
-    if (ret < 0) return -1;
-    nsent += ret;
-  }
-  return nsent;
-}
-
-
-/* -----------------------------------------------------------------------------
- * List_sort()
- * ----------------------------------------------------------------------------- */
-
-
-static int  objcmp(const void *s1, const void *s2) {
+int  objcmp(const void *s1, const void *s2) {
   DOH **so1, **so2;
   so1 = (DOH **) s1;
   so2 = (DOH **) s2;
   return Cmp(*so1,*so2);
 }
 
-void
-List_sort(DOH *lo, int opt) {
-  List *l = (List *) ObjData(lo);
-  qsort(l->items,l->nitems,sizeof(DOH *),objcmp);
+void List_sort(DOH *so) {
+  List *l;
+  if (!List_check(so)) return;
+  l = (List *) so;
+  qsort(l->items,l->nitems,sizeof(DOH *), objcmp);
 }
+#endif
 
 
-void List_setfile(DOH *lo, DOH *file) {
-  DOH *fo;
-  List *l = (List *) ObjData(lo);
 
-  if (!DohCheck(file)) {
-    fo = NewString(file);
-    Decref(fo);
-  } else fo = file;
-  Incref(fo);
-  Delete(l->file);
-  l->file = fo;
-}
 
-DOH *List_getfile(DOH *lo) {
-  List *l = (List *) ObjData(lo);
-  return l->file;
-}
-
-void List_setline(DOH *lo, int line) {
-  List *l = (List *) ObjData(lo);
-  l->line = line;
-}
-
-int List_getline(DOH *lo) {
-  List *l = (List *) ObjData(lo);
-  return l->line;
-}
-
-static DohListMethods ListListMethods = {
-  List_get,
-  List_set,
-  List_remove,
-  List_insert,
-  List_first,
-  List_next,
-  List_sort
-};
-
-static DohObjInfo ListType = {
-    "List",          /* objname */
-    DelList,         /* doh_del */
-    CopyList,        /* doh_copy */
-    List_clear,      /* doh_clear */
-    List_str,        /* doh_str */
-    0,               /* doh_data */
-    List_dump,       /* doh_dump */
-    List_len,        /* doh_len */
-    0,               /* doh_hash    */
-    0,               /* doh_cmp */
-    List_setfile,               /* doh_setfile */
-    List_getfile,               /* doh_getfile */
-    List_setline,               /* doh_setline */
-    List_getline,               /* doh_getline */
-    0,               /* doh_mapping */
-    &ListListMethods, /* doh_sequence */
-    0,               /* doh_file */
-    0,               /* doh_string */
-    0,               /* doh_callable */
-    0,               /* doh_position */         
-};
-
-/* -----------------------------------------------------------------------------
- * NewList()
- *
- * Create a new list.
- * ----------------------------------------------------------------------------- */
-
-#define MAXLISTITEMS 8
-
-DOH *
-NewList() {
-    List *l;
-    int   i;
-    static int init = 0;
-    if (!init) {
-      DohRegisterType(DOHTYPE_LIST, &ListType);
-      init = 1;
-    }
-    l = (List *) DohMalloc(sizeof(List));
-    l->nitems = 0;
-    l->maxitems = MAXLISTITEMS;
-    l->items = (void **) DohMalloc(l->maxitems*sizeof(void *));
-    for (i = 0; i < MAXLISTITEMS; i++) {
-	l->items[i] = 0;
-    }
-    l->iter = 0;
-    l->file = 0;
-    l->line = 0;
-    return DohObjMalloc(DOHTYPE_LIST,l);
-}
