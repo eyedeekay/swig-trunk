@@ -405,35 +405,6 @@ GUILE::close (void)
   }
 }
 
-// ----------------------------------------------------------------------
-// get_pointer()
-//
-// Emits code to get a pointer from a parameter and do type checking.
-// parm is the parameter number.   This function is only used
-// in create_function().
-// ----------------------------------------------------------------------
-
-static void
-get_pointer (char *iname, int parm, SwigType *t,
-	     Wrapper *f, DOHString_or_char *proc_name,
-	     int num_scheme_parm)
-{
-  SwigType_remember(t);
-  /* Pointers are smobs */
-  Printf(f->code, "    if (SWIG_Guile_GetPtr(s_%d,(void **) &arg%d", parm, parm);
-  if (SwigType_type(t) == T_VOID)
-    Printf(f->code, ", NULL)) {\n");
-  else
-    Printv(f->code, ", SWIGTYPE", SwigType_manglestr(t), ")) {\n", 0);
-  /* Raise exception */
-  Printv(f->code,
-	 tab8,
-         "scm_wrong_type_arg(\"",proc_name, "\", ",
-	 0);
-  Printf(f->code,"%d, s_%d);\n", num_scheme_parm, parm);
-  Printv(f->code, tab4, "}\n", 0);
-}
-
 /* Return true iff T is a pointer type */
 
 static int
@@ -474,11 +445,23 @@ guile_do_typemap(DOHFile *file, const char *op,
   if ((tm = guile_typemap_lookup(op, type, arg,
 				 source, target, f))) {
     String *s = NewString(tm);
+    String *descriptor = NewString("");
+    String *basedescriptor = NewString("");
     char argnum_s[10];
+    Printf(descriptor, "SWIGTYPE%s",
+	   SwigType_manglestr(type));
+    Printf(basedescriptor, "SWIGTYPE%s",
+	   SwigType_manglestr(SwigType_base(type)));
     sprintf(argnum_s, "%d", argnum);
     Replace(s,"$argnum", argnum_s, DOH_REPLACE_ANY);
     Replace(s,"$arg",    arg,      DOH_REPLACE_ANY);
     Replace(s,"$name",   name,     DOH_REPLACE_ANY);
+    if (Replace(s, "$descriptor",
+		descriptor, DOH_REPLACE_ANY))
+      SwigType_remember(type);
+    if (Replace(s, "$basedescriptor",
+		basedescriptor, DOH_REPLACE_ANY))
+      SwigType_remember(SwigType_base(type));      
     if (nonewline_p)
       Printv(file, s, 0);
     else Printv(file, s, "\n", 0);
@@ -623,9 +606,6 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 			   source, target, numargs, proc_name, f, 0)) {
 	/* nothing to do */
       }
-      else if (is_a_pointer(pt)) {
-        get_pointer (iname, i, pt, f, proc_name, numargs);
-      }
       else {
         throw_unhandled_guile_type_error (pt);
       }
@@ -689,15 +669,6 @@ GUILE::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 		       (char*)"result", (char*)"gswig_result",
 		       0, proc_name, f, 0)) {
     /* nothing */
-  }
-  else if (is_a_pointer(d)) {
-    SwigType_remember(d);
-    Printv(f->code, tab4,
-           "gswig_result = SWIG_Guile_MakePtr (",
-           "result, ",
-           "SWIGTYPE", SwigType_manglestr(d),
-           ");\n",
-	   0);
   }
   else {
     throw_unhandled_guile_type_error (d);
@@ -843,6 +814,10 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
 
     Printf (f_wrappers, "static SCM %s(SCM s_0)\n{\n", var_name);
 
+    /* Define the scheme name in C. This define is used by several Guile
+       macros. */
+    Printv(f_wrappers, "#define FUNC_NAME \"", proc_name, "\"\n", 0);
+
     if (!(Status & STAT_READONLY) && SwigType_type(t) == T_STRING) {
       Printf (f_wrappers, "\t char *_temp;\n");
       Printf (f_wrappers, "\t int  _len;\n");
@@ -860,31 +835,9 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
 	       "\"Unable to set %s. Variable is read only.\", SCM_EOL);\n",
 	       proc_name, proc_name);
     }
-    else if ((tm = guile_typemap_lookup ("varin",
-                                   t, name, (char*)"s_0", name, f))) {
-      Printf (f_wrappers, "%s\n", tm);
-    }
-    else if (is_a_pointer(t)) {
-      if (SwigType_type(t) == T_STRING) {
-        Printf (f_wrappers, "\t\t _temp = gh_scm2newstr(s_0, &_len);\n");
-        Printf (f_wrappers, "\t\t if (%s) { free(%s);}\n", name, name);
-        Printf (f_wrappers, "\t\t %s = (char *) "
-                 "malloc((_len+1)*sizeof(char));\n", name);
-        Printf (f_wrappers, "\t\t strncpy(%s,_temp,_len);\n", name);
-        Printf (f_wrappers, "\t\t %s[_len] = 0;\n", name);
-      } else {
-        // Set the value of a pointer
-        Printf (f_wrappers, "\t if (SWIG_Guile_GetPtr(s_0, "
-                 "(void **) &%s, ", name);
-        if (SwigType_type(t) == T_VOID)
-          Printf (f_wrappers, "NULL)) {\n");
-        else
-          Printf (f_wrappers, "SWIGTYPE%s)) {\n", SwigType_manglestr(t));
-	/* Raise exception */
-	Printf(f_wrappers, "\tscm_wrong_type_arg(\"%s\", "
-		"%d, s_0);\n", proc_name, 1);
-        Printf (f_wrappers, "\t}\n");
-      }
+    else if (guile_do_typemap(f_wrappers, "varin",
+			      t, name, (char*) "s_0", name, 1, name, f, 0)) {
+      /* nothing */
     }
     else {
       throw_unhandled_guile_type_error (t);
@@ -894,23 +847,16 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
     // Now return the value of the variable (regardless
     // of evaluating or setting)
 
-    if ((tm = guile_typemap_lookup ("varout",
-                              t, name, name, (char*)"gswig_result", f))) {
-      Printf (f_wrappers, "%s\n", tm);
-    }
-    else if (is_a_pointer(t)) {
-      if (SwigType_type(t) == T_STRING) {
-        Printf (f_wrappers, "\t gswig_result = gh_str02scm(%s);\n", name);
-      } else {
-        // Is an ordinary pointer type.
-        Printf (f_wrappers, "\t gswig_result = SWIG_Guile_MakePtr ("
-                 "%s, SWIGTYPE%s);\n", name, SwigType_manglestr(t));
-      }
+    if (guile_do_typemap (f_wrappers, "varout",
+			  t, name, name, (char*)"gswig_result",
+			  0, name, f, 1)) {
+      /* nothing */
     }
     else {
       throw_unhandled_guile_type_error (t);
     }
     Printf (f_wrappers, "\t return gswig_result;\n");
+    Printf (f_wrappers, "#undef FUNC_NAME\n");
     Printf (f_wrappers, "}\n\n");
 
     // Now add symbol to the Guile interpreter
@@ -971,8 +917,7 @@ GUILE::link_variable (char *name, char *iname, SwigType *t)
 // -----------------------------------------------------------------------
 // GUILE::declare_const(char *name, char *iname, SwigType *type, char *value)
 //
-// Makes a constant.   Not sure how this is really supposed to work.
-// I'm going to fake out SWIG and create a variable instead.
+// We create a read-only variable.
 // ------------------------------------------------------------------------
 
 void
@@ -1011,25 +956,17 @@ GUILE::declare_const (char *name, char *, SwigType *type, char *value)
   } else {
     rvalue = NewString(value);
   }
-  if ((tm = guile_typemap_lookup ("const", type, name,
-                            Char(rvalue), name, f))) {
-    Printf (f_init, "%s\n", tm);
+  if (guile_do_typemap(f_header, "const", type, name,
+		       Char(rvalue), name, 0, name, f, 0)) {
+    /* nothing */
   } else {
     // Create variable and assign it a value
-
-    Printf (f_header, "static %s %s = ", SwigType_lstr(type,0), var_name);
-    if (SwigType_type(type) == T_STRING) {
-      Printf (f_header, "\"%s\";\n", value);
-    } else if (SwigType_type(type) == T_CHAR) {
-      Printf (f_header, "\'%s\';\n", value);
-    } else {
-      Printf (f_header, "%s;\n", value);
-    }
-    // Now create a variable declaration
-
-    link_variable (var_name, name, type);
-    Status = OldStatus;
+    Printf (f_header, "static %s %s = %s;\n", SwigType_lstr(type,0),
+	    var_name, rvalue);
   }
+  // Now create a variable declaration
+  link_variable (var_name, name, type);
+  Status = OldStatus;
   Delete(proc_name);
   Delete(rvalue);
   DelWrapper(f);

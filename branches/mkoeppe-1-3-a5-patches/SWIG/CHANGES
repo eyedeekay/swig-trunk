@@ -3,6 +3,16 @@ SWIG (Simplified Wrapper and Interface Generator)
 The Guile/MzScheme/Java Support Patch for 1.3a5
 ===============================================
 
+5/27/2001: mkoeppe
+	   [Guile] Handle pointer types with typemaps, rather than
+	   hard-coded. New typemap substitutions $descriptor,
+	   $basedescriptor; see documentation. Some clean-up in the
+	   variable/constants wrapper generator code.  New convenience
+	   macro SWIG_Guile_MustGetPtr, which allows getting pointers
+	   from smobs in a functional style.  New typemap file
+	   "list-vector.i", providing macros that define typemaps for
+	   converting between C arrays and Scheme lists and vectors.
+
 5/22/2001: mkoeppe
 	   [Guile] Fixed extern "C" declarations in C++ mode. Thanks
 	   to Greg Troxel <gdt@ir.bbn.com>.

@@ -4,10 +4,40 @@
    $Header$  */
 
 /* Unlike other SWIG language modules, the Guile module handles all
-   non-pointer types uniformly via typemaps. Here are the
-   definitions.
+   types uniformly via typemaps. Here are the definitions.
+*/
 
-   The SIMPLE_MAP macro below defines the whole set of typemaps needed
+/* Pointers */
+
+%typemap(in) SWIGPOINTER * {
+  if (SWIG_Guile_GetPtr($source, (void **) &$target, $descriptor))
+    scm_wrong_type_arg(FUNC_NAME, $argnum, $source);
+}
+
+%typemap(in) void * {
+  if (SWIG_Guile_GetPtr($source, (void **) &$target, NULL))
+    scm_wrong_type_arg(FUNC_NAME, $argnum, $source);
+}
+
+%typemap(varin) SWIGPOINTER * {
+  if (SWIG_Guile_GetPtr($source, (void **) &$target, $descriptor))
+    scm_wrong_type_arg(FUNC_NAME, $argnum, $source);
+}
+
+%typemap(varin) void * {
+  if (SWIG_Guile_GetPtr($source, (void **) &$target, NULL))
+    scm_wrong_type_arg(FUNC_NAME, $argnum, $source);
+}
+
+%typemap(out) SWIGPOINTER * {
+    $target = SWIG_Guile_MakePtr ($source, $descriptor);
+}
+    
+%typemap(varout) SWIGPOINTER * {
+    $target = SWIG_Guile_MakePtr ($source, $descriptor);
+}
+
+/* The SIMPLE_MAP macro below defines the whole set of typemaps needed
    for simple types. */
 
 %define SIMPLE_MAP(C_NAME, SCM_TO_C, C_TO_SCM, SCM_NAME)
@@ -60,6 +90,13 @@
    reference. */
 
 %typemap (guile, freearg) char *OUTPUT, char *BOTH "";
+
+/* If we set a string variable, delete the old result first. */
+
+%typemap (varin) char *, const char * {
+    if ($target) free($target);
+    $target = GSWIG_scm2str($source);
+}
 
 /* Void */
 

@@ -117,6 +117,16 @@ SWIG_Guile_Init();
 SWIGSTATIC int
 SWIG_Guile_GetPtr (SCM s, void **result, swig_type_info *type);
 
+/* Get a pointer value from a smob.  If there is a type-mismatch,
+   signal a wrong-type-arg error for the given argument number. */
+SWIGSTATIC void *
+SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
+			int argnum, char *func_name);
+
+/* Use this convenience macro instead of the above function. */
+#define SWIG_Guile_MustGetPtr(s, type, argnum) \
+  SWIG_Guile_MustGetPtr_(s, type, argnum, FUNC_NAME)
+
 /* Make a smob from a pointer and typeinfo.  */
 SWIGSTATIC SCM
 SWIG_Guile_MakePtr (void *ptr, swig_type_info *type);

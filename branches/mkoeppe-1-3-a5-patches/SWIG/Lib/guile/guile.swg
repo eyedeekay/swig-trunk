@@ -213,6 +213,18 @@ SWIG_Guile_GetPtr(SCM s, void **result, swig_type_info *type)
   return 1;
 }
 
+SWIGSTATIC void *
+SWIG_Guile_MustGetPtr_ (SCM s, swig_type_info *type,
+			int argnum, char *func_name)
+{
+  void *result;
+  if (SWIG_Guile_GetPtr(s, &result, type)) {
+    /* type mismatch */
+    scm_wrong_type_arg(func_name, argnum, s);
+  }
+  return result;
+}
+
 /* Init */
 
 static int

@@ -946,6 +946,14 @@ Revised: Matthias K&ouml;ppe (May 8, 2001)
 <p>
 This section details guile-specific support in SWIG.
 
+<p>
+Currently, one wrapper module must be generated without
+<code>-c</code> and compiled with <code>-DSWIG_GLOBAL</code>, all the
+other wrapper modules must be generated with <code>-c</code>.  Maybe
+one should move all the global helper functions that come from
+<code>guile.swg</code> into a library, which is built by <code>make
+runtime</code>. 
+
 <a name="10.1" href="#i10.1">
 <h3>10.1 Meaning of "Module"</h3>
 </a>
@@ -1090,25 +1098,56 @@ complained so far.
 </a>
 
 <p>
-The Guile module handles all non-pointer types via typemaps. This
+The Guile module handles all types via typemaps. This
 information is read from <code>Lib/guile/typemaps.i</code>. 
 
-<p>
-A function can return multiple values in three ways:
+Some non-standard typemap substitutions are supported:
+<ul>
+<li><code>$descriptor</code> expands to a type descriptor for use with
+the <code>SWIG_Guile_MakePtr()</code> and
+<code>SWIG_Guile_GetPtr</code> functions.
+<li>For pointer types, <code>$basedescriptor</code> expands to a
+descriptor for the base type.
+</ul>
+
+<p>A function returning <code>void</code> (more precisely, a function
+whose <code>out</code> typemap returns <code>GH_UNSPECIFIED</code>) is
+treated as returning no values. In <code>argout</code> typemaps, one
+can use the macro <code>GUILE_APPEND_RESULT</code> in order to append
+a value to the list of function return values.
+
+<p>Multiple values can be passed up to Scheme in one of three ways:
 <ul>
 <li><em>Multiple values as lists.</em> 
 By default, if more than one value is to
 be returned, a list of the values is created and returned.
 <li><em>Multiple values as vectors.</em>
 By issueing 
+<blockquote>
 <pre>%pragma(guile) beforereturn = "GUILE_MAYBE_VECTOR"</pre>
+</blockquote>
 vectors instead of lists will be used.
 <li><em>Multiple values for multiple-value continuations.</em>
-By issueing 
+<strong>This is the most elegant way.</strong> By issueing 
+<blockquote>
 <pre>%pragma(guile) beforereturn = "GUILE_MAYBE_VALUES"</pre>
+</blockquote>
 multiple values are passed to the multiple-value
 continuation, as created by <code>call-with-values</code> or the
-convenience macro <code>receive</code>. 
+convenience macro <code>receive</code>. The latter is available if you
+issue <code>(use-modules (srfi srfi-8))</code>. Assuming that your
+<code>divide</code> function 
+wants to return two values, a quotient and a remainder, you can write: 
+<blockquote>
+<pre>
+(receive (quotient remainder)
+    (divide 35 17)
+  <var>body</var>...)
+</pre>
+</blockquote>
+In <code><var>body</var></code>, the first result of
+<code>divide</code> will be bound to the variable
+<code>quotient</code>, and the second result to <code>remainder</code>.
 </ul>
 
 <a name="10.5" href="#i10.5">
@@ -1117,14 +1156,6 @@ convenience macro <code>receive</code>.
 
 <p>
 For pointer types, SWIG uses Guile smobs.
-
-<p>
-Currently, one wrapper module must be generated without
-<code>-c</code> and compiled with <code>-DSWIG_GLOBAL</code>, all the
-other wrapper modules must be generated with <code>-c</code>.  Maybe
-one should move all the global helper functions that come from
-<code>guile.swg</code> into a library, which is built by <code>make
-runtime</code>. 
 
 <p>
 In earlier versions of SWIG, C pointers were represented as Scheme
