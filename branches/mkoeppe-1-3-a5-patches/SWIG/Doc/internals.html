@@ -989,12 +989,22 @@ libraries into Guile.
 ;; Scheme definitions can go here
 </pre>
 </blockquote>
-Newer Guile versions provide a shorthand:
+Newer Guile versions provide a shorthand for <code>dynamic-link</code>
+and <code>dynamic-call</code>:
 <blockquote>
 <pre>
 (load-extension "./example.so" "SWIG_init")
 </pre>
 </blockquote>
+You need to explicitly export those bindings made by SWIG that you
+want to import into other modules:
+<blockquote>
+<pre>
+(export foo bar)
+</pre>
+</blockquote>
+In this example, the procedures <code>foo</code> and <code>bar</code>
+would be exported.
 </ul>
 
 If you want to include several SWIG modules, you would need to rename
