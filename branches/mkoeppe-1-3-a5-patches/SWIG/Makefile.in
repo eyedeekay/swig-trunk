@@ -251,7 +251,7 @@ clean:
 		(cd $(SOURCE)/$$i; $(MAKE) clean) ; \
 	   fi \
 	done;
-	@cd Runtime clean; $(MAKE)
+	@cd Runtime; $(MAKE) clean
 	rm -f $(TARGET)
 
 distclean-dead = config.status config.log config.cache \
