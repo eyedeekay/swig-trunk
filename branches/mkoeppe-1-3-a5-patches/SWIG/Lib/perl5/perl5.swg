@@ -153,7 +153,7 @@ SWIGRUNTIME(int *)
 _SWIG_MakePtr(CPerlObj *pPerl, SV *sv, void *ptr, swig_type_info *t)
 #endif
 {
-  sv_setref_pv(sv, t->name, ptr);
+  sv_setref_pv(sv, (char *) t->name, ptr);
 }
 
 /* Magic variable code */
