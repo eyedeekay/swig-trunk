@@ -1266,7 +1266,7 @@ void JAVA::cpp_pragma(Pragma* plist) {
 void JAVA::add_typedef(SwigType *t, char *name) {
   if(!shadow) return;
   if (is_shadow(t)) {
-    cpp_class_decl(name,Char(is_shadow(t)),"");
+    cpp_class_decl(name,Char(is_shadow(t)), (char*) "");
   }
 }
 
