@@ -5,20 +5,20 @@ SRCS       =
 TARGET     = simple
 INTERFACE  = simple.i
 LIBS       = -L../.. -lgifplot
-INCLUDE    = -I../../Include
+INCLUDES   = -I../../Include
 
 all:: static
 
 dynamic::
 	$(MAKE) -f $(TOP)/Makefile TOP='$(TOP)' \
 	SRCS='$(SRCS)' SWIG='$(SWIG)' \
-	INCLUDE='$(INCLUDE)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
+	INCLUDES='$(INCLUDES)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' guile
 
 static::
 	$(MAKE) -f $(TOP)/Makefile TOP='$(TOP)' \
 	SRCS='$(SRCS)' SWIG='$(SWIG)' \
-	INCLUDE='$(INCLUDE)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
+	INCLUDES='$(INCLUDES)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' guile_static
 
 clean::

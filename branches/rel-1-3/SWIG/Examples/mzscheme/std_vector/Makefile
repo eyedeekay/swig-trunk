@@ -3,7 +3,6 @@ SWIG       = $(TOP)/../swig
 SRCS       = 
 TARGET     = example
 INTERFACE  = example.i
-INCLUDE    = -I.
 SWIGOPT    = 
 
 GPP        = `which g++`

@@ -5,7 +5,7 @@ SRCS       =
 TARGET     = gifcaml
 INTERFACE  = gifplot.i
 LIBS       = -L../.. -lgifplot -lm
-INCLUDE    = -I../../Include
+INCLUDES   = -I../../Include
 MLFILE     = gifplot.ml
 IOBJS      = runme.cmo
 PROGFILE   = runme.ml
@@ -16,7 +16,7 @@ static::
 	$(MAKE) -f $(TOP)/Makefile TOP='$(TOP)' \
 	IOBJS='$(IOBJS)' PROGFILE='$(PROGFILE)' \
 	SRCS='$(SRCS)' SWIG='$(SWIG)' MLFILE='$(MLFILE)' \
-	INCLUDE='$(INCLUDE)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
+	INCLUDES='$(INCLUDES)' LIBS='$(LIBS)' SWIGOPT='$(SWIGOPT)' \
 	TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' ocaml_static
 
 clean::

@@ -32,7 +32,7 @@ CSRCS      =
 TARGETPREFIX = 
 TARGETSUFFIX = 
 SWIGOPT    = -I$(TOP)/$(TEST_SUITE)
-INCLUDE    = -I$(TOP)/$(TEST_SUITE)
+INCLUDES   = -I$(TOP)/$(TEST_SUITE)
 RUNTIMEDIR = ../$(TOP)/Runtime/.libs
 DYNAMIC_LIB_PATH = $(RUNTIMEDIR):.
 
@@ -256,20 +256,20 @@ check: all
 
 swig_and_compile_cpp =  \
 	$(MAKE) -f $(TOP)/Makefile CXXSRCS="$(CXXSRCS)" SWIG_LIB="$(SWIG_LIB)" SWIG="$(SWIG)" \
-	INCLUDE="$(INCLUDE)" SWIGOPT="$(SWIGOPT)" NOLINK=true \
+	INCLUDES="$(INCLUDES)" SWIGOPT="$(SWIGOPT)" NOLINK=true \
 	TARGET="$(TARGETPREFIX)$*$(TARGETSUFFIX)" INTERFACE="$*.i" \
 	$(LANGUAGE)$(VARIANT)_cpp
 
 swig_and_compile_c =  \
 	$(MAKE) -f $(TOP)/Makefile CSRCS="$(CSRCS)" SWIG_LIB="$(SWIG_LIB)" SWIG="$(SWIG)" \
-	INCLUDE="$(INCLUDE)" SWIGOPT="$(SWIGOPT)" NOLINK=true \
+	INCLUDES="$(INCLUDES)" SWIGOPT="$(SWIGOPT)" NOLINK=true \
 	TARGET="$(TARGETPREFIX)$*$(TARGETSUFFIX)" INTERFACE="$*.i" \
 	$(LANGUAGE)$(VARIANT)
 
 swig_and_compile_multi_cpp = \
 	for f in `cat $(TOP)/$(TEST_SUITE)/$*.list` ; do \
 	  $(MAKE) -f $(TOP)/Makefile CXXSRCS="$(CXXSRCS)" SWIG_LIB="$(SWIG_LIB)" SWIG="$(SWIG)" \
-	  INCLUDE="$(INCLUDE)" SWIGOPT="$(SWIGOPT)" RUNTIMEDIR="$(RUNTIMEDIR)" \
+	  INCLUDES="$(INCLUDES)" SWIGOPT="$(SWIGOPT)" RUNTIMEDIR="$(RUNTIMEDIR)" \
 	  TARGET="$(TARGETPREFIX)$${f}$(TARGETSUFFIX)" INTERFACE="$$f.i" \
 	  NOLINK=true $(LANGUAGE)$(VARIANT)_multi_cpp; \
 	done
