@@ -9,6 +9,11 @@ language modules take place.  This branch is also the basis for the
 http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).  Eventually it
 will be merged with the development on the trunk of the CVS tree.
 
+5/31/2001: mkoeppe
+	   [Guile] Support multiple parallel lists or vectors in
+	   the typemaps provided by list-vector.i.  New typemaps file,
+	   pointer-in-out.i. 
+
 5/25/2001: cheetah (william fulton)
 	   [Java] HTML update for examples.
 

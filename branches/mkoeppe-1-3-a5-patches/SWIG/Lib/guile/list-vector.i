@@ -52,7 +52,9 @@
 
        Likewise, but the Scheme wrapper will return a list instead of
        a vector.
-       
+
+   Multiple parallel lists or vectors (sharing one length argument)
+   are also supported. 
 */
 
 %define TYPEMAP_LIST_VECTOR_INPUT_OUTPUT(C_TYPE, SCM_TO_C, C_TO_SCM, SCM_TYPE)
@@ -166,10 +168,10 @@
        SCM res = gh_make_vector(gh_int2scm(arraylentemp),
 				SCM_BOOL_F);
        for (i = 0; i<arraylentemp; i++) {
-	 SCM elt = C_TO_SCM(arraytemp[i]);
+	 SCM elt = C_TO_SCM((*$target)[i]);
 	 gh_vector_set_x(res, gh_int2scm(i), elt);
        }
-       if (arraytemp!=NULL) free(arraytemp);
+       if ((*$target)!=NULL) free(*$target);
        GUILE_APPEND_RESULT(res);
      }
 
@@ -178,10 +180,10 @@
        int i;
        SCM res = SCM_EOL;
        for (i = arraylentemp - 1; i>=0; i--) {
-	 SCM elt = C_TO_SCM(arraytemp[i]);
+	 SCM elt = C_TO_SCM((*$target)[i]);
 	 res = gh_cons(elt, res);
        }
-       if (arraytemp!=NULL) free(arraytemp);
+       if ((*$target)!=NULL) free(*$target);
        GUILE_APPEND_RESULT(res);
      }
 
