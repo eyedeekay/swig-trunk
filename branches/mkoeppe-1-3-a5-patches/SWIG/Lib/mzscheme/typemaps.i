@@ -691,3 +691,9 @@ void m_output_helper(Scheme_Object **target, Scheme_Object *s, int *_lenv) {
     $target = scheme_make_double(*$source);
 }
 */
+
+/* Pass through Scheme_Object * */
+
+%typemap (guile, in) Scheme_Object * "$target=$source;";
+%typemap (guile, out) Scheme_Object * "$target=$source;";
+
