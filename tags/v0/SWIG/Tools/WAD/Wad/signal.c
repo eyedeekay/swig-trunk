@@ -1,0 +1,476 @@
+/* ----------------------------------------------------------------------------- 
+ * signal.c
+ *
+ *     WAD signal handler. 
+ * 
+ * Author(s) : David Beazley (beazley@cs.uchicago.edu)
+ *
+ * Copyright (C) 2000.  The University of Chicago
+ * See the file LICENSE for information on usage and redistribution.	
+ * ----------------------------------------------------------------------------- */
+
+#include "wad.h"
+
+/* For some odd reason, certain linux distributions do not seem to define the
+   ESP, EIP, and EBP registers.  This is a hack */
+
+#ifdef WAD_LINUX
+#ifndef ESP
+#define ESP      7
+#endif
+#ifndef EBP
+#define EBP      6
+#endif
+#ifndef EIP
+#define EIP      14
+#endif
+#ifndef ESI
+#define ESI      5
+#endif
+#ifndef EDI
+#define EDI      4
+#endif
+#ifndef EBX
+#define EBX      8
+#endif
+
+#endif
+
+/* Signal handling stack */
+#define STACK_SIZE 4*SIGSTKSZ
+char wad_sig_stack[STACK_SIZE];
+
+/* This variable is set if the signal handler thinks that the
+   heap has overflowed */
+
+int wad_heap_overflow = 0;
+
+static wad_stacked_signal = 0;
+
+static void (*sig_callback)(int signo, WadFrame *data, char *ret) = 0;
+
+void wad_set_callback(void (*s)(int,WadFrame *,char *ret)) {
+  sig_callback = s;
+}
+
+/* This bit of nastiness is used to make a non-local return from the
+   signal handler to a configurable location on the call stack. In a nutshell,
+   this works by repeatedly calling "restore" to roll back the 
+   register windows and stack pointer.  Then we fake a return value and
+   return to the caller as if the function had actually completed
+   normally. */
+
+int            wad_nlr_levels = 0;
+static volatile int  *volatile nlr_p = &wad_nlr_levels;
+long           wad_nlr_value = 0;
+void          (*wad_nlr_func)(void) = 0;
+
+/* Set the return value from another module */
+void wad_set_return_value(long value) {
+  wad_nlr_value = value;
+}
+
+/* Set the return function */
+void wad_set_return_func(void(*f)(void)) {
+  wad_nlr_func = f;
+}
+
+#ifdef WAD_SOLARIS
+static void nonlocalret() {
+  long a;
+  
+  a = wad_nlr_value;
+  /* We never call this procedure as a function.  This code
+     causes an immediate return if someone does this */
+
+  asm("jmp %i7 + 8");
+  asm("restore");
+
+  /* This is the real entry point */
+  /*  asm(".globl _returnsignal");*/
+  asm(".type   _returnsignal,2");
+  asm("_returnsignal:");
+
+  while (*nlr_p > 0) {
+    (*nlr_p)--;
+    asm("restore");
+  }
+
+  asm("sethi %hi(wad_nlr_value), %o0");
+  asm("or %o0, %lo(wad_nlr_value), %o0");
+  asm("ld [%o0], %i0");
+
+  /* If there is a non-local return function.  We're going to go ahead
+     and transfer control to it */
+  
+  if (wad_nlr_func) 
+    (*wad_nlr_func)();
+
+  asm("jmp %i7 + 8");
+  asm("restore");
+  asm(".size	_returnsignal,(.-_returnsignal)");
+}
+#endif
+
+#ifdef WAD_LINUX
+
+/* Saved values of the machine registers */
+
+long   wad_saved_esi = 0;
+long   wad_saved_edi = 0;
+long   wad_saved_ebx = 0;
+
+static void nonlocalret() {
+  asm("_returnsignal:");
+  while (*nlr_p > 0) {
+    (*nlr_p)--;
+    asm("leave");
+  }
+
+  if (wad_nlr_func) 
+    (*wad_nlr_func)();
+
+  /* Restore the registers */
+  asm("movl wad_saved_esi, %esi");
+  asm("movl wad_saved_edi, %edi");
+  asm("movl wad_saved_ebx, %ebx");
+  asm("movl wad_nlr_value, %eax");
+  asm("leave");
+  asm("ret");
+}
+
+/* This function uses a heuristic to restore the callee-save registers on i386.
+   According to the Linux Assembly HOWTO, the %esi, %edi, %ebx, and %ebp registers
+   are callee-saved.  All others are caller saved.    To restore the callee-save
+   registers, we use the fact that the C compiler saves the callee-save registers
+   (if any) at the beginning of function execution.   Therefore, we can scan the
+   instructions at the start of each function in the stack trace to try and find
+   where they are. 
+
+   The following heuristic is used:
+
+   1. Each function starts with a preamble like this which saves the %ebp 
+      register:
+
+          55 89 e5       --->   push %ebp
+                                mov  %esp, %ebp
+
+   2. Next, space is allocated for local variables, using one of two schemes:
+ 
+          83 ec xx       --->  Less than 256 bytes of local storage
+                ^^^
+                length
+
+          81 ec xx xx xx xx  --> More than 256 bytes of local storage
+                ^^^^^^^^^^^
+                   length
+
+   3. After this, a collection of 1-byte stack push op codes might appear
+          
+          56      = pushl %esi
+          57      = pushl %edi
+          53      = pushl %ebx
+
+
+   Based on the size of local variable storage and the order in which 
+   the %esi, %edi, and %ebx registers are pushed on the stack, we can
+   determine where in memory the registers are saved and restore them to
+   their proper values.
+*/
+
+void wad_restore_i386_registers(WadFrame *f, int nlevels) {
+  WadFrame *lastf = f;
+  char     *fd = (char *) f;
+  int       localsize = 0;
+  unsigned char     *pc;
+  unsigned long     *saved;
+  int i, j;
+  int pci;
+  for (i = 0; i <= nlevels; i++) {
+
+    /* This gets the starting instruction for the stack frame */
+    pc = (unsigned char *) f->sym_base;
+    /*    printf("pc = %x, base = %x, %s\n", f->pc, f->sym_base, SYMBOL(f)); */
+    
+    /* Look for the standard prologue 0x55 0x89 0xe5 */
+    if ((pc[0] == 0x55) && (pc[1] == 0x89) && (pc[2] == 0xe5)) {
+      /* Determine the size */
+      pci = 3;
+      if ((pc[3] == 0x83) && (pc[4] == 0xec)) {
+	/*	printf("8-bit size\n");*/
+	localsize = (int) pc[5];
+	pci = 6;
+      } 
+      if ((pc[3] == 0x81) && (pc[4] == 0xec)) {
+	/*	printf("32-bit size\n"); */
+	localsize = (int) *((long *) (pc+5));
+	pci = 10;
+      }
+      saved = (long *) (f->fp - localsize - sizeof(long));
+      /*      printf("saved = %x, fp = %x\n", saved, f->fp);
+      printf("localsize = %d\n", localsize);
+      */
+      for (j = 0; j < 3; j++, saved--, pci++) {
+	if (pc[pci] == 0x57) {
+	  wad_saved_edi = *saved;
+	  /*	  printf("restored edi = %x\n", wad_saved_edi); */
+	}
+	else if (pc[pci] == 0x56) {
+	  wad_saved_esi = *saved;
+	  /*	  printf("restored esi = %x\n", wad_saved_esi); */
+	}
+	else if (pc[pci] == 0x53) {
+	  wad_saved_ebx = *saved;
+	  /*	  printf("restored ebx = %x\n", wad_saved_ebx); */
+	}
+	else break;
+      }
+    }
+    fd += f->size;
+    f = (WadFrame *) fd;
+  }
+}
+
+#endif
+
+void wad_signalhandler(int sig, siginfo_t *si, void *vcontext) {
+  greg_t  *pc;
+  greg_t  *npc;
+  greg_t  *sp;
+  greg_t  *fp;
+#ifdef WAD_LINUX
+  greg_t  *esi;
+  greg_t  *edi;
+  greg_t  *ebx;
+#endif
+
+  unsigned long   addr;
+  ucontext_t      *context;
+  unsigned long   p_sp;        /* process stack pointer   */
+  unsigned long   p_pc;        /* Process program counter */
+  unsigned long   p_fp;        /* Process frame pointer   */
+  int      nlevels = 0;
+  int      found = 0;
+  void     _returnsignal();
+  WadFrame  *frame, *origframe;
+  char      *framedata;
+  char      *retname = 0;
+  unsigned long current_brk;
+
+  wad_nlr_func = 0;
+
+  if (!wad_stacked_signal)
+    wad_object_init();
+
+  context = (ucontext_t *) vcontext;
+ 
+  if (wad_debug_mode & DEBUG_SIGNAL) {
+    printf("WAD: siginfo = %x, context = %x\n", si, vcontext);
+  }
+  
+  current_brk = (long) sbrk(0);
+
+  /* Get some information about the current context */
+
+#ifdef WAD_SOLARIS
+  pc = &((context->uc_mcontext).gregs[REG_PC]);
+  npc = &((context->uc_mcontext).gregs[REG_nPC]);
+  sp = &((context->uc_mcontext).gregs[REG_SP]);
+#endif
+
+#ifdef WAD_LINUX
+  sp = &((context->uc_mcontext).gregs[ESP]);        /* Top of stack */
+  fp = &((context->uc_mcontext).gregs[EBP]);        /* Stack base - frame pointer */
+  pc = &((context->uc_mcontext).gregs[EIP]);        /* Current instruction */
+  esi = &((context->uc_mcontext).gregs[ESI]);       
+  edi = &((context->uc_mcontext).gregs[EDI]);       
+  ebx = &((context->uc_mcontext).gregs[EBX]);       
+  
+  wad_saved_esi = (unsigned long) (*esi);
+  wad_saved_edi = (unsigned long) (*edi);
+  wad_saved_ebx = (unsigned long) (*ebx);
+
+  /*  printf("esi = %x, edi = %x, ebx = %x\n", wad_saved_esi, wad_saved_edi, wad_saved_ebx); */
+
+  /*   printf("&sp = %x, &pc = %x\n", sp, pc); */
+#endif
+  
+  /* Get some information out of the signal handler stack */
+  addr = (unsigned long) si->si_addr;
+
+  /* See if this might be a stack overflow */
+
+  p_pc = (unsigned long) (*pc);
+  p_sp = (unsigned long) (*sp);
+#ifdef WAD_LINUX
+  p_fp = (unsigned long) (*fp);
+  /*  printf("fault at address %x, pc = %x, sp = %x, fp = %x\n", addr, p_pc, p_sp, p_fp); */
+#endif
+  /*  printf("fault at address %x, pc = %x, sp = %x, fp = %x\n", addr, p_pc, p_sp, p_fp);*/
+
+  
+  if (wad_debug_mode & DEBUG_SIGNAL) {
+    printf("fault at address %x, pc = %x, sp = %x, fp = %x\n", addr, p_pc, p_sp, p_fp);
+  }
+
+  if (wad_stacked_signal) {
+    printf("Fault in wad at pc = %x, sp = %x\n", p_pc, p_sp);
+    exit(1);
+  }
+  wad_stacked_signal++;
+  frame = wad_stack_trace(p_pc, p_sp, p_fp);
+  origframe =frame;
+  if (!frame) {
+    /* We're really hosed here */
+    wad_stacked_signal--;
+    return;
+  }
+  wad_heap_overflow = 0;
+  if (sig == SIGSEGV) {
+    if (addr >= current_brk) wad_heap_overflow = 1;
+  }
+
+
+  if (wad_debug_mode & DEBUG_STACK) {
+    /* Walk the exception frames and try to find a return point */
+    framedata = (char *) frame;
+    
+    while (frame->size) {
+      int i;
+      WadParm *p;
+      /* Print out detailed stack trace information */
+      printf("::: Stack frame - 0x%08x :::\n", frame);
+      printf("    sp           = %x\n", frame->sp);
+      printf("    fp           = %x\n", frame->fp);
+      printf("    size         = %x\n", frame->stack_size);
+      printf("    pc           = %x (base = %x)\n", frame->pc, frame->sym_base);
+      printf("    symbol       = '%s'\n", SYMBOL(frame));
+      printf("    srcfile      = '%s'\n", SRCFILE(frame));
+      printf("    objfile      = '%s'\n", OBJFILE(frame));
+      printf("    numargs      = %d\n", frame->nargs);
+      printf("    arguments [\n");
+      p = ARGUMENTS(frame);
+      for (i = 0; i < frame->nargs; i++, p++) {
+	printf("        arg[%d] : name = '%s', loc = %d, type = %d, value = %d\n", i, p->name, p->loc, p->type, p->value);
+      }
+      printf("    ]\n");
+      framedata = framedata + frame->size;
+      frame = (WadFrame *) framedata;
+    }
+    frame = origframe;
+  }
+
+  /* Walk the exception frames and try to find a return point */
+  framedata = (char *) frame;
+
+  while (frame->size) {
+    WadReturnFunc *wr = wad_check_return(framedata+frame->sym_off);
+    if (wr) {
+      found = 1;
+      wad_nlr_value = wr->value;
+      retname = wr->name;
+    }
+    framedata = framedata + frame->size;
+    frame = (WadFrame *) framedata;
+    if (found) {
+      frame->last = 1;   /* Cut off top of the stack trace */
+      break;
+    }
+    nlevels++;
+  }
+
+
+  if (found) {
+    wad_nlr_levels = nlevels - 1;
+#ifdef WAD_LINUX
+    wad_restore_i386_registers(origframe, wad_nlr_levels);
+#endif
+  } else {
+    wad_nlr_levels = 0;
+  }
+
+  if (sig_callback) {
+    (*sig_callback)(sig,origframe,retname);
+  } else {
+    /* No signal handler defined.  Go invoke the default */
+    wad_default_callback(sig, origframe,retname);
+    wad_release_trace();
+  }
+
+  if (wad_debug_mode & DEBUG_HOLD) while(1);
+
+  wad_object_cleanup();
+
+  /* If we found a function to which we should return, we jump to
+     an alternative piece of code that unwinds the stack and 
+     initiates a non-local return. */
+
+  if (wad_nlr_levels > 0) {
+    *(pc) = (greg_t) _returnsignal;
+#ifdef WAD_SOLARIS
+    *(npc) = *(pc) + 4;
+#endif
+    wad_stacked_signal--;
+    return;
+  }
+  exit(1);
+}
+
+
+/* -----------------------------------------------------------------------------
+ * wad_signal_init()
+ *
+ * Resets the signal handler.
+ * ----------------------------------------------------------------------------- */
+
+void wad_signal_init() {
+  struct sigaction newvec;
+  static stack_t  sigstk;
+
+  if (wad_debug_mode & DEBUG_INIT) {
+    printf("WAD: Initializing signal handler.\n");
+  }
+
+  /* This is buggy in Linux and threads.  disabled by default */
+#ifndef WAD_LINUX
+  /* Set up an alternative stack */
+
+  sigstk.ss_sp = (char *) wad_sig_stack;
+  sigstk.ss_size = STACK_SIZE;
+  sigstk.ss_flags = 0;
+  if (!(wad_debug_mode & DEBUG_NOSTACK)) {
+    if (sigaltstack(&sigstk, (stack_t*)0) < 0) {
+      perror("sigaltstack");
+    }
+  }
+#endif
+
+  sigemptyset(&newvec.sa_mask);
+  sigaddset(&newvec.sa_mask, SIGSEGV);
+  sigaddset(&newvec.sa_mask, SIGBUS);
+  sigaddset(&newvec.sa_mask, SIGABRT);
+  sigaddset(&newvec.sa_mask, SIGILL);
+  sigaddset(&newvec.sa_mask, SIGFPE);
+  newvec.sa_flags = SA_SIGINFO;
+
+  if (wad_debug_mode & DEBUG_ONESHOT) {
+    newvec.sa_flags |= SA_RESETHAND;
+  }
+#ifndef WAD_LINUX
+  if (!(wad_debug_mode & DEBUG_NOSTACK)) {
+    newvec.sa_flags |= SA_ONSTACK;
+  } 
+#endif
+  newvec.sa_sigaction = ((void (*)(int,siginfo_t *, void *)) wad_signalhandler);
+  if (sigaction(SIGSEGV, &newvec, NULL) < 0) goto werror;
+  if (sigaction(SIGBUS, &newvec, NULL) < 0) goto werror;
+  if (sigaction(SIGABRT, &newvec, NULL) < 0) goto werror;
+  if (sigaction(SIGFPE, &newvec, NULL) < 0) goto werror;
+  if (sigaction(SIGILL, &newvec, NULL) < 0) goto werror;
+  
+  return;
+ werror:
+  printf("WAD: Couldn't install signal handler!\n");
+}
+
+
