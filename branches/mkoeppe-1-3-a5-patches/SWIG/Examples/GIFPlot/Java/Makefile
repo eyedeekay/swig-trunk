@@ -1,6 +1,6 @@
 TOP        = ../..
-SWIG       = $(TOP)/../swig -shadow
-SWIGOPT    = -I../Include
+SWIG       = $(TOP)/../swig
+SWIGOPT    = -I../Include -shadow
 SRCS       =
 TARGET     = libjgifplot
 INTERFACE  = gifplot.i

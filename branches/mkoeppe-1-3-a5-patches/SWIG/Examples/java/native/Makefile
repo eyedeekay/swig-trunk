@@ -1,9 +1,9 @@
 TOP        = ../..
 SWIG       = $(TOP)/../swig
-SWIGOPT    =
 SRCS       = 
 TARGET     = libexample
 INTERFACE  = example.i
+SWIGOPT    =
 
 all::	java
 
