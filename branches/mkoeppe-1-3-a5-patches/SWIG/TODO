@@ -32,3 +32,38 @@
 
 ** [Guile] Maybe support GOOPS shadow classes
 
+** [Guile] Support garbage collection.
+
+*** %new annotation decides whether a pointer smob can be gc'ed.
+
+*** New smob type `swig-gc'; instances created with
+    SWIG_Guile_MakeCollectablePtr.  %new versions of the pointer
+    typemaps use this function rather than SWIG_Guile_MakePtr.
+
+*** New typemaps "destructor", "gcmarker".  Their values are taken as
+    identifiers for functions taking one argument: a pointer to the
+    object to be destroyed, or whose SCM-valued subobjects are to be
+    marked.  After creating the pointer equivalence table, we iterate
+    again over the remembered pointer types, emitting code that puts
+    the functions into our type table.  No additional functions are
+    generated.
+
+*** The default for all pointer types would be: 
+    %typemap(destructor) SWIGPOINTER * "free";
+
+*** A special annotation, e.g. FREED, can be attached to the arguments
+    of destructor functions, so that explicitly freed structs won't be
+    collected by the GC again. Like this:
+
+    %typemap(argout) SWIGPOINTER *FREED {
+      smob-tag($source) = swig; /* non-gc */
+      smob-data($source) = NULL;
+    }
+    void free_foo(struct foo *FREED);
+    
+** Make a tricky header file defining annotations invisible to the C compiler. 
+   The idea is to prepare one file that serves both as a C header file 
+   and a SWIG interface file.
+
+   void add(SWIG_OUTPUT(int) *z, int x, int y)
+
