@@ -54,9 +54,20 @@
 
 %typemap (guile, freearg) char *, const char * "if ($target) scm_must_free($target);";
 
+/* But this shall not apply if we try to pass a single char by
+   reference. */
+
+%typemap (guile, freearg) char *OUTPUT, char *BOTH "";
+
 /* Void */
 
 %typemap (guile, out) void "gswig_result = GH_UNSPECIFIED;";
 %typemap (guile, outdoc) void "";
+
+/* SCM is passed through */
+
+typedef unsigned long SCM;
+%typemap (guile, in) SCM "$target=$source;";
+%typemap (guile, out) SCM "$target=$source;";
 
 /* typemaps.i ends here */
