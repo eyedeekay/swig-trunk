@@ -495,12 +495,15 @@ expand_macro(DOHString_or_char *name, DOHList *args)
   if (Getattr(macro,"swigmacro")) {
     DOHString *g;
     DOHString *f = NewString("");
-    Printf(f,"%%macro %s, \"%s\", %d {\n", name, Getfile(macro), Getline(macro));
+    /*    Printf(f," %%macro \"%s\",\"%s\",%d\n ", name, Getfile(macro), Getline(macro)); */
     Seek(e,0,SEEK_SET);
     copy_location(macro,e);
     g = Preprocessor_parse(e);
-    Printf(f,"%s\n", g);
-    Printf(f,"}\n");
+
+    /* Drop the macro in place, but with a marker around it */
+    Printf(f,"/*@%s,%d,%s@*/%s/*@@*/", Getfile(macro), Getline(macro), name, g);
+
+    /*    Printf(f," }\n"); */
     Delete(g);
     Delete(e);
     e = f;
@@ -922,6 +925,12 @@ Preprocessor_parse(DOH *s)
 	state = 50;
       } else if (c == '/') {
 	state = 45;
+      } else if (c == '\"') {
+	Putc(c,value);
+	skip_tochar(s,'\"',value);
+      } else if (c == '\'') {
+	Putc(c,value);
+	skip_tochar(s,'\'',value);
       } else {
 	Putc(c,value);
 	if (c == '\\') state = 44;
@@ -1093,7 +1102,7 @@ Preprocessor_parse(DOH *s)
   	  fn = get_filename(value);
 	  s1 = cpp_include(fn);
 	  if (s1) {
-  	    Printf(ns,"%%file(\"include\") \"%s\" {\n", Swig_last_file());
+  	    Printf(ns,"%%includefile \"%s\" {\n", Swig_last_file());
   	    s2 = Preprocessor_parse(s1);
   	    addline(ns,s2,allow);
   	    Printf(ns,"\n}\n");
@@ -1164,17 +1173,25 @@ Preprocessor_parse(DOH *s)
   	  /* Got some kind of file inclusion directive  */
   	  if (allow) {
   	    DOH *s1, *s2, *fn;
+
+	    if (Cmp(decl,"%extern") == 0) {
+	      Printf(stderr,"%s:%d. %%extern is deprecated. Use %%import instead.\n",Getfile(s),Getline(s));
+	      Clear(decl);
+	      Printf(decl,"%%import");
+	    }
   	    fn = get_filename(s);
 	    s1 = cpp_include(fn);
 	    if (s1) {
   	      add_chunk(ns,chunk,allow);
   	      copy_location(s,chunk);
-  	      Printf(ns,"%%file(\"%s\") \"%s\" {\n", Char(decl)+1, Swig_last_file());
+  	      Printf(ns,"%sfile \"%s\" {\n", decl, Swig_last_file());
 	      if ((Cmp(decl,"%import") == 0) || (Cmp(decl,"%extern") == 0)) {
 		Preprocessor_define("WRAPEXTERN 1", 0);
+		Preprocessor_define("SWIGIMPORT 1", 0);
 	      }
   	      s2 = Preprocessor_parse(s1);
 	      if ((Cmp(decl,"%import") == 0) || (Cmp(decl,"%extern") == 0)) {
+		Preprocessor_undef("SWIGIMPORT");
 		Preprocessor_undef("WRAPEXTERN");
 	      }
   	      addline(ns,s2,allow);

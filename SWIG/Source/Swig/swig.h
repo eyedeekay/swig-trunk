@@ -34,28 +34,39 @@ typedef  DOH     ParmList;
 typedef  DOH     Node;
 
 /* --- Legacy DataType interface.  These type codes are provided solely 
-   for backwards compatibility with older modules --- */
+       for backwards compatibility with older modules --- */
 
-#define   T_INT        1
-#define   T_SHORT      2
-#define   T_LONG       3
-#define   T_UINT       4
+/* --- The ordering of type values is used to determine type-promotion 
+   in the parser.  Do not change */
+
+/* Numeric types */
+
+#define   T_BOOL       1
+#define   T_SCHAR      2
+#define   T_UCHAR      3
+#define   T_SHORT      4
 #define   T_USHORT     5
-#define   T_ULONG      6
-#define   T_UCHAR      7
-#define   T_SCHAR      8
-#define   T_BOOL       9
-#define   T_DOUBLE     10
-#define   T_FLOAT      11
-#define   T_CHAR       12
-#define   T_USER       13
-#define   T_VOID       14
-#define   T_ENUM       15
-#define   T_STRING     20
-#define   T_POINTER    21
-#define   T_REFERENCE  22
-#define   T_ARRAY      23
-#define   T_FUNCTION   24
+#define   T_ENUM       6
+#define   T_INT        7
+#define   T_UINT       8
+#define   T_LONG       9
+#define   T_ULONG      10
+#define   T_LONGLONG   11
+#define   T_ULONGLONG  12
+#define   T_FLOAT      20
+#define   T_DOUBLE     21
+#define   T_NUMERIC    22
+
+/* non-numeric */
+
+#define   T_CHAR       30
+#define   T_USER       31
+#define   T_VOID       32
+#define   T_STRING     33
+#define   T_POINTER    34
+#define   T_REFERENCE  35
+#define   T_ARRAY      36
+#define   T_FUNCTION   37
 #define   T_SYMBOL     98
 #define   T_ERROR      99
 
@@ -69,19 +80,19 @@ extern String  *Swig_read_file(FILE *f);
 extern String  *Swig_include(const String_or_char *name);
 extern int      Swig_insert_file(const String_or_char *name, File *outfile);
 extern int      Swig_bytes_read();
-extern void     Swig_register_filebyname(const String_or_char *name, File *outfile);
-extern File    *Swig_filebyname(const String_or_char *name);
-extern void     Swig_swiglib_set(const String_or_char *name);
+extern void     Swig_set_config_file(const String_or_char *filename);
+extern String  *Swig_get_config_file(void);
+extern void     Swig_swiglib_set(const String_or_char *);
 extern String  *Swig_swiglib_get();
-extern void     Swig_set_config_file(const String_or_char *name);
-extern String  *Swig_get_config_file();
+extern void     Swig_register_filebyname(const String_or_char *filename, File *outfile);
+extern File    *Swig_filebyname(const String_or_char *filename);
 
 #define OUTFILE(x)   Swig_filebyname(x)
 
 #ifdef MACSWIG
-#define  SWIG_FILE_DELIMETER   ":"
+#  define SWIG_FILE_DELIMETER  ":"
 #else
-#define  SWIG_FILE_DELIMETER   "/"
+#  define  SWIG_FILE_DELIMETER "/"
 #endif
 
 /* --- Command line parsing --- */
@@ -199,7 +210,7 @@ extern void        SwigType_inherit(String *subclass, String *baseclass);
 extern void        SwigType_new_scope();
 extern void        SwigType_reset_scopes();
 extern void        SwigType_set_scope_name(String_or_char *name);
-extern void        SwigType_merge_scope(Hash *scope, String *prefix);
+extern void        SwigType_merge_scope(Hash *scope, String_or_char *prefix);
 extern Hash       *SwigType_pop_scope();
 extern SwigType   *SwigType_typedef_resolve(SwigType *t);
 extern SwigType   *SwigType_typedef_resolve_all(SwigType *t);
@@ -208,11 +219,11 @@ extern int         SwigType_cmp(String_or_char *pat, SwigType *t);
 extern int         SwigType_array_ndim(SwigType *t);
 extern String     *SwigType_array_getdim(SwigType *t, int n);
 extern void        SwigType_array_setdim(SwigType *t, int n, String_or_char *rep);
+extern SwigType   *SwigType_array_type(SwigType *t);
 extern String     *SwigType_default(SwigType *t);
 extern int         SwigType_type(SwigType *t);
 extern void        SwigType_remember(SwigType *t);
 extern void        SwigType_emit_type_table(File *f_headers, File *f_table);
-extern void        SwigType_strip_qualifiers(SwigType *t);
 
 /* --- Parameters and Parameter Lists --- */
 
@@ -269,15 +280,31 @@ extern void Swig_dump_rules();
 
 /* -- Wrapper function Object */
 
-typedef DOH Wrapper;
+typedef struct {
+  SwigType  *_type;
+  ParmList  *_parms;
+  String    *_name;
+  Hash      *localh;
+  String    *def;
+  String    *locals;
+  String    *code;
+} Wrapper;
 
 extern Wrapper  *NewWrapper();
+extern void      DelWrapper(Wrapper *w);
 extern void      Wrapper_pretty_print(String *str, File *f);
+extern void      Wrapper_print(Wrapper *w, File *f);
 extern int       Wrapper_add_local(Wrapper *w, const String_or_char *name, const String_or_char *decl);
 extern int       Wrapper_add_localv(Wrapper *w, const String_or_char *name, ...);
 extern int       Wrapper_check_local(Wrapper *w, const String_or_char *name);
 extern char     *Wrapper_new_local(Wrapper *w, const String_or_char *name, const String_or_char *decl);
 extern char     *Wrapper_new_localv(Wrapper *w, const String_or_char *name, ...);
+extern SwigType *Wrapper_Gettype(Wrapper *w);
+extern void      Wrapper_Settype(Wrapper *w, SwigType *t);
+extern ParmList *Wrapper_Getparms(Wrapper *w);
+extern void      Wrapper_Setparms(Wrapper *w, ParmList *l);
+extern char     *Wrapper_Getname(Wrapper *w);
+extern void      Wrapper_Setname(Wrapper *w, String_or_char *name);
 
 /* --- Naming functions --- */
 
@@ -303,8 +330,9 @@ extern DOH       *Swig_temp_result(DOH *x);
 extern String    *Swig_string_escape(String *s);
 extern String    *Swig_string_mangle(String *s);
 extern void       Swig_init();
+extern void       Swig_warn(const char *filename, int line, const char *msg);
 
-extern int        Swig_proto_cmp(const String_or_char *pat, DOH *node);
+#define WARNING(msg) Swig_warn(__FILE__,__LINE__,msg)
 
 /* --- C Wrappers --- */
 extern String    *Swig_clocal(SwigType *t, String_or_char *name, String_or_char *value);
@@ -369,18 +397,6 @@ extern Wrapper   *Swig_cvarget_wrapper(String_or_char *varname,
 				       String_or_char *code);
 
 
-/* --- Module loader and handler --- */
-
-typedef struct Module Module;
-extern void   Swig_register_module(const String_or_char *modname, const String_or_char *starttag,
-				   int (*initfunc)(int, char **),
-				   DOH *(*startfunc)(DOH *));
-
-extern Module *Swig_load_module(const String_or_char *modname);
-extern int     Swig_init_module(Module *m, int argc, char **argv);
-extern DOH    *Swig_start_module(Module *m, DOH *obj);
-extern DOH    *Swig_run_modules(DOH *node);
-
 /* --- Legacy Typemap API (somewhat simplified) --- */
 
 extern void   Swig_typemap_init();
@@ -393,7 +409,7 @@ extern void   Swig_typemap_clear_apply(SwigType *type, String_or_char *pname);
 extern void   Swig_typemap_debug();
 extern Hash  *Swig_typemap_search(const String_or_char *op, SwigType *type, String_or_char *pname);
 extern char  *Swig_typemap_lookup(const String_or_char *op, SwigType *type, String_or_char *pname, String_or_char *source, String_or_char *target, Wrapper *f);
-extern void   Swig_typemap_new_scope(Hash *);
+extern void   Swig_typemap_new_scope();
 extern Hash  *Swig_typemap_pop_scope();
 
 /* --- Legacy %except directive API --- */
@@ -428,9 +444,6 @@ extern void   Swig_except_clear();
 
 #define Getchild(x)        Getattr(x,"child")
 #define Setchild(x,c)      Setattr(x,"child",c)
-
-extern int Swig_main(int argc, char **argv, char **modules);
-extern void Swig_exit(int n);
 
 #endif
 

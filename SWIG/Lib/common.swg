@@ -39,14 +39,16 @@
 #define SWIGRUNTIME(a) static a
 #endif
 
+typedef void *(*swig_converter_func)(void *);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct swig_type_info {
-  char  *name;                 
-  void *(*converter)(void *);
-  char  *str;
+  const char  *name;                 
+  swig_converter_func converter;
+  const char  *str;
   struct swig_type_info  *next;
   struct swig_type_info  *prev;
 } swig_type_info;
@@ -55,6 +57,7 @@ typedef struct swig_type_info {
 SWIGEXPORT(swig_type_info *) SWIG_TypeRegister(swig_type_info *);
 SWIGEXPORT(swig_type_info *) SWIG_TypeCheck(char *c, swig_type_info *);
 SWIGEXPORT(void *) SWIG_TypeCast(swig_type_info *, void *);
+SWIGEXPORT(swig_type_info *) SWIG_TypeQuery(const char *);
 #else
 
 static swig_type_info *swig_type_list = 0;
@@ -132,7 +135,7 @@ SWIG_TypeCast(swig_type_info *ty, void *ptr)
 }
 
 /* Search for a swig_type_info structure */
-SWIGRUNTIME(void *)
+SWIGRUNTIME(swig_type_info *)
 SWIG_TypeQuery(const char *name) {
   swig_type_info *ty = swig_type_list;
   while (ty) {
