@@ -46,10 +46,10 @@ all::   macro-2.test \
 
 import.cplusplusruntest:
 	@echo Checking Examples/guile/test-suite/import
-	@$(SWIG) -c++ -guile -c import-a.i || (echo "Examples/guile/test-suite/import: SWIG FAILED "; exit 1)
-	@$(SWIG) -c++ -guile -lguilemain.i import-b.i  || (echo "Examples/guile/test-suite/import: SWIG FAILED "; exit 1)
-	@$(CXX) -g -c $(CFLAGS) -DSWIG_GLOBAL -DSWIG_init=A_init -o import-a_wrap.o import-a_wrap.c $(GUILEINCLUDE)  || (echo "Examples/guile/test-suite/import: COMPILE FAILED "; exit 1)
-	@$(CXX) -g -c $(CFLAGS) -DSWIG_GLOBAL -DSWIG_init=B_init -DSWIGINIT='void A_init(); void B_init(); A_init(); B_init();' -o import-b_wrap.o import-b_wrap.c $(GUILEINCLUDE)|| (echo "Examples/guile/test-suite/import: COMPILE FAILED "; exit 1)
+	@$(SWIG) -c++ -guile -Linkage passive -c import-a.i || (echo "Examples/guile/test-suite/import: SWIG FAILED "; exit 1)
+	@$(SWIG) -c++ -guile -Linkage passive -lguilemain.i import-b.i  || (echo "Examples/guile/test-suite/import: SWIG FAILED "; exit 1)
+	@$(CXX) -g -c $(CFLAGS) -DSWIG_GLOBAL -o import-a_wrap.o import-a_wrap.c $(GUILEINCLUDE)  || (echo "Examples/guile/test-suite/import: COMPILE FAILED "; exit 1)
+	@$(CXX) -g -c $(CFLAGS) -DSWIG_GLOBAL -DSWIGINIT='void scm_init_a_module(); void scm_init_b_module(); scm_init_a_module(); scm_init_b_module();' -o import-b_wrap.o import-b_wrap.c $(GUILEINCLUDE)|| (echo "Examples/guile/test-suite/import: COMPILE FAILED "; exit 1)
 	@$(CXX) -g $(CFLAGS) -o $@-x import-a_wrap.o import-b_wrap.o $(GUILELINK)|| (echo "Examples/guile/test-suite/import: LINK FAILED "; exit 1)
 	@./$@-x -l $*.scm || (echo "Examples/guile/test-suite/import: RUN TEST FAILED"; exit 1)
 	@echo "Examples/guile/test-suite/import: PASSED"

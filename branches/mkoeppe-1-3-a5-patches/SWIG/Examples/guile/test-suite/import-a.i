@@ -3,6 +3,8 @@
    1.3a5:  Type information is not properly generated if a base class
    comes from an %import-ed file. */
 
+%module a
+
 %{ 
   #include "import-a.h" 
 %} 

@@ -44,7 +44,8 @@ Guile Options (available with -guile)\n\
 \n\
   When unspecified, the default LSTYLE is `simple'.  For native Guile\n\
   module linking (for Guile versions >=1.5.0), use `module'.  Other\n\
-  LSTYLE values are: `ltdlmod' for Guile's old dynamic module convention\n\
+  LSTYLE values are: `passive' for passive linking (no module-handling\n\
+  code), `ltdlmod' for Guile's old dynamic module convention\n\
   (versions <= 1.4), or `hobbit' for hobbit modules.\n\
 \n";
 
@@ -136,8 +137,10 @@ GUILE::parse_args (int argc, char *argv[])
             linkage = GUILE_LSTYLE_LTDLMOD_1_4;
           else if (0 == strcmp (argv[i + 1], "hobbit"))
             linkage = GUILE_LSTYLE_HOBBIT;
-	  else if (0 == strcmp (argv[i + 1], "simple"))
+ 	  else if (0 == strcmp (argv[i + 1], "simple"))
 	    linkage = GUILE_LSTYLE_SIMPLE;
+ 	  else if (0 == strcmp (argv[i + 1], "passive"))
+	    linkage = GUILE_LSTYLE_PASSIVE;
 	  else if (0 == strcmp (argv[i + 1], "module"))
 	    linkage = GUILE_LSTYLE_MODULE;
           else
@@ -223,10 +226,7 @@ GUILE::parse ()
 void
 GUILE::set_module (char *mod_name)
 {
-  if (module) {
-    printf ("module already set (%s), returning\n", module);
-    return;
-  }
+  if (module) return;
 
   module = new char [strlen (mod_name) + 1];
   strcpy (module, mod_name);
@@ -316,6 +316,15 @@ GUILE::emit_linkage (char *module_name)
   case GUILE_LSTYLE_SIMPLE:
     Printf (f_init, "\n/* Linkage: simple */\n");
     break;
+  case GUILE_LSTYLE_PASSIVE:
+    Printf (f_init, "\n/* Linkage: passive */\n");
+    Replace(module_func,"/", "_", DOH_REPLACE_ANY);
+    Insert(module_func,0, "scm_init_");
+    Append(module_func,"_module");
+
+    Printf (f_init, "SCM\n%s (void)\n{\n", module_func);
+    Printf (f_init, "  SWIG_init();\n}\n");
+    break;
   case GUILE_LSTYLE_LTDLMOD_1_4:
     Printf (f_init, "\n/* Linkage: ltdlmod */\n");
     Replace(module_func,"/", "_", DOH_REPLACE_ANY);
@@ -340,8 +349,10 @@ GUILE::emit_linkage (char *module_name)
 
     Printf (f_init, "static void SWIG_init_helper(void *data)\n");
     Printf (f_init, "{\n    SWIG_init();\n");
-    Printf (f_init, "    scm_c_export(%sNULL);\n}\n\n",
-	    exported_symbols);
+    if (Len(exported_symbols) > 0)
+      Printf (f_init, "    scm_c_export(%sNULL);",
+	      exported_symbols);
+    Printf (f_init, "\n}\n\n");
     
     Printf (f_init, "SCM\n%s (void)\n{\n", module_func);
     {

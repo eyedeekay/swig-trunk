@@ -32,6 +32,7 @@ private:
   char   *package;
   enum {
     GUILE_LSTYLE_SIMPLE,                // call `SWIG_init()'
+    GUILE_LSTYLE_PASSIVE,               // passive linking (no module code)
     GUILE_LSTYLE_MODULE,                // native guile module linking (Guile >= 1.4.1)
     GUILE_LSTYLE_LTDLMOD_1_4,		// old (Guile <= 1.4) dynamic module convention
     GUILE_LSTYLE_HOBBIT                 // use (hobbit4d link)

@@ -946,14 +946,6 @@ Revised: Matthias K&ouml;ppe (May 29, 2001)
 <p>
 This section details guile-specific support in SWIG.
 
-<p>
-One wrapper module must be generated without
-<code>-c</code> and compiled with <code>-DSWIG_GLOBAL</code>, all the
-other wrapper modules must be generated with <code>-c</code>.
-Alternatively, one can use the runtime library
-<code>libswigguile</code>, which is built by <code>make
-runtime</code>. 
-
 <a name="10.1" href="#i10.1">
 <h3>10.1 Meaning of "Module"</h3>
 </a>
@@ -982,9 +974,7 @@ can be used in several ways:
 <li><b>Embedded Guile, no modules.</b> You want to embed a Guile
 interpreter into your program; all bindings made by SWIG shall show up
 in the root module. Then call <code>SWIG_init()</code> in the
-<code>inner_main()</code> function. If you want to include several
-SWIG modules, you need to rename <code>SWIG_init</code> via a
-preprocessor define.  See the "simple" and "matrix" examples under
+<code>inner_main()</code> function.  See the "simple" and "matrix" examples under
 <code>Examples/guile</code>.
 
 <li><b>Dynamic module mix-in.</b> You want to create a Guile module
@@ -999,10 +989,26 @@ libraries into Guile.
 ;; Scheme definitions can go here
 </pre>
 </blockquote>
-Again, if you want  to include several
-SWIG modules, you need to rename <code>SWIG_init</code> via a
-preprocessor define when compiling the SWIG module.
+Newer Guile versions provide a shorthand:
+<blockquote>
+<pre>
+(load-extension "./example.so" "SWIG_init")
+</pre>
+</blockquote>
 </ul>
+
+If you want to include several SWIG modules, you would need to rename
+<code>SWIG_init</code> via a preprocessor define to avoid symbol
+clashes. For this case, however, passive linkage is available.
+
+<h4>Passive Linkage</h4>
+
+<p>Passive linkage is just like simple linkage, but it generates an
+initialization function whose name is derived from the module and
+package name (see below). 
+
+<p>You should use passive linkage rather than simple linkage when you
+are using multiple modules.
 
 <h4>Native Guile Module Linkage</h4>
 
@@ -1034,6 +1040,12 @@ newly created Guile modules.
 (define my-so (dynamic-link "./foo.so"))
 ;; create new module and put bindings there:
 (dynamic-call "scm_init_my_modules_foo_module" my-so) 
+</pre>
+</blockquote>
+Newer Guile versions have a shorthand procedure for this:
+<blockquote>
+<pre>
+(load-extension "./foo.so" "scm_init_my_modules_foo_module")
 </pre>
 </blockquote>
 </ul>
@@ -1084,6 +1096,26 @@ case foo.i declares the module to be "foo").  The installed files are
 my/lib/libfoo.so.X.Y.Z and friends.  This scheme is still very
 experimental; the (hobbit4d link) conventions are not well understood.
 
+
+<h4>General Remarks on Multiple SWIG Modules</h4>
+
+If you want to use multiple SWIG modules, they have to share some 
+run-time data for the typing system. You have two options:
+
+<ul>
+<li>Either generate all but one wrapper module with
+the <code>-c</code> command-line argument.  Compile all wrapper files
+with the C compiler switch <code>-DSWIG_GLOBAL</code>.
+
+<li>Or generate all wrapper modules with the <code>-c</code>
+command-line argument and compile all wrapper files with the C
+compiler switch <code>-DSWIG_GLOBAL</code>. Then link against the
+runtime library <code>libswigguile</code>, which is built by
+<code>make runtime</code>. The needed linker flags are reported by
+SWIG if you invoke it with the <code>-guile -ldflags</code>
+command-line arguments.
+</ul>
+
 <a name="10.3" href="#i10.3">
 <h3>10.3 Underscore Folding</h3>
 </a>  
@@ -1092,6 +1124,10 @@ experimental; the (hobbit4d link) conventions are not well understood.
 Underscores are converted to dashes in identifiers.  Guile support may
 grow an option to inhibit this folding in the future, but no one has
 complained so far.
+
+<p>You can use the SWIG directives <code>%name</code> and
+<code>%rename</code> to specify the Guile name of the wrapped
+functions and variables (see CHANGES).
 
 <a name="10.4" href="#i10.4">
 <h3>10.4 Typemaps</h3>
