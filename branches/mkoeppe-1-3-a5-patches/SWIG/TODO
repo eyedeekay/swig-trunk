@@ -14,6 +14,8 @@
 
 * eventually
 
+**     Maybe use libtool rather than all the home-grown compile/link stuff
+
 **     The behavior of SWIG with respect to call/return-by-value needs
        to be verified for all language modules.   Previously, the
        parser automatically performed the conversion of pass-by-value
