@@ -18,6 +18,11 @@ trunk of the CVS tree.
 Version 1.3.6  (not yet released)
 =============
 
+7/03/2001: beazley
+           Fixed up the version numbers so that the release is known
+           as 1.3.6.  All future releases should have a similar
+           version format.
+
 7/02/2001: mkoeppe
 	   * [Python]: Prevent the problem of self.thisown not being
 	   defined if the C++ class constructor raised an exception.
