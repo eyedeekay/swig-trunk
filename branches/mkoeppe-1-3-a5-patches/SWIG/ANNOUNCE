@@ -25,7 +25,8 @@ that a lot of bugs have been fixed and the language modules tend to
 generate smaller and more efficient wrappers. New modules have also
 been added to support Ruby and Mzscheme. In addition, Python, Perl,
 and Guile support has been enhanced to support new releases such as
-Python1.6 and Perl5.6.
+Python1.6 and Perl5.6. The Java module is now back in action with 
+this release.
 
 Under the hood, you will find that this release is an almost complete
 reimplementation of SWIG's internals.  In fact the only code that
@@ -41,8 +42,7 @@ What's broken?
 --------------
 As this is a work in progress, a number of features are still missing
 or incomplete.  The documentation system is still missing and won't be
-reimplemented for some time.  The Java module is also temporarily out
-of service for this release.  In addition, C++ programmers who make
+reimplemented for some time. C++ programmers who make
 extensive use of typemaps may encounter a few strange problems
 (although SWIG will generate warning messages).
 
