@@ -1,8 +1,14 @@
 						-*- outline -*-
 
-* for release 1.3.6 
+* for release 1.3.6
 
-** Get %pragma directive syntax change from CVS head
+** Testing
+
+* for release 1.3.7
+
+** Discuss the %pragma directive syntax change from CVS head.  
+   Why is the syntax changing all the time?  Can't we just stick to
+   the syntax in 1.3a5? 
 
 ** Maybe port other parser-related stuff from CVS head
 
@@ -14,10 +20,12 @@
 
 * eventually
 
+**     Revive the documentation
+
 **     Maybe use libtool rather than all the home-grown compile/link stuff
 
 **     The behavior of SWIG with respect to call/return-by-value needs
-       to be verified for all language modules.   Previously, the
+       to be verified for all language modules.  Previously, the
        parser automatically performed the conversion of pass-by-value
        to pass-by-reference.  Unfortunately, this confused typemap
        handling and other aspects of the system.   I have removed
