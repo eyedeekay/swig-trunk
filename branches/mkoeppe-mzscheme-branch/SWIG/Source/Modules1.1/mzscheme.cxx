@@ -536,10 +536,10 @@ MZSCHEME::link_variable (char *name, char *iname, SwigType *t)
 // ------------------------------------------------------------------------
 
 void
-MZSCHEME::declare_const (char *name, char *, SwigType *type, char *value)
+MZSCHEME::declare_const (char *name, char *iname, SwigType *type, char *value)
 {
   int OldStatus = Status;      // Save old status flags
-  char   var_name[256];
+  String *var_name = NewString("");
   String *proc_name = NewString("");
   String *rvalue = NewString("");
   String *temp = NewString("");
@@ -549,10 +549,10 @@ MZSCHEME::declare_const (char *name, char *, SwigType *type, char *value)
 
   // Make a static variable;
 
-  sprintf (var_name, "_wrap_const_%s", name);
+  Printv (var_name, "_wrap_const_%s", Swig_name_mangle(iname));
 
   // Build the name for scheme.
-  Printv(proc_name, name,0);
+  Printv(proc_name, iname,0);
   Replace(proc_name, "_", "-", DOH_REPLACE_ANY);
 
   if ((SwigType_type(type) == T_USER) && (!is_a_pointer(type))) {
@@ -593,7 +593,7 @@ MZSCHEME::declare_const (char *name, char *, SwigType *type, char *value)
 
     // Now create a variable declaration
 
-    link_variable (var_name, name, type);
+    link_variable (Char(var_name), iname, type);
     Status = OldStatus;
   }
   Delete(proc_name);
