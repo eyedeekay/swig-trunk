@@ -1487,6 +1487,15 @@ parm_type      : type pname {
 		   free($3);
 		}
 
+		| type maybestars CONST pname {
+		   $$ = NewParm($1,$4);
+		   add_pointers(Gettype($$), $2);
+		   SwigType_add_qualifier($$,(char*)"const");
+		   Setvalue($$,DefArg);
+		   Delete($1);
+		   free($4);
+		}
+
                 | type maybestars AND pname {
 		  $$ = NewParm($1,$4);
 		  SwigType *pt = Gettype($$);

@@ -2,7 +2,7 @@ MAKE_EXEC = $(MAKE) -f ../Makefile SRCS='' sub-all
 MAKE_EXEC_CPLUSPLUS = $(MAKE) -f ../Makefile SRCS='' sub-all-cxx
 
 all::   macro-1.test macro-1a.test macro-2.test \
-	long-long.test \
+	long-long.test const-const.test \
 	cplusplus-throw.cplusplustest \
 	char-constant.runtest \
 	pointer-reference.cplusplustest

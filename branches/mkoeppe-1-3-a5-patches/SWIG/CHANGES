@@ -20,6 +20,8 @@ trunk of the CVS tree.
 	     types. It is up to the individual language modules to
 	     provide typemaps if needed. Reported by Sam Steingold, SF
 	     bug #429176.
+	   * The parser now understands arguments like "const int *
+	     const i". This fixes SF bug #215649.
 	   * Fixed the Guile test-suite.
 
 6/13/2001: mkoeppe
