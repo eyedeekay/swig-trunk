@@ -212,24 +212,6 @@ MZSCHEME::close (void)
 }
 
 // ----------------------------------------------------------------------
-// MZSCHEME::get_pointer(int parm, SwigType *t, Wrapper *f)
-//
-// Emits code to get a pointer from a parameter and do type checking.
-// parm is the parameter number.   This function is only used
-// in create_function().
-// ----------------------------------------------------------------------
-
-void
-MZSCHEME::get_pointer (String *name, int parm, SwigType *t, Wrapper *f)
-{
-  char p[256];
-  sprintf(p, "%d", parm);
-  Printv(f->code, tab4, "if (!swig_get_c_pointer(argv[", p, "], \"", SwigType_manglestr(t),
-	 "\", (void **) &arg", p, "))\n",0);
-  Printv(f->code, tab8, "scheme_wrong_type(\"", name,
-	 "\", \"", SwigType_manglestr(t), "\", ", p, ", argc, argv);\n",0);    
-}
-// ----------------------------------------------------------------------
 // MZSCHEME::create_function(char *name, char *iname, SwigType *d,
 //                             ParmList *l)
 //
@@ -307,6 +289,10 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   Printv(f->def, "int argc, Scheme_Object **argv", 0);
   Printv(f->def, ")\n{", 0);
 
+  /* Define the scheme name in C. This define is used by several
+     macros. */
+  Printv(f->def, "#define FUNC_NAME \"", proc_name, "\"", 0);
+
   // Declare return variable and arguments
   // number of parameters
   // they are called arg0, arg1, ...
@@ -316,9 +302,9 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
   int numargs = 0;
 
   // adds local variables
-  Wrapper_add_local(f, "_tempc", "char *_tempc");
   Wrapper_add_local(f, "_len", "int _len");
-  Wrapper_add_local(f, "swig_result", "Scheme_Object *swig_result");
+  Wrapper_add_local(f, "lenv", "int lenv = 1");
+  Wrapper_add_local(f, "values", "Scheme_Object *values[MAXVALUES]");
 
   // Now write code to extract the parameters (this is super ugly)
 
@@ -346,16 +332,7 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
       }
       // no typemap found
       // check if typedef and resolve
-      else if (SwigType_istypedef(Gettype(p))) {
-	t = SwigType_typedef_resolve(Gettype(p));
-
-	// if a pointer then get it 
-	if (is_a_pointer(t)) {
-	  get_pointer (proc_name, i, t, f);
-	}
-	// not a pointer
-	else throw_unhandled_mzscheme_type_error (Gettype(p));
-      }
+      else throw_unhandled_mzscheme_type_error (Gettype(p));
     }
 
     // Check if there are any constraints.
@@ -393,24 +370,10 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
 
   // Now have return value, figure out what to do with it.
 
-  if (SwigType_type(d) == T_VOID) {
-    if(!argout_set)
-      Printv(f->code, tab4, "swig_result = scheme_void;\n",0);
-  }
-
-  else if ((tm = mzscheme_typemap_lookup ("out",
-				      d, name, (char*)"result", (char*)"swig_result", f))) {
+  if ((tm = mzscheme_typemap_lookup ("out",
+				      d, name, (char*)"result", (char*)"values[0]", f))) {
     Printv(f->code, tm, "\n",0);
     mreplace (f->code, argnum, arg, proc_name);
-  }
-  // no typemap found and not void then create a Scheme_Object holding
-  // the C pointer and return it
-  else if (is_a_pointer(d)) {
-    Printv(f->code, tab4,
-	   "swig_result = swig_make_c_pointer(",
-	   "result, \"",
-	   SwigType_manglestr(d),
-	   "\");\n", 0);
   }
   else {
     throw_unhandled_mzscheme_type_error (d);
@@ -441,24 +404,10 @@ MZSCHEME::create_function (char *name, char *iname, SwigType *d, ParmList *l)
     mreplace (f->code, argnum, arg, proc_name);
   }
 
-  // returning multiple values
-  if(argout_set) {
-    if(SwigType_type(d) == T_VOID) {
-      Wrapper_add_local(f, "_lenv", "int _lenv = 0");
-      Wrapper_add_local(f, "values", "Scheme_Object *values[MAXVALUES]");
-      Printv(f->code, tab4, "swig_result = scheme_values(_lenv, _values);\n",0);
-    }
-    else {
-      Wrapper_add_local(f, "_lenv", "int _lenv = 1");
-      Wrapper_add_local(f, "values", "Scheme_Object *values[MAXVALUES]");
-      Printv(f->code, tab4, "_values[0] = swig_result;\n",0);
-      Printv(f->code, tab4, "swig_result = scheme_values(_lenv, _values);\n",0);
-    }
-  }
-
   // Wrap things up (in a manner of speaking)
 
-  Printv(f->code, tab4, "return swig_result;\n",0);
+  Printv(f->code, tab4, "return swig_package_values(lenv, values);\n", 0);
+  Printf(f->code, "#undef FUNC_NAME\n");
   Printv(f->code, "}\n",0);
 
   Wrapper_print(f, f_wrappers);

@@ -17,6 +17,9 @@
 
 
 
+/* Definitions */
+#define SWIG_malloc(size) SCM_MUST_MALLOC(size)
+#define SWIG_free(mem) scm_must_free(mem)
+
 /* Read in standard typemaps. */
 %include "typemaps.i"
-
