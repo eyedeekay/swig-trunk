@@ -15,6 +15,11 @@ http://www.math.uni-magdeburg.de/~mkoeppe/imo-debian).
 Eventually this branch will be merged with the development on the
 trunk of the CVS tree.
 
+6/14/2001: beazley
+           Made a minor change to the way files are loaded in
+           order to get file/line number reporting correct in
+           the preprocessor.
+
 6/14/2001: mkoeppe
 	   * The parser now understands the (non-standard) "long long"
 	     types. It is up to the individual language modules to
