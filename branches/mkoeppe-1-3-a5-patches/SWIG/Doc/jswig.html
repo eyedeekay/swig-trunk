@@ -7,20 +7,15 @@
 <body bgcolor="#FFFFFF">
 
 <h1>
-JSwig: The Java JNI wrapper generator.</h1>
-
-<h1>
-1% pure Java</h1>
+The Java SWIG module [1% pure Java]</h1>
 
 <h2>
 Introduction</h2>
-JSwig is a Java module extension for <a href="http://www.swig.org/">SWIG</a> (Simplified
-Wrapper Interface Generator). It generates
-Java and JNI wrapper code based
-<br>on an interface definition file.
+The Java module extension for <a href="http://www.swig.org/">SWIG</a> (Simplified
+Wrapper Interface Generator) is a Java JNI wrapper generator. It generates
+Java and JNI wrapper code based on an interface definition file.
 <p>See the 1.1 release SWIG documentation for a full description of the interface
-format. Only the issues specific to the
-<br>Java implementation are addressed here.
+format. Only the issues specific to the Java implementation are addressed here.
 <p>The 100% Pure Java
 effort is a great idea however, in the real world programmers either need to re-use their existing code or in some situations want to take advantage 
 of Java but have to use some native code.
@@ -328,8 +323,9 @@ The following pragma's are accepted:
 
 <dd>
 Import statements are generated in all generated Java classes which could
-be useful in combination with the %native feature.</dd>
-
+be useful in combination with the %native feature.
+This pragma will be improved in the near future so that it will be possible to target the import for a specific shadow file.
+</dd>
 <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pragma(java) import="java.io.*"</pre>
 
 <dt>
@@ -353,8 +349,7 @@ All text is copied verbatim to the (Java) module file.</dd>
 <b>pragma(java) shadow</b></dt>
 
 <dd>
-All text is copied verbatim to the (Java) shadow file, that is currently
-active. A new shadow file is opened just after the declaration of a struct/class.
+All text is copied verbatim to all (Java) shadow files. This pragma will be improved in the near future so that it will be possible to copy code into a specified shadow file.
 <pre>
 </pre>
 </dd>
@@ -369,6 +364,57 @@ Change the modifiers of the generated native calls. The default is "public final
 </dd>
 
 </dl>
+
+<h2>
+Shadow Classes and Garbage Collection</h2>
+If you get SWIG to produce shadow classes, you will notice the generated <code>_delete()</code> and <code>finalize()</code> methods. The <code>finalize()</code> method calls <code>_delete()</code> which frees any SWIG malloced c memory for wrapped structs or deletes any SWIG wrapped classes created on the heap, which in turn calls the class' destructor. The idea is for <code>_delete()</code> to be called when you have finished with the c/c++ object. Ideally you need not call <code>_delete()</code>, but rather leave it to the garbage collector to call it from the finalizer. The unfortunate thing is that Sun, in their wisdom, do not guarantee that the finalizers will be called. When a program exits, the garbage collector does not always call the finalizers. Depending on what the finalizers do and which operating system you use, this may or may not be a problem. 
+<br><br>
+
+If the <code>_delete()</code> call into JNI code is just for memory handling, there is not a problem when run on Windows and Unix. Say your JNI code creates memory on the heap which your finalizers will clean up, the finalizers may or may not be called before the program exits. In Windows and Unix all memory that a process uses is returned to the system, so this isn't a problem. This is not the case in some operating systems like vxWorks. If however, your finalizers call into JNI code invokes a c++ destructor which in turn releases a socket for example, there is no guarantee that it will be released. Note that the garbage collector will eventually run, so long running programs will have their finalizers called periodically.
+<br><br>
+
+Some not so ideal solutions are:
+<ol>
+<li start=1>
+Call the <code>System.runFinalizersOnExit(true)</code> or <code>Runtime.getRuntime().runFinalizersOnExit(true)</code> to ensure the finalizers are called before the program exits. The catch is that this is a deprecated function call as the documenation says: 
+<blockquote><i>
+This method is inherently unsafe. It may result in finalizers being called on live objects while other threads are concurrently manipulating those objects, resulting in erratic behavior or deadlock.
+</i></blockquote> 
+In many cases you will be lucky and find that it works, but it is not to be advocated. Have a look at <a href=http://java.sun.com>Sun's Java web site</a> and search for <code>runFinalizersOnExit</code>.
+</li>
+<p>
+<li>
+From jdk1.3 onwards a new function, <code>addShutdownHook()</code>, was introduced which is guaranteed to be called when your program exits. You can encourage the garbage collector to call the finalizers, for example, add this static block to the class that has the <code>main()</code> function: 
+<blockquote><pre>
+  static {
+    Runtime.getRuntime().addShutdownHook( 
+      new Thread() {
+        public void run() { System.gc(); System.runFinalization(); }
+      }
+    );
+  }
+</pre></blockquote>
+Although this usually works, the documentation doesn't guarantee that <code>runFinalization()</code> will actually call the finalizers. As the the shutdown hook is guaranteed you could also make a JNI call to clean up any resources that are being tracked in the c/c++ code.
+</li>
+<p>
+<li>
+Call the <code>_delete()</code> function manually. As a suggestion it may be a good idea to set the object to null so that should the object be inadvertantly used again a Java null pointer exception is thrown, the alternative would crash the JVM by using a null c pointer. For example given a SWIG generated class A:
+<blockquote><pre>
+A myA = new A();
+// use myA ...
+myA._delete();
+// any use of myA here would crash the JVM 
+myA=null;
+// any use of myA here would cause a java null pointer exception to be thrown
+</pre></blockquote>
+The SWIG generated code ensures that the memory is not deleted twice, in the event the finalizers get called in addition to the manual <code>_delete()</code> call.
+</li>
+
+<p>
+<li>
+Write your own object manager in Java. You could derive all SWIG classes from a single base class which could track which objects have had their finalizers run, then call the rest of them on program termination. Currently you cannot tell SWIG to derive a SWIG shadow class from any named Java class, but this is planned in the near future. An alternative is to add the object handling code to all generated shadow classes using the shadow pragma.
+</li>
+</ol>
 
 <h2>
 Tips</h2>
