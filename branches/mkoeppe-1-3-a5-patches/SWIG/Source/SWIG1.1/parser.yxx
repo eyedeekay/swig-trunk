@@ -2802,6 +2802,7 @@ cpptype        : CLASS { $$ = (char*)"class"; }
 
 cpp_const      : CONST {}
                | THROW LPAREN parms RPAREN { Delete($3);}
+               | CONST THROW LPAREN parms RPAREN { Delete($4);}
                | empty {}
                ;
 
