@@ -1,0 +1,90 @@
+/* Define a C preprocessor symbol that can be used in interface files
+   to distinguish between the SWIG language modules. */ 
+
+#define SWIG_ALLEGRO_CL
+
+/* Typespecs for basic types. */
+
+%typemap(ffitype) char ":char";
+%typemap(lisptype) char "character";
+%typemap(ffitype) unsigned char ":unsigned-char";
+%typemap(lisptype) unsigned char "integer";
+%typemap(ffitype) signed char ":char";
+%typemap(lisptype) signed char "integer";
+%typemap(ffitype) short ":short";
+%typemap(ffitype) signed short ":short";
+%typemap(ffitype) unsigned short ":unsigned-short";
+%typemap(ffitype) int ":int";
+%typemap(ffitype) signed int ":int";
+%typemap(ffitype) unsigned int ":unsigned-int";
+%typemap(ffitype) long ":long";
+%typemap(ffitype) signed long ":long";
+%typemap(ffitype) unsigned long ":unsigned-long";
+%typemap(ffitype) float ":float";
+%typemap(ffitype) double ":double";
+%typemap(ffitype) char * "(* :char)";
+%typemap(ffitype) void * "(* :void)";
+%typemap(ffitype) void ":void";
+
+%wrapper %{
+;; $Id$
+
+(eval-when (compile eval)
+
+;;; You can define your own identifier converter if you want.
+;;; Use the -identifier-converter command line argument to
+;;; specify its name. 
+  
+(defun identifier-convert-null (id &key type)
+  (declare (ignore type))
+  (read-from-string id))
+
+(defun identifier-convert-lispify (cname &key type)
+  (assert (stringp cname))
+  (if (eq type :constant)
+      (setf cname (format nil "*~A*" cname)))
+  (setf cname (replace-regexp cname "_" "-"))
+  (let ((lastcase :other)
+        newcase char res)
+    (dotimes (n (length cname))
+      (setf char (schar cname n))
+      (if* (alpha-char-p char)
+         then
+              (setf newcase (if (upper-case-p char) :upper :lower))
+
+              (when (or (and (eq lastcase :upper) (eq newcase :lower))
+                        (and (eq lastcase :lower) (eq newcase :upper)))
+                ;; case change... add a dash                                    
+                (push #\- res)
+                (setf newcase :other))
+
+              (push (char-downcase char) res)
+
+              (setf lastcase newcase)
+
+         else
+              (push char res)
+              (setf lastcase :other)))
+    (read-from-string (coerce (nreverse res) 'string))))
+
+(defmacro swig-defconstant (string value)
+  (let ((symbol (funcall *swig-identifier-converter* string :type :constant)))
+    `(eval-when (compile load eval)
+       (defconstant ,symbol ,value)
+       (export (quote ,symbol)))))
+
+(defmacro swig-defun (name &rest rest)
+  (let ((symbol (funcall *swig-identifier-converter* name :type :operator)))
+    `(eval-when (compile load eval)
+       (excl::compiler-let ((*record-xref-info* nil))
+	 (ff:def-foreign-call (,symbol ,name) ,@rest)
+	 (export (quote ,symbol))))))
+
+(defmacro swig-def-foreign-type (name &rest rest)
+  (let ((symbol (funcall *swig-identifier-converter* name :type :type)))
+    `(eval-when (compile load eval)
+       (ff:def-foreign-type ,symbol ,@rest)
+       (export (quote ,symbol)))))
+
+) ;; eval-when
+%}

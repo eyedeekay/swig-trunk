@@ -1,0 +1,89 @@
+#######################################################################
+# $Header$
+# Makefile for python test-suite
+#######################################################################
+
+LANGUAGE     = python
+PYTHON       = python
+SCRIPTSUFFIX = _runme.py
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+
+CPP_TEST_CASES += \
+	argcargvtest \
+	attributetest \
+	autodoc \
+	callback \
+	complextest \
+	director_stl \
+	director_thread \
+	file_test \
+	implicittest \
+	inout \
+	input \
+	inplaceadd \
+	kwargs \
+	li_std_except \
+	li_std_vectora \
+	li_std_map \
+	li_std_stream \
+	li_std_wstream \
+	li_std_wstring \
+	nondynamic \
+	primitive_types \
+	std_containers \
+	swigobject \
+	template_matrix \
+	simutry
+
+C_TEST_CASES += \
+	file_test \
+	nondynamic
+
+#
+# This test only works with modern C compilers
+#
+#C_TEST_CASES += \
+#	complextest
+
+include $(srcdir)/../common.mk
+
+# Overridden variables here
+LIBS       = -L.
+
+# Rules for the different types of tests
+%.cpptest: 
+	$(setup) \
+	($(swig_and_compile_cpp); ) &&\
+	$(run_testcase)
+
+%.ctest:
+	$(setup) \
+	($(swig_and_compile_c); ) &&\
+	$(run_testcase)
+
+%.multicpptest: 
+	$(setup) \
+	($(swig_and_compile_multi_cpp); ) &&\
+	$(run_testcase)
+
+# Runs the testcase. A testcase is only run if
+# a file is found which has _runme.py appended after the testcase name.
+run_testcase = \
+	if [ -f $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ]; then (	  \
+	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(PYTHON) $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX);) \
+	fi;
+
+# Clean: remove the generated .py file
+%.clean:
+	@rm -f $*.py;
+
+clean:
+	$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile python_clean
+
+cvsignore:
+	@echo '*wrap* *.pyc *.so *.dll *.exp *.lib'
+	@echo Makefile
+	@for i in ${CPP_TEST_CASES} ${C_TEST_CASES}; do echo $$i.py; done 
+	@for i in ${CPP_TEST_CASES} ${C_TEST_CASES}; do if grep -q $${i}_runme.py CVS/Entries ; then echo $${i}_runme.py; fi; done 
