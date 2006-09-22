@@ -126,6 +126,41 @@ SWIG_From_dec(long long)( long long val )
 }
 }
 
+%fragment(SWIG_AsVal_frag(unsigned long long),"header",fragment="<limits.h>") {
+SWIGINTERN int
+SWIG_AsVal_dec(unsigned long long)(zval **obj, unsigned long long* val)
+{
+  if ( Z_TYPE_PP(obj) == IS_LONG ) {
+    long phpval = Z_LVAL_PP(obj);
+    if (phpval > LONG_MAX )
+      return SWIG_TypeError;
+    if (val) *val = (unsigned long long) phpval;
+    return SWIG_OK;
+  }
+
+  if ( val ) {
+    convert_to_long_ex( obj );
+    long phpval = Z_LVAL_PP(obj);
+    if ( phpval > LONG_MAX )
+      return SWIG_TypeError;
+    *val = (unsigned long long) phpval;
+  }
+
+  return SWIG_AddCast(SWIG_OK);
+}
+}
+
+%fragment(SWIG_From_frag(unsigned long long),"header") {
+SWIGINTERNINLINE zval **
+SWIG_From_dec(unsigned long long)( unsigned long long val )
+{
+  zval *o;
+  MAKE_STD_ZVAL(o);
+  ZVAL_LONG(o,val);
+  return %static_cast(o,zval **);
+}
+}
+
 %fragment(SWIG_AsVal_frag(double),"header") {
 SWIGINTERN int
 SWIG_AsVal_dec(double)(zval **obj, double* val)

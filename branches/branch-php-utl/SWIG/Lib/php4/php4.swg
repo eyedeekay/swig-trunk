@@ -84,7 +84,7 @@
 
 %typemap(in) void *
 {
-	if(SWIG_ConvertPtr(*$input, (void **) &$1, 0, 0) < 0) {
+	if(SWIG_ConvertPtr($input, (void **) &$1, 0, 0) < 0) {
 	  /* Allow NULL from php for void* */
 	  if ((*$input)->type==IS_NULL) $1=0;
 	  else
@@ -99,7 +99,7 @@
 {
   /* If they pass NULL by reference, make it into a void*
      This bit should go in arginit if arginit support init-ing scripting args */
-  if(SWIG_ConvertPtr(*$input, (void **) &$1, $1_descriptor, 0) < 0) {
+  if(SWIG_ConvertPtr($input, (void **) &$1, $1_descriptor, 0) < 0) {
     /* So... we didn't get a ref or ptr, but we'll accept NULL by reference */
     if (!((*$input)->type==IS_NULL && PZVAL_IS_REF(*$input))) {
       /* wasn't a pre/ref/thing, OR anything like an int thing */
@@ -147,48 +147,6 @@
 {
   RETVAL_STRINGL($1,$1_dim0,1);
 }
-
-// This typecheck does hard checking for proper argument type.  If you want
-// an argument to be converted from a different PHP type, you must convert
-// it yourself before passing it (e.g. (string)4.7 or (int)"6").
-%define %php_typecheck(_type,_prec,is)
-%typemap(typecheck,precedence=_prec) _type
- " $1 = (Z_TYPE_PP($input) == is); "
-%enddef
-
-%php_typecheck(int,SWIG_TYPECHECK_INTEGER,IS_LONG)
-%php_typecheck(unsigned int,SWIG_TYPECHECK_UINT32,IS_LONG)
-%php_typecheck(short,SWIG_TYPECHECK_INT16,IS_LONG)
-%php_typecheck(unsigned short,SWIG_TYPECHECK_UINT16,IS_LONG)
-%php_typecheck(long,SWIG_TYPECHECK_INT64,IS_LONG)
-%php_typecheck(unsigned long,SWIG_TYPECHECK_UINT64,IS_LONG)
-%php_typecheck(signed char,SWIG_TYPECHECK_INT8,IS_LONG)
-%php_typecheck(unsigned char,SWIG_TYPECHECK_UINT8,IS_LONG)
-%php_typecheck(size_t,SWIG_TYPECHECK_INT16,IS_LONG)
-%php_typecheck(enum SWIGTYPE,SWIG_TYPECHECK_INT8,IS_LONG)
-%php_typecheck(bool,SWIG_TYPECHECK_BOOL,IS_BOOL)
-
-%php_typecheck(char,SWIG_TYPECHECK_CHAR,IS_STRING)
-%php_typecheck(char *,SWIG_TYPECHECK_STRING,IS_STRING)
-%php_typecheck(char [],SWIG_TYPECHECK_STRING,IS_STRING)
-
-%php_typecheck(float,SWIG_TYPECHECK_FLOAT,IS_DOUBLE)
-%php_typecheck(double,SWIG_TYPECHECK_BOOL,IS_DOUBLE)
-
-%typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE
- " /* typecheck SWIGTYPE */ "
-
-%typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE *,
-             SWIGTYPE [],
-             SWIGTYPE &
-{
-  void *tmp;
-  _v = (SWIG_ConvertPtr( *$input, (void**)&tmp, $1_descriptor, 0) >= 0);
-}
-
-%typecheck(SWIG_TYPECHECK_VOIDPTR) void *
- " /* typecheck void * */ "
-
 
 /* Exception handling */
 
