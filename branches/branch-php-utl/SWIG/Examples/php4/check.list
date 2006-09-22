@@ -12,6 +12,7 @@ pragmas
 reference
 shadow
 simple
+struct
 sync
 value
 variables
