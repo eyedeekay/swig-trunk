@@ -1078,8 +1078,9 @@ public:
 
     Printf(f->code, "SWIG_ResetError();\n");
 
-    if (has_this_ptr)
+    if (has_this_ptr) {
       Printf(f->code, "/* This function uses a this_ptr*/\n");
+    }
 
     if (native_constructor) {
       if (native_constructor==NATIVE_CONSTRUCTOR) {
@@ -1160,6 +1161,11 @@ public:
         Replaceall(tm,"$target", ln);
         Replaceall(tm,"$input", source);
         Setattr(p,"emit:input", source);
+	if (Getattr(p,"wrap:disown") || (Getattr(p,"tmap:in:disown"))) {
+	  Replaceall(tm,"$disown","SWIG_POINTER_DISOWN");
+	} else {
+	  Replaceall(tm,"$disown","0");
+	}
         Printf(f->code,"%s\n",tm);
 	if (i == 0 && HashGetAttr(p, k_self)) {
 	  Printf(f->code,"\tif(!arg1) SWIG_PHP_Error(E_ERROR, \"this pointer is NULL\");\n");
@@ -2643,7 +2649,9 @@ public:
       native_constructor=0;
     }
     constructors++;
+    wrapperType = constructor;
     Language::constructorHandler(n);
+    wrapperType = standard;
 
     if (shadow && php_version == 4) {
       String *wname = NewStringf( "_wrap_new_%s", iname );
@@ -2697,8 +2705,8 @@ public:
 
     Printf(df->code,"  efree(value);\n");
     Printf(df->code,"  if (! newobject) return; /* can't delete it! */\n");
-    Printf(df->code,"  arg1 = (%s)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE%s TSRMLS_CC);\n",
-	SwigType_lstr(pt, 0), SwigType_manglestr(pt));
+    Printf(df->code,"  SWIG_ZTS_ConvertResourceData(ptr,type_name, (void**)&arg1, SWIGTYPE%s TSRMLS_CC);\n",
+	SwigType_manglestr(pt));
     Printf(df->code,"  if (! arg1) zend_error(E_ERROR, \"%s resource already free'd\");\n", Char(name));
 
     emit_action(n,df);

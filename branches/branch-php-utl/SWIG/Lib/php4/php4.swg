@@ -7,13 +7,29 @@
  * PHP4 configuration file
  * ----------------------------------------------------------------------------- */
 
-%runtime "swigrun.swg"  // Common C API type-checking code
-%runtime "php4run.swg"	// Php4 runtime functions
+/* Typemaps for input parameters by value */
+%include <utils.i>
 
-%include <php4init.swg> // Php4 initialization routine.
+/* Common C API type-checking code */
+%insert(runtime) "swigrun.swg"
 
-%include <globalvar.i>	// Global variables.
+/* Swig error codes */
+%insert(runtime) "swigerrors.swg"
+
+/* php4 runtime functions */
+%insert(runtime) "php4run.swg"
+
+/* php4 initialization routine */
+%include <php4init.swg>
+
+/* Global variable support */
+%include <globalvar.i>
+
+/* Constant Support */
 %include <const.i>
+
+/* Specialization of the std typemap library */
+%include <phptypemaps.swg>
 
 // use %init %{ "/*code goes here*/ " %}
 // or  %minit %{ "/* code goes here*/ " %} to
@@ -65,47 +81,6 @@
 
 %pass_by_val(char *, CONVERT_STRING_IN);
 
-// char array can be in/out, though the passed string may not be big enough...
-// so we have to size it
-%typemap(in) char[ANY]
-{
-   convert_to_string_ex($input);
-   $1 = ($1_ltype) Z_STRVAL_PP($input);
-}
-
-/* Object passed by value. Convert to a pointer */
-%typemap(in) SWIGTYPE ($&1_ltype tmp)
-{
-	if(SWIG_ConvertPtr(*$input, (void **) &tmp, $&1_descriptor, 0) < 0 || tmp == NULL) {
-          SWIG_PHP_Error(E_ERROR, "Type error in argument $argnum of $symname. Expected $&1_descriptor");
-	}
-	$1 = *tmp;
-}
-
-%typemap(in) SWIGTYPE *,
-	     SWIGTYPE []
-{
-	if(SWIG_ConvertPtr(*$input, (void **) &$1, $1_descriptor, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument $argnum of $symname. Expected $1_descriptor");
-	}
-}
-
-%typemap(in) SWIGTYPE &
-{
-	if(SWIG_ConvertPtr(*$input, (void **) &$1, $1_descriptor, 0) < 0 || $1 == NULL) {
-	    SWIG_PHP_Error(E_ERROR, "Type error in argument $argnum of $symname. Expected $1_descriptor");
-	}
-}
-
-%typemap(in) SWIGTYPE *DISOWN
-{
-  if(SWIG_ConvertPtr(*$input, (void **) &$1, $1_descriptor, SWIG_POINTER_DISOWN ) < 0) {
-    SWIG_PHP_Error(E_ERROR, "Type error in argument $argnum of $symname. Expected $&1_descriptor");
-  }
-}
-%typemap(argout) SWIGTYPE *,
-                 SWIGTYPE [],
-                 SWIGTYPE&;
 
 %typemap(in) void *
 {
@@ -151,62 +126,6 @@
   }
 }
 
-/* Typemap for output values */
-
-%typemap(out) int,
-              unsigned int,
-              short,
-              unsigned short,
-              long,
-              unsigned long,
-              signed char,
-              unsigned char,
-              bool,
-              size_t,
-              enum SWIGTYPE
-{
-	ZVAL_LONG(return_value,$1);
-}
-
-%typemap(out) bool
-{
-	ZVAL_BOOL(return_value,($1)?1:0);
-}
-
-%typemap(out) float,
-              double
-{
-	ZVAL_DOUBLE(return_value,$1);
-}
-
-%typemap(out) char
-{
-	ZVAL_STRINGL(return_value,&$1, 1, 1);
-}
-
-%typemap(out) char *,
-              char []
-{
-	if(!$1) {
-	  ZVAL_NULL(return_value);
-	} else {
-	  ZVAL_STRING(return_value,$1, 1);
-	}
-}
-
-%typemap(out) SWIGTYPE *,
-              SWIGTYPE [],
-              SWIGTYPE &
-{
-	SWIG_SetPointerZval(return_value, (void *)$1, $1_descriptor, $owner);
-}
-
-%typemap(out) SWIGTYPE *DYNAMIC,
-              SWIGTYPE &DYNAMIC
-{
-        swig_type_info *ty = SWIG_TypeDynamicCast($1_descriptor, (void **) &$1);
-	SWIG_SetPointerZval(return_value, (void *)$1, ty, $owner);
-}
 
 %typemap(out) SWIGTYPE
 #ifdef __cplusplus
