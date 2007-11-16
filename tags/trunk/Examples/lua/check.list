@@ -1,0 +1,10 @@
+# see top-level Makefile.in
+class
+constants
+funcptr3
+functest
+functor
+import
+pointer
+simple
+variables
