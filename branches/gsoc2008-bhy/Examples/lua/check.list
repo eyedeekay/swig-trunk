@@ -1,0 +1,16 @@
+# see top-level Makefile.in
+arrays
+class
+constants
+dual
+embed
+embed2
+exception
+funcptr3
+functest
+functor
+import
+owner
+pointer
+simple
+variables
