@@ -53,6 +53,8 @@ static int apply = 0;
 static int new_repr = 1;
 static int no_header_file = 0;
 
+static int py3 = 0;
+
 /* C++ Support + Shadow Classes */
 
 static int have_constructor;
@@ -148,6 +150,7 @@ static const char *usage3 = (char *) "\
      -O              - Enable all the optimization options: \n\
                          -modern -fastdispatch -dirvtable -nosafecstrings -fvirtual -noproxydel \n\
                          -fastproxy -fastinit -fastunpack -fastquery -modernargs -nobuildnone \n\
+     -3              - (Experimental) Generate code for Python 3 \n\
 \n";
 
 class PYTHON:public Language {
@@ -429,8 +432,19 @@ public:
 	  fputs(usage1, stdout);
 	  fputs(usage2, stdout);
 	  fputs(usage3, stdout);
-	}
+	} else if (strcmp(argv[i], "-3") == 0) {
+      py3 = 1;
+      Swig_mark_arg(i);
+    }
+      
       }
+    } /* for */
+
+    if (py3) {
+        /* force disable features that not compatible with Python 3.x */
+        apply = 0;
+        classic = 0;
+        fastproxy = 0;
     }
 
     if (cppcast) {
@@ -691,11 +705,14 @@ public:
 
       Printf(f_shadow, "\nimport %s\n", module);
 
-      Printv(f_shadow, "import new\n", NULL);
-      Printv(f_shadow, "new_instancemethod = new.instancemethod\n", NULL);
+      if(!py3)
+      {
+          Printv(f_shadow, "import new\n", NULL);
+          Printv(f_shadow, "new_instancemethod = new.instancemethod\n", NULL);
+      }
       if (modern || !classic) {
 	Printv(f_shadow, "try:\n", tab4, "_swig_property = property\n", "except NameError:\n", tab4, "pass # Python < 2.2 doesn't have 'property'.\n", NULL);
-      }
+      } 
       /* if (!modern) */
       /* always needed, a class can be forced to be no-modern, such as an exception */
       {
@@ -722,7 +739,7 @@ public:
 	       "def _swig_getattr(self,class_type,name):\n",
 	       tab4, "if (name == \"thisown\"): return self.this.own()\n",
 	       tab4, "method = class_type.__swig_getmethods__.get(name,None)\n",
-	       tab4, "if method: return method(self)\n", tab4, "raise AttributeError,name\n\n", NIL);
+	       tab4, "if method: return method(self)\n", tab4, "raise AttributeError(name)\n\n", NIL);
 
 	Printv(f_shadow,
 	       "def _swig_repr(self):\n",
@@ -2703,7 +2720,7 @@ public:
 	Delete(realct);
       }
       if (!have_constructor) {
-	Printv(f_shadow_file, tab4, "def __init__(self, *args, **kwargs): raise AttributeError, \"No constructor defined\"\n", NIL);
+	Printv(f_shadow_file, tab4, "def __init__(self, *args, **kwargs): raise AttributeError(\"No constructor defined\")\n", NIL);
       } else if (fastinit) {
 
 	Printv(f_wrappers, "SWIGINTERN PyObject *", class_name, "_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {\n", NIL);

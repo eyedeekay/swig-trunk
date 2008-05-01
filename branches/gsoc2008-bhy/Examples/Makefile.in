@@ -292,7 +292,7 @@ PYTHON3_SO     = @PYTHON_SO@
 # ----------------------------------------------------------------
 
 python3: $(SRCS)
-	$(SWIG) -python $(SWIGOPT) $(INTERFACE)
+	$(SWIG) -python -3 $(SWIGOPT) $(INTERFACE)
 	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDES) $(PYTHON3_INCLUDE)
 	$(LDSHARED) $(CFLAGS) $(OBJS) $(IOBJS) $(PYTHON3_DLNK) $(LIBS) -o $(LIBPREFIX)_$(TARGET)$(PYTHON_SO)
 
@@ -301,7 +301,7 @@ python3: $(SRCS)
 # -----------------------------------------------------------------
 
 python3_cpp: $(SRCS)
-	$(SWIG) -c++ -python $(SWIGOPT) $(INTERFACE)
+	$(SWIG) -c++ -python -3 $(SWIGOPT) $(INTERFACE)
 	$(CXX) -c $(CCSHARED) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) $(PYTHON3_INCLUDE)
 	$(CXXSHARED) $(CFLAGS) $(OBJS) $(IOBJS) $(PYTHON3_DLNK) $(LIBS) $(CPP_DLLIBS) -o $(LIBPREFIX)_$(TARGET)$(PYTHON_SO)
 
@@ -317,12 +317,12 @@ TKINTER =
 PYTHON3_LIBOPTS = @PY3LINK@ @LIBS@ $(TKINTER) $(SYSLIBS)
 
 python3_static: $(SRCS)
-	$(SWIG) -python -lembed.i $(SWIGOPT) $(INTERFACE)
+	$(SWIG) -python -3 -lembed.i $(SWIGOPT) $(INTERFACE)
 	$(CC) $(CFLAGS) @LINKFORSHARED@ $(ISRCS) $(SRCS) $(INCLUDES) \
 	$(PYTHON3_INCLUDE) $(LIBS) -L$(PYTHON_LIB) $(PYTHON_LIBOPTS) -o $(TARGET)
 
 python3_static_cpp: $(SRCS)
-	$(SWIG) -c++ -python -lembed.i $(SWIGOPT) $(INTERFACE)
+	$(SWIG) -c++ -python -3 -lembed.i $(SWIGOPT) $(INTERFACE)
 	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) \
 	$(PYTHON3_INCLUDE) $(LIBS)  -L$(PYTHON_LIB) $(PYTHON_LIBOPTS) -o $(TARGET)
 
