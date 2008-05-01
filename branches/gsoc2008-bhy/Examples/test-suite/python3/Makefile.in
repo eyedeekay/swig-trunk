@@ -1,14 +1,16 @@
 #######################################################################
-# Makefile for python test-suite
+# Makefile for python 3.x test-suite
 #######################################################################
 
-LANGUAGE     = python
+LANGUAGE     = python3
 ifneq (,$(USE_VALGRIND))
-PYTHON       = valgrind --leak-check=full --suppressions=pyswig.supp @PYTHON@
+PYTHON       = valgrind --leak-check=full --suppressions=pyswig.supp @PYTHON3@
 else
-PYTHON       = @PYTHON@
+PYTHON       = @PYTHON3@
 endif
-SCRIPTSUFFIX = _runme.py
+#If we use same SCRIPTSUFFIX with Python 2, 
+#the 2to3 rule will fall into infinite recursion
+SCRIPTSUFFIX = _runme3.py
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
@@ -65,20 +67,28 @@ include $(srcdir)/../common.mk
 LIBS       = -L.
 
 # Rules for the different types of tests
-%.cpptest: 
+%.cpptest: %$(SCRIPTSUFFIX)
 	$(setup)
 	+$(swig_and_compile_cpp)
 	$(run_testcase)
 
-%.ctest:
+%.ctest: %$(SCRIPTSUFFIX)
 	$(setup)
 	+$(swig_and_compile_c)
 	$(run_testcase)
 
-%.multicpptest: 
+%.multicpptest: %$(SCRIPTSUFFIX)
 	$(setup)
 	+$(swig_and_compile_multi_cpp)
 	$(run_testcase)
+
+# Call 2to3 to generate Python 3.x test from the Python 2.x's *_runme.py file
+%$(SCRIPTSUFFIX): $(srcdir)/../python/%_runme.py
+	cp $< $@
+	2to3 -w $@
+
+$(srcdir)/../python/%$(SCRIPTSUFFIX):
+
 
 # Runs the testcase. A testcase is only run if
 # a file is found which has _runme.py appended after the testcase name.

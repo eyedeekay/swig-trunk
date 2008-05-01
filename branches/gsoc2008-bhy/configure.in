@@ -1948,6 +1948,11 @@ if test -z "$PYINCLUDE" || test -z "$PYLIB" ; then
 fi
 AC_SUBST(SKIP_PYTHON)
 
+SKIP_PYTHON3=
+if test -z "$PY3INCLUDE" || test -z "$PY3LIB" ; then
+    SKIP_PYTHON3="1"
+fi
+AC_SUBST(SKIP_PYTHON3)
 
 SKIP_JAVA=
 if test -z "$JAVA" || test -z "$JAVAC" || test -z "$JAVAINC" ; then
@@ -2133,6 +2138,7 @@ AC_CONFIG_FILES([			        \
     Examples/test-suite/php4/Makefile	        \
     Examples/test-suite/pike/Makefile	        \
     Examples/test-suite/python/Makefile	        \
+    Examples/test-suite/python3/Makefile	    \
     Examples/test-suite/ruby/Makefile	        \
     Examples/test-suite/tcl/Makefile	        \
     Examples/test-suite/lua/Makefile	        \
