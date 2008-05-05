@@ -12,7 +12,11 @@
 PyObject* PyInstance_NewRaw(PyObject *cls, PyObject *dict)
 {
 	PyObject* obj = ((PyTypeObject *)cls)->tp_alloc((PyTypeObject *)cls, 0);
-	*_PyObject_GetDictPtr(obj) = dict;
+    PyObject** dict_ptr = _PyObject_GetDictPtr(obj);
+    Py_DECREF(*dict_ptr);
+    Py_INCREF(dict);
+	*dict_ptr = dict;
+    printf("PyInstance_NewRaw calling...\n");
     return obj;
 }
 

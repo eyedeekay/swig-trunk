@@ -74,7 +74,11 @@ SWIG_FromCharPtrAndSize(const char* carray, size_t size)
       return pchar_descriptor ? 
 	SWIG_NewPointerObj(%const_cast(carray,char *), pchar_descriptor, 0) : SWIG_Py_Void();
     } else {
+%#if PY_VERSION_HEX >= 0x03000000
+      return PyUnicode_FromStringAndSize(carray, %numeric_cast(size,int));
+%#else
       return PyString_FromStringAndSize(carray, %numeric_cast(size,int));
+%#endif
     }
   } else {
     return SWIG_Py_Void();
