@@ -1010,7 +1010,13 @@ SWIG_Python_GetSwigThis(PyObject *pyobj)
       }
     }
 #else
+//#if PY_VERSION_HEX >= 0x03000000
+    //printf("TRYING GET THIS FROM: %s\n", Py_TYPE(pyobj)->tp_name);
+//    obj = PyDict_GetItem(Py_TYPE(pyobj)->tp_dict, SWIG_This());
+    //if(obj) printf("%s\n", Py_TYPE(obj)->tp_name);
+//#else
     obj = PyObject_GetAttr(pyobj,SWIG_This());
+//#endif
     if (obj) {
       Py_DECREF(obj);
     } else {
@@ -1215,10 +1221,17 @@ SWIG_Python_NewShadowInstance(PySwigClientData *data, PyObject *swig_this)
 #endif
     }
   } else {
+#if PY_VERSION_HEX >= 0x03000000
+    inst = PyObject_New(PyObject, (PyTypeObject*) data->newargs);
+    //PyObject_SetAttr(inst, SWIG_This(), swig_this);
+    PyDict_SetItem(Py_TYPE(inst)->tp_dict, SWIG_This(), swig_this);
+
+#else
     PyObject *dict = PyDict_New();
     PyDict_SetItem(dict, SWIG_This(), swig_this);
     inst = PyInstance_NewRaw(data->newargs, dict);
     Py_DECREF(dict);
+#endif
   }
   return inst;
 #else

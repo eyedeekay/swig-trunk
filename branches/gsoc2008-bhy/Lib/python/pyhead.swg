@@ -8,18 +8,42 @@
 #define PyInt_FromLong(x) PyLong_FromLong(x)
 
 #define PyString_Format(fmt, args)  PyUnicode_Format(fmt, args)
-
-PyObject* PyInstance_NewRaw(PyObject *cls, PyObject *dict)
+/*
+PyObject* PyInstance_NewRaw(PyObject *klass, PyObject *dict)
 {
-	PyObject* obj = ((PyTypeObject *)cls)->tp_alloc((PyTypeObject *)cls, 0);
-    PyObject** dict_ptr = _PyObject_GetDictPtr(obj);
-    Py_DECREF(*dict_ptr);
-    Py_INCREF(dict);
-	*dict_ptr = dict;
-    printf("PyInstance_NewRaw calling...\n");
-    return obj;
+   	PyTypeObject *inst;
+    printf("Entering PyInstance_NewRaw...\n");
+	if (!PyClass_Check(klass)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	if (dict == NULL) {
+		dict = PyDict_New();
+		if (dict == NULL)
+			return NULL;
+	}
+	else {
+		if (!PyDict_Check(dict)) {
+			PyErr_BadInternalCall();
+			return NULL;
+		}
+		Py_INCREF(dict);
+	}
+	inst = PyObject_GC_New(PyTypeObject,(PyTypeObject*)klass);// PyBaseObject_Type);
+	if (inst == NULL) {
+		Py_DECREF(dict);
+		return NULL;
+	}
+	//inst->tp_weaklist = NULL;
+	Py_INCREF(klass);
+	//inst->in_class = (PyClassObject *)klass;
+	Py_TYPE(inst)->tp_dict = dict;
+    //Py_TYPE(inst) = (PyTypeObject *)klass;
+	_PyObject_GC_TRACK(inst);
+    printf("PyInstance_NewRaw calling succ...\n");
+	return (PyObject *)inst;
 }
-
+*/
 #endif
 
 /* Add PyOS_snprintf for old Pythons */
