@@ -1947,7 +1947,7 @@ public:
       } else {
 	if (!s_fakeoowrappers)
 	  s_fakeoowrappers = NewStringEmpty();
-	Printf(s_fakeoowrappers, "\n\tconst %s = %s;\n", name, set_to);
+	Printf(s_fakeoowrappers, "\n\tconst %s = %s;\n", iname, set_to);
       }
     }
 
@@ -2321,7 +2321,7 @@ public:
 	base.item = NULL;
       }
 
-      if (Getattr(n, "abstract")) {
+      if (Getattr(n, "abstract") && !GetFlag(n, "feature:notabstract")) {
 	Printf(s_phpclasses, "abstract ");
       }
 
