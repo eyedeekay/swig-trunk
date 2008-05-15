@@ -116,6 +116,13 @@ namespace std {
       bool res;
       SWIG_PYTHON_THREAD_BEGIN_BLOCK;
       res = PyObject_Compare(v, w) < 0;
+      if( PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_TypeError) )
+      {
+        /* Objects can't be compared, this mostly occured in Python 3.0 */
+        /* Compare their ptr directly for a workaround */
+        res = (v < w);
+        PyErr_Clear();
+      }
       SWIG_PYTHON_THREAD_END_BLOCK;
       return res;
     }
