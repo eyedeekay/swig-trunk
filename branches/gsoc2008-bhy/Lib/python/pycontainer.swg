@@ -116,6 +116,10 @@ namespace std {
       bool res;
       SWIG_PYTHON_THREAD_BEGIN_BLOCK;
       res = PyObject_Compare(v, w) < 0;
+      /* TODO: would this fall into a case of inconsistent? 
+               eg. ObjA > ObjX > ObjB
+               but ObjA < ObjB
+      */
       if( PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_TypeError) )
       {
         /* Objects can't be compared, this mostly occured in Python 3.0 */
@@ -607,6 +611,7 @@ namespace swig
     size_type __len__() const {
       return self->size();
     }
+    %pythoncode {__bool__ = __nonzero__}
   }
 %enddef
 
