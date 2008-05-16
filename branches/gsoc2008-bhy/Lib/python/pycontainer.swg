@@ -630,6 +630,28 @@ namespace swig
       return x;
     }
 
+    /* typemap for slice object support */
+    %typemap(in) (difference_type i, difference_type j) {
+      PySliceObject *r;
+      int step; /*TODO: don't ignore step */
+      if(PySlice_Check($input)) {
+        /* We don't know self->size() so can't use this API
+        PySlice_GetIndices($input, self->size(), &$1, &$2, &step); */
+        r = (PySliceObject*) $input;
+        $1 = PyLong_AsSsize_t(r->start);
+        $2 = PyLong_AsSsize_t(r->stop);
+      } else {
+        SWIG_exception(SWIG_TypeError, "Slice object expected.");
+      }
+    }
+
+    %typemap(typecheck) (difference_type i, difference_type j) {
+      $1 = PySlice_Check($input);
+    }
+
+    %typemap(typecheck) difference_type = int;
+
+
     Sequence* __getslice__(difference_type i, difference_type j) throw (std::out_of_range) {
       return swig::getslice(self, i, j);
     }
@@ -646,6 +668,24 @@ namespace swig
     void __delitem__(difference_type i) throw (std::out_of_range) {
       self->erase(swig::getpos(self,i));
     }
+
+
+    /* Overloaded methods for Python 3 compatibility 
+     * (Also useful in Python 2.x)
+     */
+    Sequence* __getitem__(difference_type i, difference_type j) throw (std::out_of_range) {
+      return swig::getslice(self, i, j);
+    }
+
+    void __setitem__(difference_type i, difference_type j, const Sequence& v) 
+      throw (std::out_of_range, std::invalid_argument) {
+      swig::setslice(self, i, j, v);
+    }
+
+    void __delitem__(difference_type i, difference_type j) throw (std::out_of_range) {
+      swig::delslice(self, i,j);
+    }
+     
   }
 %enddef
 

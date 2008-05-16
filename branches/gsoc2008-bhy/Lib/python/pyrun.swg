@@ -439,6 +439,24 @@ PySwigObject_compare(PySwigObject *v, PySwigObject *w)
   return (i < j) ? -1 : ((i > j) ? 1 : 0);
 }
 
+/* Added for Python 3.x, whould it also useful for Python 2.x? */
+SWIGRUNTIME PyObject*
+PySwigObject_richcompare(PySwigObject *v, PySwigObject *w, int op)
+{
+  PyObject* res;
+  if( op != Py_EQ && op != Py_NE ) {
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+  }
+  if( (PySwigObject_compare(v, w)==0) == (op == Py_EQ) )
+    res = Py_True;
+  else
+    res = Py_False;
+  Py_INCREF(res);
+  return res;  
+}
+
+
 SWIGRUNTIME PyTypeObject* _PySwigObject_type(void);
 
 SWIGRUNTIME PyTypeObject*
@@ -705,7 +723,7 @@ _PySwigObject_type(void) {
 	swigobject_doc, 	            /* tp_doc */        
 	0,                                  /* tp_traverse */
 	0,                                  /* tp_clear */
-	0,                                  /* tp_richcompare */
+	(richcmpfunc)PySwigObject_richcompare,           /* tp_richcompare */
 	0,                                  /* tp_weaklistoffset */
 #if PY_VERSION_HEX >= 0x02020000
 	0,                                  /* tp_iter */
