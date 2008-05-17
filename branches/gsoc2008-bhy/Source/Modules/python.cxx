@@ -747,11 +747,17 @@ public:
 	       tab4, "except: strthis = \"\"\n", tab4, "return \"<%s.%s; %s >\" % (self.__class__.__module__, self.__class__.__name__, strthis,)\n\n", NIL);
 
 	if (!classic) {
+          /* Usage of types.ObjectType is deprecated.
+           * But don't sure wether this would broken old Python?
+           */
 	  Printv(f_shadow,
-		 "import types\n",
+//		 "import types\n",
 		 "try:\n",
-		 "    _object = types.ObjectType\n",
-		 "    _newclass = 1\n", "except AttributeError:\n", "    class _object : pass\n", "    _newclass = 0\n", "del types\n", "\n\n", NIL);
+//		 "    _object = types.ObjectType\n",
+		 "    _object = object\n",
+		 "    _newclass = 1\n", "except AttributeError:\n", "    class _object : pass\n", "    _newclass = 0\n", 
+//                 "del types\n", 
+                 "\n\n", NIL);
 	}
       }
       if (modern) {
