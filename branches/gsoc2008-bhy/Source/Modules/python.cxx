@@ -2636,6 +2636,9 @@ public:
 	if (!classic) {
 	  Printf(f_shadow, modern ? "(object)" : "(_object)");
 	}
+        if (GetFlag(n, "feature:exceptionclass") ) {
+          Printf(f_shadow, "(BaseException)");
+        }
       }
       Printf(f_shadow, ":\n");
       if (have_docstring(n)) {
