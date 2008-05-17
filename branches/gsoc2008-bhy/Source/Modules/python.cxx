@@ -2637,7 +2637,7 @@ public:
 	  Printf(f_shadow, modern ? "(object)" : "(_object)");
 	}
         if (GetFlag(n, "feature:exceptionclass") ) {
-          Printf(f_shadow, "(BaseException)");
+          Printf(f_shadow, "(Exception)");
         }
       }
       Printf(f_shadow, ":\n");
