@@ -676,7 +676,7 @@ AC_MSG_NOTICE([Disabling Python 3.x support])
 else
 # First figure out the name of the Python3 executable 
 
-if test "x$PYBIN" = xyes; then
+if test "x$PY3BIN" = xyes; then
 AC_CHECK_PROGS(PYTHON3, python3, python3.0)
 else
 PYTHON3="$PY3BIN"
