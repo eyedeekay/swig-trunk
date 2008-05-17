@@ -58,7 +58,14 @@ SWIG_Python_AddErrorMsg(const char* mesg)
     PyObject *old_str = PyObject_Str(value);
     PyErr_Clear();
     Py_XINCREF(type);
-    PyErr_Format(type, "%s %s", PyString_AsString(old_str), mesg);
+
+    PyErr_Format(type, "%s %s", 
+#if PY_VERSION_HEX >= 0x03000000            
+        PyUnicode_AsString(old_str),
+#else
+        PyString_AsString(old_str), 
+#endif
+        mesg);
     Py_DECREF(old_str);
     Py_DECREF(value);
   } else {

@@ -526,6 +526,9 @@ namespace swig
 }
 }
 
+/*TODO: disable warning temporaly, fix it then!! */
+#pragma SWIG nowarn=467
+
 %define %swig_sequence_iterator(Sequence...)
 #if defined(SWIG_EXPORT_ITERATOR_METHODS)
   class iterator;
