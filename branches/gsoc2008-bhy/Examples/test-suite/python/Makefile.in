@@ -2,16 +2,38 @@
 # Makefile for python test-suite
 #######################################################################
 
+ifeq (,$(PY3))
+  PYBIN = @PYTHON@
+else
+  PYBIN = @PYTHON3@
+endif
+
 LANGUAGE     = python
 ifneq (,$(USE_VALGRIND))
-PYTHON       = valgrind --leak-check=full --suppressions=pyswig.supp @PYTHON@
+PYTHON       = valgrind --leak-check=full --suppressions=pyswig.supp $(PYBIN)
 else
-PYTHON       = @PYTHON@
+PYTHON       = $(PYBIN)
 endif
-SCRIPTSUFFIX = _runme.py
+
+#*_runme.py for Python 2.x, *_runme3.py for Python 3.x
+PY2SCRIPTSUFFIX = _runme.py
+PY3SCRIPTSUFFIX = _runme3.py
+
+ifeq (,$(PY3))
+  SCRIPTSUFFIX = $(PY2SCRIPTSUFFIX)
+else
+  SCRIPTSUFFIX = $(PY3SCRIPTSUFFIX)
+endif
+
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
+
+
+#Use the tricky command because we want to disable the "import" fixer,
+#but currently 2to3 has no option to let us do it
+PY2TO3 = 2to3 `2to3 -l | grep -v -E "Available|import$$" | awk '{print "-f "$$0}'`
+
 
 CPP_TEST_CASES += \
 	argcargvtest \
@@ -80,12 +102,35 @@ LIBS       = -L.
 	+$(swig_and_compile_multi_cpp)
 	$(run_testcase)
 
+
+# Call 2to3 to generate Python 3.x test from the Python 2.x's *_runme.py file
+%$(PY3SCRIPTSUFFIX): %$(PY2SCRIPTSUFFIX)
+	cp $< $@
+	$(PY2TO3) -w $@ >/dev/null 2>&1 
+
+
 # Runs the testcase. A testcase is only run if
-# a file is found which has _runme.py appended after the testcase name.
+# a file is found which has _runme.py (or _runme3.py for Python 3) appended after the testcase name.
+
+run_python = env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(PYTHON) $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX)
+
+ifeq (,$(PY3))
 run_testcase = \
 	if [ -f $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ]; then (	  \
-	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(PYTHON) $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX);) \
+	  $(run_python);)\
 	fi;
+else
+py2_runme = $(srcdir)/$(SCRIPTPREFIX)$*$(PY2SCRIPTSUFFIX)
+py3_runme = $(srcdir)/$(SCRIPTPREFIX)$*$(PY3SCRIPTSUFFIX) 
+
+run_testcase = \
+	if [ -f $(py2_runme) ]; then (	  \
+	  $(MAKE) -f $(srcdir)/Makefile $(py3_runme) && \
+	   $(run_python);) \
+        elif [ -f $(py3_runme)]; then (   \
+          $(run_python);)  \
+	fi;
+endif
 
 # Clean: remove the generated .py file
 %.clean:
