@@ -1,5 +1,5 @@
 TOP        = ../../..
-SWIG       = $(TOP)/../swig
+SWIG       = $(TOP)/../preinst-swig
 SWIGOPT    = -I../../Interface
 SRCS       =
 TARGET     = gifplot
