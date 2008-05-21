@@ -221,9 +221,11 @@ perl5_clean:
 ifeq (,$(PY3))
   PYTHON_INCLUDE= $(DEFS) @PYINCLUDE@
   PYTHON_LIB    = @PYLIB@
+  PYTHON        = @PYTHON@
 else
   PYTHON_INCLUDE= $(DEFS) @PY3INCLUDE@
   PYTHON_LIB    = @PY3LIB@
+  PYTHON        = @PYTHON3@
 endif
 
 # Extra Python specific linking options
@@ -282,6 +284,25 @@ python_static_cpp: $(SRCS)
 	$(CXX) $(CFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES) \
 	$(PYTHON_INCLUDE) $(LIBS)  -L$(PYTHON_LIB) $(PYTHON_LIBOPTS) -o $(TARGET)
 
+# ----------------------------------------------------------------- 
+# Running a Python example
+# ----------------------------------------------------------------- 
+
+ifeq (,$(PY3))
+  SCRIPT = runme.py
+else
+  SCRIPT = runme3.py
+endif
+
+PY2TO3 = 2to3 `2to3 -l | grep -v -E "Available|import$$" | awk '{print "-f "$$0}'`
+
+python_run: $(SCRIPT)
+	env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(PYTHON) $(SCRIPT) >/dev/null
+
+runme3.py: runme.py
+	cp $< $@
+	$(PY2TO3) -w $@ >/dev/null 2>&1 
+
 # -----------------------------------------------------------------
 # Cleaning the python examples
 # -----------------------------------------------------------------
@@ -290,6 +311,8 @@ python_clean:
 	rm -f *_wrap* *~ .~* mypython@EXEEXT@ *.pyc
 	rm -f core @EXTRA_CLEAN@
 	rm -f *.@OBJEXT@ *@SO@ *@PYTHON_SO@
+
+
 
 ##################################################################
 #####                      PYTHON 3                         ######

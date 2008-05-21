@@ -2,7 +2,7 @@
 
 use strict;
 
-my $modsize = 600; #adjust it so you can have a smaller or bigger hugemod 
+my $modsize = 399; #adjust it so you can have a smaller or bigger hugemod 
 
 my $runme = shift @ARGV;
 
