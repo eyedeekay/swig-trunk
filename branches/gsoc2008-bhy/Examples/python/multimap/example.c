@@ -21,7 +21,6 @@ int gcdmain(int argc, char *argv[]) {
     printf("usage: gcd x y\n");
     return -1;
   }
-  printf("%s %s\n", argv[1], argv[2]);
   x = atoi(argv[1]);
   y = atoi(argv[2]);
   printf("gcd(%d,%d) = %d\n", x,y,gcd(x,y));
