@@ -66,6 +66,12 @@ namespace swig {
       return obj;     
     }
 
+    /* Make an alias for Python 3.x */
+    PyObject *__next__()
+    {
+      return next();
+    }
+
     PyObject *previous()
     {
       SWIG_PYTHON_THREAD_BEGIN_BLOCK; // disable threads       
@@ -328,7 +334,6 @@ namespace swig
   %nodirector PySwigIterator;
   %extend PySwigIterator {
   %pythoncode {def __iter__(self): return self}
-  %pythoncode {__next__ = next #Workaround for Python 3.x}
   }
 
   %catches(swig::stop_iteration) PySwigIterator::value() const;
@@ -336,6 +341,7 @@ namespace swig
   %catches(swig::stop_iteration) PySwigIterator::decr(size_t n = 1);
   %catches(std::invalid_argument) PySwigIterator::distance(const PySwigIterator &x) const;
   %catches(std::invalid_argument) PySwigIterator::equal (const PySwigIterator &x) const;
+  %catches(swig::stop_iteration) PySwigIterator::__next__();
   %catches(swig::stop_iteration) PySwigIterator::next();
   %catches(swig::stop_iteration) PySwigIterator::previous();
   %catches(swig::stop_iteration) PySwigIterator::advance(ptrdiff_t n);
@@ -371,6 +377,7 @@ namespace swig
     virtual PySwigIterator *copy() const = 0;
 
     PyObject *next();
+    PyObject *__next__();
     PyObject *previous();
     PySwigIterator *advance(ptrdiff_t n);
 

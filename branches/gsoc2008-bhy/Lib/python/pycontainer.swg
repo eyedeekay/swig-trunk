@@ -611,10 +611,14 @@ namespace swig
       return !(self->empty());
     }
 
+    /* Alias for Python 3 compatibility */
+    bool __bool__() const {
+      return !(self->empty());
+    }
+
     size_type __len__() const {
       return self->size();
     }
-    %pythoncode {__bool__ = __nonzero__}
   }
 %enddef
 
