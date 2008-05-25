@@ -39,7 +39,6 @@ maintainer: libfiles
 skip-tcl	= test -n "@SKIP_TCL@"
 skip-perl5	= test -n "@SKIP_PERL5@"
 skip-python	= test -n "@SKIP_PYTHON@"
-skip-python3= test -n "@SKIP_PYTHON3@"
 skip-java	= test -n "@SKIP_JAVA@"
 skip-guilescm   = test -n "@SKIP_GUILESCM@"
 skip-guile	= test -n "@SKIP_GUILE@"

@@ -2144,7 +2144,6 @@ AC_CONFIG_FILES([			        \
     Examples/test-suite/php4/Makefile	        \
     Examples/test-suite/pike/Makefile	        \
     Examples/test-suite/python/Makefile	        \
-    Examples/test-suite/python3/Makefile	    \
     Examples/test-suite/ruby/Makefile	        \
     Examples/test-suite/tcl/Makefile	        \
     Examples/test-suite/lua/Makefile	        \
