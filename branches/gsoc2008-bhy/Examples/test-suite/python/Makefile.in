@@ -9,11 +9,7 @@ else
 endif
 
 LANGUAGE     = python
-ifneq (,$(USE_VALGRIND))
-PYTHON       = valgrind --leak-check=full --suppressions=pyswig.supp $(PYBIN)
-else
 PYTHON       = $(PYBIN)
-endif
 
 #*_runme.py for Python 2.x, *_runme3.py for Python 3.x
 PY2SCRIPTSUFFIX = _runme.py
@@ -85,6 +81,7 @@ include $(srcdir)/../common.mk
 
 # Overridden variables here
 LIBS       = -L.
+VALGRIND_OPT += --suppressions=pythonswig.supp
 
 # Rules for the different types of tests
 %.cpptest: 
@@ -112,7 +109,7 @@ LIBS       = -L.
 # Runs the testcase. A testcase is only run if
 # a file is found which has _runme.py (or _runme3.py for Python 3) appended after the testcase name.
 
-run_python = env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(PYTHON) $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX)
+run_python = env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH PYTHONPATH=$(srcdir):$$PYTHONPATH $(RUNTOOL) $(PYTHON) $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX)
 
 ifeq (,$(PY3))
 run_testcase = \
