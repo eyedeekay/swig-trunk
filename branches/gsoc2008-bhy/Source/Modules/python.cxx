@@ -705,7 +705,7 @@ public:
 
       Printf(f_shadow, "\nimport %s\n", module);
 
-      if(!py3)
+      if(fastproxy)
       {
           Printv(f_shadow, "import new\n", NULL);
           Printv(f_shadow, "new_instancemethod = new.instancemethod\n", NULL);
