@@ -101,6 +101,7 @@
 <li><a href="#Python_nn71">%feature("docstring")</a>
 </ul>
 <li><a href="#Python_nn72">Python Packages</a>
+<li><a href="#Python_nn73">Notes on Python 3.0 Support</a>
 </ul>
 </div>
 <!-- INDEX -->
@@ -4948,6 +4949,25 @@ However if the importee specifies what its package is with the
 importer will use that package name when importing the other module
 and also in base class declarations, etc. if the package name is
 different than its own.
+</p>
+
+<H2><a name="Python_nn73"></a>30.12 Notes on Python 3.0 Support</H2>
+
+<p>
+Currently we have exprimental Python 3.0 support by passing the 
+<tt>-3</tt> command line option to SWIG. However the <tt>-3</tt> is
+a dummy option now, since it did nothing but forcely disable some
+broken features. But in future you should enable some new features
+by using this option.
+</p>
+
+<p>
+There is a list of known-to-be-broken features:
+<ul>
+  <li>No longer support for FILE* typemap, because PyFile_AsFile droped
+      in Python 3.</li>
+  <li><tt>-fastproxy</tt> haven't be supported yet.</li>
+</ul>
 </p>
 
 
