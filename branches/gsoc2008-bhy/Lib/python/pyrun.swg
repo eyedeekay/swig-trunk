@@ -1028,15 +1028,7 @@ SWIG_Python_GetSwigThis(PyObject *pyobj)
       }
     }
 #else
-/*#if PY_VERSION_HEX >= 0x03000000
-    PyObject **dict_ptr = _PyObject_GetDictPtr(pyobj);
-    printf("TRYING GET THIS FROM: %s %p\n", Py_TYPE(pyobj)->tp_name, pyobj);
-    obj = dict_ptr ? PyDict_GetItem(*dict_ptr, SWIG_This()) : 0;
-   if(obj) printf("%s\n", Py_TYPE(obj)->tp_name);
-   else printf("***Get item failed!!\n");
-#else*/
     obj = PyObject_GetAttr(pyobj,SWIG_This());
-//#endif
     if (obj) {
       Py_DECREF(obj);
     } else {
@@ -1242,20 +1234,9 @@ SWIG_Python_NewShadowInstance(PySwigClientData *data, PyObject *swig_this)
     }
   } else {
 #if PY_VERSION_HEX >= 0x03000000
-    //inst = PyObject_New(PyObject, (PyTypeObject*) data->newargs);
     inst = PyBaseObject_Type.tp_new((PyTypeObject*) data->newargs, Py_None, Py_None);
     Py_INCREF(data->newargs);
     PyObject_SetAttr(inst, SWIG_This(), swig_this);
-    //printf("***Setting %p\n", inst);
-    //*_PyObject_GetDictPtr(inst) = PyDict_New();
-    /*if(PyDict_SetItem(*_PyObject_GetDictPtr(inst), SWIG_This(), swig_this) < 0)
-    {
-        printf("***PyDict_SetItem Failed!!\n");
-    }
-    if(! PyDict_GetItem(*_PyObject_GetDictPtr(inst), SWIG_This()))
-    {
-        printf("*** yeah... failed to set.\n");
-    }*/
     Py_TYPE(inst)->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
 #else
     PyObject *dict = PyDict_New();
