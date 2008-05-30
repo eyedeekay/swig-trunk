@@ -444,7 +444,6 @@ public:
         /* force disable features that not compatible with Python 3.x */
         apply = 0;
         classic = 0;
-        fastproxy = 0;
     }
 
     if (cppcast) {
@@ -707,8 +706,12 @@ public:
 
       if(fastproxy)
       {
-          Printv(f_shadow, "import new\n", NULL);
-          Printv(f_shadow, "new_instancemethod = new.instancemethod\n", NULL);
+        Printv(f_shadow, "from sys import version_info\n", NULL);
+        Printv(f_shadow, "if version_info >= (3,0,0):\n", NULL);
+        Printf(f_shadow, tab4 "new_instancemethod = lambda func, inst, cls: %s.SWIG_PyInstanceMethod_New(func)\n", module);
+        Printv(f_shadow, "else:\n", NULL);
+        Printv(f_shadow, tab4, "from new import instancemethod as new_instancemethod\n", NULL);
+        Printv(f_shadow, "del version_info\n", NULL);
       }
       if (modern || !classic) {
 	Printv(f_shadow, "try:\n", tab4, "_swig_property = property\n", "except NameError:\n", tab4, "pass # Python < 2.2 doesn't have 'property'.\n", NULL);
@@ -792,6 +795,9 @@ public:
     Append(const_code, "static swig_const_info swig_const_table[] = {\n");
     Append(methods, "static PyMethodDef SwigMethods[] = {\n");
 
+    /* the method exported for replacement of new.instancemethod in Python 3 */
+    add_pyinstancemethod_new();
+
     /* emit code */
     Language::top(n);
 
@@ -853,6 +859,19 @@ public:
     Delete(f_runtime);
 
     return SWIG_OK;
+  }
+  
+  /* ------------------------------------------------------------
+   * Emit the wrapper for PyInstanceMethod_New to MethodDef array.
+   * This wrapper is used to implement -fastproxy,
+   * as a replacement of new.instancemethod in Python 3.
+   * ------------------------------------------------------------ */
+  int add_pyinstancemethod_new()
+  {
+    String* name = NewString("SWIG_PyInstanceMethod_New");
+    Printf(methods, "\t { (char *)\"%s\", (PyCFunction)%s, METH_O, NULL},", name, name);
+    Delete(name);
+    return 0;
   }
 
   /* ------------------------------------------------------------
