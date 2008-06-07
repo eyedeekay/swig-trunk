@@ -1132,6 +1132,7 @@ public:
 
   String *makeParameterName(ParmList *plist, Parm *p, int arg_num) {
     String *arg = 0;
+    Printf(stdout, "Checking %s\n", Getattr(p, "name"));
     String *pn = Swig_name_make(p, 0, Getattr(p, "name"), 0, 0);
     // Use C parameter name unless it is a duplicate or an empty parameter name
     int count = 0;
@@ -1172,7 +1173,16 @@ public:
     Swig_typemap_attach_parms("doc", plist, 0);
 
     for (p = plist; p; p = pnext) {
-      arg_num ++;
+
+      String *tm = Getattr(p, "tmap:in");
+      if (tm) {
+	pnext = Getattr(p, "tmap:in:next");
+        if (checkAttribute(p, "tmap:in:numinputs", "0")) {
+          continue;
+        }
+      } else {
+	pnext = nextSibling(p);
+      }
 
       String *name = 0;
       String *type = 0;
@@ -1196,12 +1206,8 @@ public:
       // we can hope that the set would have no side effect
       Setattr(p, "name", name);
 
-      String *tm = Getattr(p, "tmap:in");
-      if (tm) {
-	pnext = Getattr(p, "tmap:in:next");
-      } else {
-	pnext = nextSibling(p);
-      }
+      arg_num++;
+
 
       if (Len(doc)) {
 	// add a comma to the previous one if any
@@ -2947,13 +2953,15 @@ public:
 	  Delete(pycode);
 	  fproxy = 0;
 	} else {
+          String *parms = make_pyParmList(n, true, false, allow_kwargs);
+          String *callParms = make_pyParmList(n, true, true, allow_kwargs);
 	  if (!have_addtofunc(n)) {
 	    if (!fastproxy || olddefs) {
-	      Printv(f_shadow, tab4, "def ", symname, "(*args", (allow_kwargs ? ", **kwargs" : ""), "):", NIL);
-	      Printv(f_shadow, " return ", funcCallHelper(Swig_name_member(class_name, symname), allow_kwargs), "\n", NIL);
+	      Printv(f_shadow, tab4, "def ", symname, "(", parms, "):", NIL);
+	      Printv(f_shadow, " return ", funcCall(Swig_name_member(class_name, symname), callParms), "\n", NIL);
 	    }
 	  } else {
-	    Printv(f_shadow, tab4, "def ", symname, "(*args", (allow_kwargs ? ", **kwargs" : ""), "):", NIL);
+	    Printv(f_shadow, tab4, "def ", symname, "(",parms , "):", NIL);
 	    Printv(f_shadow, "\n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow, tab8, docstring(n, AUTODOC_METHOD, tab8), "\n", NIL);
@@ -2963,11 +2971,11 @@ public:
 	    }
 	    if (have_pythonappend(n)) {
 	      fproxy = 0;
-	      Printv(f_shadow, tab8, "val = ", funcCallHelper(Swig_name_member(class_name, symname), allow_kwargs), "\n", NIL);
+	      Printv(f_shadow, tab8, "val = ", funcCall(Swig_name_member(class_name, symname), callParms), "\n", NIL);
 	      Printv(f_shadow, tab8, pythonappend(n), "\n", NIL);
 	      Printv(f_shadow, tab8, "return val\n\n", NIL);
 	    } else {
-	      Printv(f_shadow, tab8, "return ", funcCallHelper(Swig_name_member(class_name, symname), allow_kwargs), "\n\n", NIL);
+	      Printv(f_shadow, tab8, "return ", funcCall(Swig_name_member(class_name, symname), callParms), "\n\n", NIL);
 	    }
 	  }
 	}
