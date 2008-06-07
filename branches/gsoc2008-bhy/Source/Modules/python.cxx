@@ -918,7 +918,7 @@ public:
 
 
   /* ------------------------------------------------------------
-   * emitFuncCallHelper()
+   * funcCallHelper()
    *    Write the shadow code to call a function in the extension
    *    module.  Takes into account the -apply flag and whether
    *    to use keyword args or not.
@@ -935,6 +935,21 @@ public:
     }
     return str;
   }
+
+  /* ------------------------------------------------------------
+   * funcCall()
+   *    Emit shadow code to call a function in the extension
+   *    module. Using proper argument and calling style for
+   *    given node n.
+   * ------------------------------------------------------------ */
+   String *funcCall(String *name, String *parms) {
+    String *str = NewString("");
+
+    //TODO: apply and kwargs
+    Printv(str, module, ".", name, "(", parms, ")", NIL);
+    return str;
+   }
+
 
   /* ------------------------------------------------------------
    * pythoncode()     - Output python code into the shadow file
@@ -1102,19 +1117,51 @@ public:
     return doc;
   }
 
+   /* -----------------------------------------------------------------------------
+   * makeParameterName()
+   *    Copy and adopted form java.cxx. :p   
+   *    Note: the generated name should consist with that in kwnames[]
+   *
+   * Inputs: 
+   *   n - Node
+   *   p - parameter node
+   *   arg_num - parameter argument number
+   * Return:
+   *   arg - a unique parameter name
+   * ----------------------------------------------------------------------------- */
+
+  String *makeParameterName(ParmList *plist, Parm *p, int arg_num) {
+    String *arg = 0;
+    String *pn = Swig_name_make(p, 0, Getattr(p, "name"), 0, 0);
+    // Use C parameter name unless it is a duplicate or an empty parameter name
+    int count = 0;
+    while (plist) {
+      if ((Cmp(pn, Getattr(plist, "name")) == 0))
+        count++;
+      plist = nextSibling(plist);
+    }
+    arg = (!pn || !Len(pn) || (count > 1)) ? NewStringf("arg%d", arg_num) : Copy(pn);
+    return arg;
+  }
+
+
   /* ------------------------------------------------------------
    * make_autodocParmList()
    *   Generate the documentation for the function parameters
    * ------------------------------------------------------------ */
 
-  String *make_autodocParmList(Node *n, bool showTypes) {
+  String *make_autodocParmList(Node *n, bool showTypes, bool calling=false) {
     String *doc = NewString("");
     String *pdocs = Copy(Getattr(n, "feature:pdocs"));
     ParmList *plist = CopyParmList(Getattr(n, "parms"));
     Parm *p;
     Parm *pnext;
-    Node *lookup;
+    Node *lookup; 
+    String *str;
+
+
     int lines = 0;
+    int arg_num = 0;
     const int maxwidth = 50;
 
     if (pdocs)
@@ -1125,6 +1172,8 @@ public:
     Swig_typemap_attach_parms("doc", plist, 0);
 
     for (p = plist; p; p = pnext) {
+      arg_num ++;
+
       String *name = 0;
       String *type = 0;
       String *value = 0;
@@ -1140,6 +1189,12 @@ public:
       name = name ? name : Getattr(p, "name");
       type = type ? type : Getattr(p, "type");
       value = value ? value : Getattr(p, "value");
+
+      name = makeParameterName(plist, p, arg_num);
+      // Reset it for convinient in further use. (mainly for makeParameterName())
+      // Since the plist is created by CopyParmList,
+      // we can hope that the set would have no side effect
+      Setattr(p, "name", name);
 
       String *tm = Getattr(p, "tmap:in");
       if (tm) {
@@ -1167,18 +1222,22 @@ public:
 	Printf(doc, "%s ", type);
       }
 
-      if (name) {
+      
+      //if (name) {
 	Append(doc, name);
 	if (pdoc) {
 	  if (!pdocs)
 	    pdocs = NewString("Parameters:\n");
 	  Printf(pdocs, "   %s\n", pdoc);
 	}
-      } else {
-	Append(doc, "?");
+      /*}  else {
+	//Append(doc, "?");
+        Printf(doc, "arg__%d", nonameArgs);
+        nonameArgs++;
       }
+      */
 
-      if (value) {
+      if (value && !calling) {
 	if (Strcmp(value, "NULL") == 0)
 	  value = NewString("None");
 	else if (Strcmp(value, "true") == 0 || Strcmp(value, "TRUE") == 0)
@@ -1330,6 +1389,36 @@ public:
   }
 
   /* ------------------------------------------------------------
+   * make_pyParmList()
+   *    Generate parameter list for Python functions or methods,
+   *    reuse make_autodocParmList() to do so.
+   * ------------------------------------------------------------ */
+  String* make_pyParmList(Node *n, bool in_class, bool is_calling, int kw)
+  {
+    //TODO: kwargs
+    
+    //For overloaded function, just use *args
+    if (Getattr(n, "sym:overloaded"))
+    {
+      return NewString("*args");
+    }
+
+    String *params = NewString("");
+    String *_params = make_autodocParmList(n, false, is_calling);
+
+    if (in_class)
+    {      
+      Printf(params, "self");
+      if(Len(_params) > 0)
+        Printf(params, ", ");
+    }
+
+    Printv(params, _params, NULL);
+
+    return params;
+  }
+
+  /* ------------------------------------------------------------
    * have_pythonprepend()
    *    Check if there is a %pythonprepend directive and it has text
    * ------------------------------------------------------------ */
@@ -1402,24 +1491,26 @@ public:
    * ------------------------------------------------------------ */
 
   void emitFunctionShadowHelper(Node *n, File *f_dest, String *name, int kw) {
-    if (Getattr(n, "feature:python:callback") || !have_addtofunc(n)) {
-      /* If there is no addtofunc directive then just assign from the extension module */
-      Printv(f_dest, name, " = ", module, ".", name, "\n", NIL);
+    String *parms = make_pyParmList(n, false, false, kw);
+    String *callParms = make_pyParmList(n, false, true, kw);
+    /* Make a wrapper function to insert the code into */
+    Printv(f_dest, "\ndef ", name, "(", parms, "):\n", NIL);
+    if (have_docstring(n))
+      Printv(f_dest, ctab4, docstring(n, AUTODOC_FUNC, tab4), "\n", NIL);
+    if (have_pythonprepend(n))
+      Printv(f_dest, ctab4, pythonprepend(n), "\n", NIL);
+    if (have_pythonappend(n)) {
+      Printv(f_dest, ctab4, "val = ", funcCall(name, callParms), "\n", NIL);
+      Printv(f_dest, ctab4, pythonappend(n), "\n", NIL);
+      Printv(f_dest, ctab4, "return val\n", NIL);
     } else {
-      /* Otherwise make a wrapper function to insert the code into */
-      Printv(f_dest, "\ndef ", name, "(*args", (kw ? ", **kwargs" : ""), "):\n", NIL);
-      if (have_docstring(n))
-	Printv(f_dest, ctab4, docstring(n, AUTODOC_FUNC, tab4), "\n", NIL);
-      if (have_pythonprepend(n))
-	Printv(f_dest, ctab4, pythonprepend(n), "\n", NIL);
-      if (have_pythonappend(n)) {
-	Printv(f_dest, ctab4, "val = ", funcCallHelper(name, kw), "\n", NIL);
-	Printv(f_dest, ctab4, pythonappend(n), "\n", NIL);
-	Printv(f_dest, ctab4, "return val\n", NIL);
-      } else {
-	Printv(f_dest, ctab4, "return ", funcCallHelper(name, kw), "\n", NIL);
-      }
+	Printv(f_dest, ctab4, "return ", funcCall(name, callParms), "\n", NIL);
     }
+
+    if (Getattr(n, "feature:python:callback") || !have_addtofunc(n)) {
+      /* If there is no addtofunc directive then just assign from the extension module (for speed up) */
+      Printv(f_dest, name, " = ", module, ".", name, "\n", NIL);
+    } 
   }
 
 
