@@ -1132,10 +1132,12 @@ public:
 
   String *makeParameterName(ParmList *plist, Parm *p, int arg_num) {
     String *arg = 0;
-    Printf(stdout, "Checking %s\n", Getattr(p, "name"));
     String *pn = Swig_name_make(p, 0, Getattr(p, "name"), 0, 0);
     // Use C parameter name unless it is a duplicate or an empty parameter name
     int count = 0;
+    if ( SwigType_isvarargs(Getattr(p, "type")) ) {
+      return NewString("*args");
+    }
     while (plist) {
       if ((Cmp(pn, Getattr(plist, "name")) == 0))
         count++;
@@ -1164,13 +1166,18 @@ public:
     int lines = 0;
     int arg_num = 0;
     const int maxwidth = 50;
-
+    
     if (pdocs)
       Append(pdocs, "\n");
 
 
     Swig_typemap_attach_parms("in", plist, 0);
     Swig_typemap_attach_parms("doc", plist, 0);
+    
+    if (Strcmp(ParmList_protostr(plist), "void")==0) {
+      //No parameters acctually
+      return doc;
+    }
 
     for (p = plist; p; p = pnext) {
 

@@ -20,6 +20,10 @@
 %cstring_output_allocate_size(char **out8, int *size, free(*$1));
 #endif
 
+#ifdef SWIGPYTHON
+%warnfilter(SWIGWARN_PARSE_KEYWORD) count;
+#endif
+
 %inline %{
 
 int count(char *in, int n, char c) {

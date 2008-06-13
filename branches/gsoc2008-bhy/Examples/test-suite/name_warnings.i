@@ -58,6 +58,10 @@ namespace std
 
 %template(max_i) max<int>;
 
+#ifdef SWIGPYTHON
+  /* Python did the rename and generate warning */
+  %warnfilter(SWIGWARN_PARSE_KEYWORD) foo;
+#endif
 
 %inline {
   /* silently rename the parameter names in csharp/java */
