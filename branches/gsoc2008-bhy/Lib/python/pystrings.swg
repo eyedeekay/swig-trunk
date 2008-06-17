@@ -43,7 +43,11 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 	  *alloc = SWIG_OLDOBJ;
 	}
       } else {
+%#if PY_VERSION_HEX >= 0x03000000      
+	*cptr = PyUnicode_AsString(obj);
+%#else
 	*cptr = PyString_AsString(obj);
+%#endif
       }
     }
     if (psize) *psize = len + 1;

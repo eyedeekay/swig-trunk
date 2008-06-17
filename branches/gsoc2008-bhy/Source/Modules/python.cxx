@@ -786,7 +786,11 @@ public:
 
     }
 
-    Printf(f_header, "#define SWIG_init    init%s\n\n", module);
+    Printf(f_header, "#if PY_VERSION_HEX >= 0x03000000\n");
+    Printf(f_header, "#  define SWIG_init    PyInit_%s\n\n", module);
+    Printf(f_header, "#else\n");
+    Printf(f_header, "#  define SWIG_init    init%s\n\n", module);
+    Printf(f_header, "#endif\n");
     Printf(f_header, "#define SWIG_name    \"%s\"\n", module);
 
     Printf(f_wrappers, "#ifdef __cplusplus\n");
@@ -816,6 +820,13 @@ public:
     Append(const_code, "{0, 0, 0, 0.0, 0, 0}};\n");
     Printf(f_wrappers, "%s\n", const_code);
     initialize_threads(f_init);
+
+    /* TODO: is it possible to put these into .swg files? */
+    Printf(f_init, "#if PY_VERSION_HEX >= 0x03000000\n");
+    Printf(f_init, "  return m;\n");
+    Printf(f_init, "#else\n");
+    Printf(f_init, "  return;\n");
+    Printf(f_init, "#endif\n");
     Printf(f_init, "}\n");
 
     Printf(f_wrappers, "#ifdef __cplusplus\n");

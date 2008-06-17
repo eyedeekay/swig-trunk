@@ -354,7 +354,11 @@ PySwigObject_format(const char* fmt, PySwigObject *v)
       PyObject *ofmt = PyString_FromString(fmt);
 #endif
       if (ofmt) {
+#if PY_VERSION_HEX >= 0x03000000
+	res = PyUnicode_Format(ofmt,args);
+#else
 	res = PyString_Format(ofmt,args);
+#endif
 	Py_DECREF(ofmt);
       }
       Py_DECREF(args);
@@ -396,7 +400,14 @@ PySwigObject_repr(PySwigObject *v, PyObject *args)
 #else
     PyObject *nrep = PySwigObject_repr((PySwigObject *)v->next, args);
 #endif
+#if PY_VERSION_HEX >= 0x03000000
+    PyObject *joined = PyUnicode_Concat(repr, nrep);
+    Py_DecRef(repr);
+    Py_DecRef(nrep);
+    repr = joined;
+#else
     PyString_ConcatAndDel(&repr,nrep);
+#endif
   }
   return repr;  
 }
@@ -410,7 +421,11 @@ PySwigObject_print(PySwigObject *v, FILE *fp, int SWIGUNUSEDPARM(flags))
   PyObject *repr = PySwigObject_repr(v, NULL);
 #endif
   if (repr) {
+#if PY_VERSION_HEX >= 0x03000000
+    fputs(PyUnicode_AsString(repr), fp);
+#else
     fputs(PyString_AsString(repr), fp);
+#endif
     Py_DECREF(repr);
     return 0; 
   } else {
@@ -664,16 +679,19 @@ _PySwigObject_type(void) {
     0,		   /*nb_and*/
     0,		   /*nb_xor*/
     0,		   /*nb_or*/
-    /* nb_reserved for Python 3, 
-     * "(coercion)" removed so it can compiled in both Pyton 2,3*/
-    0,   /*nb_coerce*/ 
+    /* nb_coerce removed in Python 3*/
+#if PY_VERSION_HEX < 0x03000000
+    0,   /*nb_coerce*/
+#endif
     (unaryfunc)PySwigObject_long, /*nb_int*/
     (unaryfunc)PySwigObject_long, /*nb_long*/
     (unaryfunc)0,                 /*nb_float*/
+#if PY_VERSION_HEX < 0x03000000
     (unaryfunc)PySwigObject_oct,  /*nb_oct*/
     (unaryfunc)PySwigObject_hex,  /*nb_hex*/
+#endif
     /* TODO: Seems we do not need to pad the zeros carefully? 
-     * It would be done auto by copiler */
+     * It would be done automatically by compiler */
 #if PY_VERSION_HEX >= 0x03000000 /* 3.0 */
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /* nb_inplace_add -> nb_index, nb_inplace_divide removed */
 #elif PY_VERSION_HEX >= 0x02050000 /* 2.5.0 */
@@ -807,9 +825,17 @@ PySwigPacked_repr(PySwigPacked *v)
 {
   char result[SWIG_BUFFER_SIZE];
   if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))) {
+#if PY_VERSION_HEX >= 0x03000000
+    return PyUnicode_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
+#else
     return PyString_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
+#endif
   } else {
+#if PY_VERSION_HEX >= 0x03000000
+    return PyUnicode_FromFormat("<Swig Packed %s>", v->ty->name);
+#else
     return PyString_FromFormat("<Swig Packed %s>", v->ty->name);
+#endif
   }  
 }
 
@@ -818,9 +844,17 @@ PySwigPacked_str(PySwigPacked *v)
 {
   char result[SWIG_BUFFER_SIZE];
   if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))){
+#if PY_VERSION_HEX >= 0x03000000
+    return PyUnicode_FromFormat("%s%s", result, v->ty->name);
+#else
     return PyString_FromFormat("%s%s", result, v->ty->name);
+#endif
   } else {
+#if PY_VERSION_HEX >= 0x03000000
+    return PyUnicode_FromString(v->ty->name);
+#else
     return PyString_FromString(v->ty->name);
+#endif
   }  
 }
 
@@ -1423,8 +1457,27 @@ SWIGRUNTIME void
 SWIG_Python_SetModule(swig_module_info *swig_module) {
   static PyMethodDef swig_empty_runtime_method_table[] = { {NULL, NULL, 0, NULL} };/* Sentinel */
 
+#if PY_VERSION_HEX >= 0x03000000
+/*  static struct PyModuleDef SWIG_runtime_module = {
+    PyModuleDef_HEAD_INIT,
+    (char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
+    NULL,
+    -1,
+    swig_empty_runtime_method_table,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+  };
+
+  PyObject *module = PyModule_Create(&SWIG_runtime_module);*/
+  /* PyModule_Create don't add the module into sys.modules,
+     since we just need a dummy object, PyImport_AddModule is enough */
+  PyObject *module = PyImport_AddModule((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION);
+#else
   PyObject *module = Py_InitModule((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
 				   swig_empty_runtime_method_table);
+#endif
   PyObject *pointer = PyCObject_FromVoidPtr((void *) swig_module, SWIG_Python_DestroyModule);
   if (pointer && module) {
     PyModule_AddObject(module, (char*)"type_pointer" SWIG_TYPE_TABLE_NAME, pointer);
@@ -1444,7 +1497,11 @@ SWIGRUNTIME swig_type_info *
 SWIG_Python_TypeQuery(const char *type)
 {
   PyObject *cache = SWIG_Python_TypeCache();
+#if PY_VERSION_HEX >= 0x03000000
+  PyObject *key = PyUnicode_FromString(type); 
+#else
   PyObject *key = PyString_FromString(type); 
+#endif
   PyObject *obj = PyDict_GetItem(cache, key);
   swig_type_info *descriptor;
   if (obj) {
@@ -1482,9 +1539,17 @@ SWIG_Python_AddErrMesg(const char* mesg, int infront)
       Py_XINCREF(type);
       PyErr_Clear();
       if (infront) {
+#if PY_VERSION_HEX >= 0x03000000
+	PyErr_Format(type, "%s %s", mesg, PyUnicode_AsString(old_str));
+#else
 	PyErr_Format(type, "%s %s", mesg, PyString_AsString(old_str));
+#endif
       } else {
+#if PY_VERSION_HEX >= 0x03000000
+	PyErr_Format(type, "%s %s", PyUnicode_AsString(old_str), mesg);
+#else
 	PyErr_Format(type, "%s %s", PyString_AsString(old_str), mesg);
+#endif
       }
       Py_DECREF(old_str);
     }
@@ -1533,7 +1598,11 @@ SWIG_Python_TypeError(const char *type, PyObject *obj)
       const char *otype = (obj ? obj->ob_type->tp_name : 0); 
       if (otype) {
 	PyObject *str = PyObject_Str(obj);
+#if PY_VERSION_HEX >= 0x03000000
+	const char *cstr = str ? PyUnicode_AsString(str) : 0;
+#else
 	const char *cstr = str ? PyString_AsString(str) : 0;
+#endif
 	if (cstr) {
 	  PyErr_Format(PyExc_TypeError, "a '%s' is expected, '%s(%s)' is received",
 		       type, otype, cstr);
