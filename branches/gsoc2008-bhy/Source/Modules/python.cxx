@@ -1180,7 +1180,8 @@ public:
     
     if (pdocs)
       Append(pdocs, "\n");
-
+    //printf("******Printing node \n");
+    //Swig_print_node(n);
 
     Swig_typemap_attach_parms("in", plist, 0);
     Swig_typemap_attach_parms("doc", plist, 0);
@@ -1189,7 +1190,7 @@ public:
       //No parameters acctually
       return doc;
     }
-
+    
     for (p = plist; p; p = pnext) {
 
       String *tm = Getattr(p, "tmap:in");
@@ -1270,10 +1271,12 @@ public:
 	  value = NewString("False");
 	else {
 	  lookup = Swig_symbol_clookup(value, 0);
-	  if (lookup)
+	  if (lookup) {
+            //Swig_print_node(lookup);
 	    value = Getattr(lookup, "sym:name");
+          }
 	}
-	Printf(doc, "=%s", value);
+	Printf(doc, "=%s", value);        
       }
     }
     if (pdocs)
@@ -1421,8 +1424,12 @@ public:
   {
     //TODO: kwargs
     
-    //For overloaded function, just use *args
-    if (Getattr(n, "sym:overloaded"))
+    /* For overloaded function, just use *args */
+    /* TODO: functions have default args also be treated as overloaded, 
+     * we should have a way to sperate them, then try to generate 
+     * the default args list...*/
+    if (Getattr(n, "sym:overloaded") ||
+        GetFlag(n, "feature:compactdefaultargs"))
     {
       return NewString("*args");
     }
