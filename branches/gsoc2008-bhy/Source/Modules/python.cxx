@@ -1162,21 +1162,25 @@ public:
   /* ------------------------------------------------------------
    * make_autodocParmList()
    *   Generate the documentation for the function parameters
+   *   Parameters:
+   *    func_annotation: Function annotation support
    * ------------------------------------------------------------ */
 
-  String *make_autodocParmList(Node *n, bool showTypes, bool calling=false) {
+  String *make_autodocParmList(Node *n, bool showTypes, bool calling=false, bool func_annotation=false) {
     String *doc = NewString("");
     String *pdocs = Copy(Getattr(n, "feature:pdocs"));
     ParmList *plist = CopyParmList(Getattr(n, "parms"));
     Parm *p;
     Parm *pnext;
     Node *lookup; 
-    String *str;
 
 
     int lines = 0;
     int arg_num = 0;
     const int maxwidth = 50;
+
+    if(calling)
+      func_annotation = false;
     
     if (pdocs)
       Append(pdocs, "\n");
@@ -1238,14 +1242,15 @@ public:
 	  lines += 1;
 	}
       }
+      
+      type = SwigType_base(type);
+      lookup = Swig_symbol_clookup(type, 0);
+      if (lookup)
+        type = Getattr(lookup, "sym:name");
+      
       // Do the param type too?
-      if (showTypes) {
-	type = SwigType_base(type);
-	lookup = Swig_symbol_clookup(type, 0);
-	if (lookup)
-	  type = Getattr(lookup, "sym:name");
-	Printf(doc, "%s ", type);
-      }
+      if (showTypes)
+        Printf(doc, "%s ", type);
 
       
       //if (name) {
@@ -1262,6 +1267,11 @@ public:
       }
       */
 
+      // Write the function annoation
+      if (func_annotation)
+        Printf(doc, " : '%s'", type);
+
+      // Write default value
       if (value && !calling) {
 	if (Strcmp(value, "NULL") == 0)
 	  value = NewString("None");
@@ -1276,7 +1286,7 @@ public:
 	    value = Getattr(lookup, "sym:name");
           }
 	}
-	Printf(doc, "=%s", value);        
+	Printf(doc, " = %s", value);        
       }
     }
     if (pdocs)
@@ -1469,11 +1479,18 @@ public:
         GetFlag(n, "feature:compactdefaultargs") ||
         !is_primitive_defaultargs(n))
     {
-      return kw ? NewString("*args, **kwargs") : NewString("*args");
+      String *parms = NewString("");
+      if(in_class)
+        Printf(parms, "self, ");
+      Printf(parms, "*args");
+      if (kw)
+        Printf(parms, ", **kwargs");
+      return parms;
     }
 
+    bool funcanno = py3 ? true : false;
     String *params = NewString("");
-    String *_params = make_autodocParmList(n, false, is_calling);
+    String *_params = make_autodocParmList(n, false, is_calling, funcanno);
 
     if (in_class)
     {      
@@ -3153,8 +3170,8 @@ public:
 	  handled_as_init = (Strcmp(nname, sname) == 0) || (Strcmp(nname, cname) == 0);
 	  Delete(cname);
 	}
-
-	if (!have_constructor && handled_as_init) {
+        
+          if (!have_constructor && handled_as_init) {
 	  if (Getattr(n, "feature:shadow")) {
 	    String *pycode = pythoncode(Getattr(n, "feature:shadow"), tab4);
 	    String *pyaction = NewStringf("%s.%s", module, Swig_name_construct(symname));
@@ -3168,23 +3185,30 @@ public:
 	    String *classname = Swig_class_name(parent);
 	    String *rclassname = Swig_class_name(getCurrentClass());
 	    assert(rclassname);
-	    if (use_director) {
+
+            String *parms = make_pyParmList(n, true, false, allow_kwargs);
+            /* Pass 'self' only if using director */
+            String *callParms = make_pyParmList(n, false, true, allow_kwargs);
+
+            if (use_director) {
+              Insert(callParms, 0, "_self, ");
 	      Printv(pass_self, tab8, NIL);
 	      Printf(pass_self, "if self.__class__ == %s:\n", classname);
-	      Printv(pass_self, tab8, tab4, "args = (None,) + args\n", tab8, "else:\n", tab8, tab4, "args = (self,) + args\n", NIL);
+              //Printv(pass_self, tab8, tab4, "args = (None,) + args\n", tab8, "else:\n", tab8, tab4, "args = (self,) + args\n", NIL);
+              Printv(pass_self, tab8, tab4, "_self = None\n", tab8, "else:\n", tab8, tab4, "_self = self\n", NIL);
 	    }
 
-	    Printv(f_shadow, tab4, "def __init__(self, *args", (allow_kwargs ? ", **kwargs" : ""), "): \n", NIL);
+	    Printv(f_shadow, tab4, "def __init__(", parms, "): \n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow, tab8, docstring(n, AUTODOC_CTOR, tab8), "\n", NIL);
 	    if (have_pythonprepend(n))
 	      Printv(f_shadow, tab8, pythonprepend(n), "\n", NIL);
 	    Printv(f_shadow, pass_self, NIL);
 	    if (fastinit) {
-	      Printv(f_shadow, tab8, module, ".", class_name, "_swiginit(self,", funcCallHelper(Swig_name_construct(symname), allow_kwargs), ")\n", NIL);
+	      Printv(f_shadow, tab8, module, ".", class_name, "_swiginit(self,", funcCall(Swig_name_construct(symname), callParms), ")\n", NIL);
 	    } else {
 	      Printv(f_shadow,
-		     tab8, "this = ", funcCallHelper(Swig_name_construct(symname), allow_kwargs), "\n",
+		     tab8, "this = ", funcCall(Swig_name_construct(symname), callParms), "\n",
 		     tab8, "try: self.this.append(this)\n", tab8, "except: self.this = this\n", NIL);
 	    }
 	    if (have_pythonappend(n))
@@ -3204,13 +3228,15 @@ public:
 	    Printv(f_shadow_stubs, pycode, "\n", NIL);
 	    Delete(pycode);
 	  } else {
+            String *parms = make_pyParmList(n, true, false, allow_kwargs);
+            String *callParms = make_pyParmList(n, true, true, allow_kwargs);
 
-	    Printv(f_shadow_stubs, "\ndef ", symname, "(*args", (allow_kwargs ? ", **kwargs" : ""), "):\n", NIL);
+	    Printv(f_shadow_stubs, "\ndef ", symname, "(", parms, "):\n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow_stubs, tab4, docstring(n, AUTODOC_CTOR, tab4), "\n", NIL);
 	    if (have_pythonprepend(n))
 	      Printv(f_shadow_stubs, tab4, pythonprepend(n), "\n", NIL);
-	    Printv(f_shadow_stubs, tab4, "val = ", funcCallHelper(Swig_name_construct(symname), allow_kwargs), "\n", NIL);
+	    Printv(f_shadow_stubs, tab4, "val = ", funcCall(Swig_name_construct(symname), callParms), "\n", NIL);
 #ifdef USE_THISOWN
 	    Printv(f_shadow_stubs, tab4, "val.thisown = 1\n", NIL);
 #endif
