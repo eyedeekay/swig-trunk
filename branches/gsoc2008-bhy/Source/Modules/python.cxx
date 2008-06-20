@@ -1414,6 +1414,42 @@ public:
 
     return doc;
   }
+  
+  /* ------------------------------------------------------------
+   * is_primitive_defaultargs()
+   *    Check if all the default args have primitive type.
+   *    (So we can generate proper parameter list with default 
+   *    values..)
+   * ------------------------------------------------------------ */
+  bool is_primitive_defaultargs(Node *n)
+  {
+    ParmList *plist = CopyParmList(Getattr(n, "parms"));
+    Parm *p;
+    Parm *pnext;
+
+    Swig_typemap_attach_parms("in", plist, 0);
+    for (p = plist; p; p = pnext) {
+      String *tm = Getattr(p, "tmap:in");
+      if (tm) {
+        pnext = Getattr(p, "tmap:in:next");
+        if (checkAttribute(p, "tmap:in:numinputs", "0")) {
+          continue;
+        }
+      } else {
+        pnext = nextSibling(p);
+      }
+      String *type = Getattr(p, "type");
+      String *value = Getattr(p, "value");
+      if (value)
+      {
+        String *basetype = SwigType_base(type);
+//        Printf(stdout, "Checking %s which base=%s...\n", type, basetype);
+        if (SwigType_type(SwigType_base(basetype)) == T_USER)
+          return false;
+      }
+    }
+    return true;
+  }
 
   /* ------------------------------------------------------------
    * make_pyParmList()
@@ -1428,10 +1464,12 @@ public:
     /* TODO: functions have default args also be treated as overloaded, 
      * we should have a way to sperate them, then try to generate 
      * the default args list...*/
+//    Swig_print_node(n);
     if (Getattr(n, "sym:overloaded") ||
-        GetFlag(n, "feature:compactdefaultargs"))
+        GetFlag(n, "feature:compactdefaultargs") ||
+        !is_primitive_defaultargs(n))
     {
-      return NewString("*args");
+      return kw ? NewString("*args, **kwargs") : NewString("*args");
     }
 
     String *params = NewString("");
