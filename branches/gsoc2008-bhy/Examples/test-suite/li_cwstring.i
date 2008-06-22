@@ -4,7 +4,7 @@
 
 #ifndef SWIG_CWSTRING_UNIMPL
 
-%cwstring_input_binary(wchar_t *in, int n);
+%cwstring_input_binary(wchar_t *str_in, int n);
 %cwstring_bounded_output(wchar_t *out1, 512);
 %cwstring_chunk_output(wchar_t *out2, 64);
 %cwstring_bounded_mutable(wchar_t *out3, 512);
@@ -20,13 +20,9 @@
 %cwstring_output_allocate_size(wchar_t **out8, int *size, free(*$1));
 #endif
 
-#ifdef SWIGPYTHON
-%warnfilter(SWIGWARN_PARSE_KEYWORD) count;
-#endif
-
 %inline %{
 
-int count(wchar_t *in, int n, wchar_t c) {
+int count(wchar_t *str_in, int n, wchar_t c) {
    int r = 0;
    while (n > 0) {
      if (*in == c) {
