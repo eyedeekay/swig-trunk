@@ -150,7 +150,7 @@ static const char *usage3 = (char *) "\
      -O              - Enable all the optimization options: \n\
                          -modern -fastdispatch -dirvtable -nosafecstrings -fvirtual -noproxydel \n\
                          -fastproxy -fastinit -fastunpack -fastquery -modernargs -nobuildnone \n\
-     -3              - (Experimental) Generate code for Python 3 \n\
+     -py3              - (Experimental) Generate code for Python 3 \n\
 \n";
 
 class PYTHON:public Language {
@@ -432,7 +432,7 @@ public:
 	  fputs(usage1, stdout);
 	  fputs(usage2, stdout);
 	  fputs(usage3, stdout);
-	} else if (strcmp(argv[i], "-3") == 0) {
+	} else if (strcmp(argv[i], "-py3") == 0) {
       py3 = 1;
       Swig_mark_arg(i);
     }

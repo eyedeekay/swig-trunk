@@ -246,7 +246,7 @@ PYTHON_SO     = @PYTHON_SO@
 ifeq (,$(PY3))
   SWIGPYTHON = $(SWIG) -python
 else
-  SWIGPYTHON = $(SWIG) -python -3
+  SWIGPYTHON = $(SWIG) -python -py3
 endif
 
 # ----------------------------------------------------------------
