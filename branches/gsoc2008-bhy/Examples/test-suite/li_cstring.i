@@ -25,10 +25,10 @@
 int count(char *str_in, int n, char c) {
    int r = 0;
    while (n > 0) {
-     if (*in == c) {
+     if (*str_in == c) {
 	r++;
      }
-     in++;
+     str_in++;
      --n;
    }
    return r;

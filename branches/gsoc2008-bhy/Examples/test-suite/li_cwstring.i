@@ -25,10 +25,10 @@
 int count(wchar_t *str_in, int n, wchar_t c) {
    int r = 0;
    while (n > 0) {
-     if (*in == c) {
+     if (*str_in == c) {
 	r++;
      }
-     in++;
+     str_in++;
      --n;
    }
    return r;
