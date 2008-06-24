@@ -1167,6 +1167,8 @@ public:
    * ------------------------------------------------------------ */
 
   String *make_autodocParmList(Node *n, bool showTypes, bool calling=false, bool func_annotation=false) {
+
+ 
     String *doc = NewString("");
     String *pdocs = Copy(Getattr(n, "feature:pdocs"));
     ParmList *plist = CopyParmList(Getattr(n, "parms"));
@@ -1273,12 +1275,15 @@ public:
 
       // Write default value
       if (value && !calling) {
-	if (Strcmp(value, "NULL") == 0)
+        String* pv = pyvalue(value, Getattr(p, "type"));
+	/*if (Strcmp(value, "NULL") == 0)
 	  value = NewString("None");
 	else if (Strcmp(value, "true") == 0 || Strcmp(value, "TRUE") == 0)
 	  value = NewString("True");
 	else if (Strcmp(value, "false") == 0 || Strcmp(value, "FALSE") == 0)
-	  value = NewString("False");
+	  value = NewString("False"); */
+        if (pv)
+          value = pv;
 	else {
 	  lookup = Swig_symbol_clookup(value, 0);
 	  if (lookup) {
@@ -1426,6 +1431,31 @@ public:
   }
   
   /* ------------------------------------------------------------
+   * pyvalue()
+   *    Check if string v can be a Python value literal,
+   *    (eg. number or string), or translate it to a Python literal.
+   * ------------------------------------------------------------ */
+  String* pyvalue(String *v, SwigType *t)
+  {
+    if (v && Len(v)>0) {
+      char fc = (Char(v))[0];
+      if (('0'<=fc && fc<='9') || '\''==fc || '"'==fc) {
+        /* number or string (or maybe NULL pointer)*/
+        if (SwigType_ispointer(t) && Strcmp(v, "0")==0)
+          return NewString("None");
+        else
+          return v;
+      }
+      if (Strcmp(v, "true")==0 || Strcmp(v, "FALSE")==0)
+        return NewString("True");
+      if (Strcmp(v, "false")==0 || Strcmp(v, "FALSE")==0)
+        return NewString("False");
+      if (Strcmp(v, "NULL")==0)
+        return NewString("None");
+    }
+    return 0;
+  }
+  /* ------------------------------------------------------------
    * is_primitive_defaultargs()
    *    Check if all the default args have primitive type.
    *    (So we can generate proper parameter list with default 
@@ -1450,15 +1480,44 @@ public:
       }
       String *type = Getattr(p, "type");
       String *value = Getattr(p, "value");
-      if (value)
+      /*if (value)
       {
         String *basetype = SwigType_base(type);
-//        Printf(stdout, "Checking %s which base=%s...\n", type, basetype);
+        Printf(stdout, "Checking %s which type=%s base=%s...\n", value, type, basetype);
         if (SwigType_type(SwigType_base(basetype)) == T_USER)
           return false;
-      }
+      }*/
+      if (!pyvalue(value, type))
+        return false;
     }
     return true;
+  }
+
+
+  /* ------------------------------------------------------------
+   * is_real_overloaded()
+   *   Check if the function is really overloaded but no just have
+   *   default args.
+   * ------------------------------------------------------------ */
+  bool is_real_overloaded(Node *n)
+  {
+    Node *h = Getattr(n, "sym:overloaded");
+    Node *i;
+    if (!h)
+      return false;
+    
+    i = Getattr(h, "sym:nextSibling");
+    while (i) {
+      Node *nn = Getattr(i, "defaultargs");
+      if (nn != h) {
+        /* Check if overloaded function has defaultargs and 
+         * pointed to the first overloaded. */
+        return true;
+      }
+      i = Getattr(i, "sym:nextSibling");
+    }
+
+    return false;
   }
 
   /* ------------------------------------------------------------
@@ -1468,12 +1527,14 @@ public:
    * ------------------------------------------------------------ */
   String* make_pyParmList(Node *n, bool in_class, bool is_calling, int kw)
   {
+    /* Get the original function for a defaultargs copy, 
+     * see default_arguments() in parser.y. */
+    Node *nn = Getattr(n, "defaultargs");
+    if (nn) n = nn;
+
     /* For overloaded function, just use *args */
-    /* TODO: functions have default args also be treated as overloaded, 
-     * we should have a way to sperate them, then try to generate 
-     * the default args list...*/
     //Swig_print_node(n);
-    if (Getattr(n, "sym:overloaded") ||
+    if (is_real_overloaded(n) ||
         GetFlag(n, "feature:compactdefaultargs") ||
         !is_primitive_defaultargs(n))
     {
