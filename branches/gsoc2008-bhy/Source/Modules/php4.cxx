@@ -1194,7 +1194,7 @@ public:
 	if (native_constructor == NATIVE_CONSTRUCTOR) {
 	  Printf(f->code, "add_property_zval(this_ptr,\"" SWIG_PTR "\",_cPtr);\n");
 	} else {
-	  String *shadowrettype = SwigToPhpType(n, true);
+	  String *shadowrettype = GetShadowReturnType(n);
 	  Printf(f->code, "object_init_ex(return_value,ptr_ce_swig_%s);\n", shadowrettype);
 	  Delete(shadowrettype);
 	  Printf(f->code, "add_property_zval(return_value,\"" SWIG_PTR "\",_cPtr);\n");
@@ -1439,6 +1439,10 @@ public:
 	if (wrapperType == memberfn)
 	  p = nextSibling(p);
 	while (p) {
+	  if (GetInt(p, "tmap:in:numinputs") == 0) {
+	    p = nextSibling(p);
+	    continue;
+	  }
 	  assert(0 <= argno && argno < max_num_of_arguments);
 	  String *&pname = arg_names[argno];
 	  const char *pname_cstr = GetChar(p, "name");
@@ -1749,7 +1753,8 @@ public:
       }
 
       Printf(output, "\n");
-      if (wrapperType == memberfn || newobject) {
+      // If it's a member function or a class constructor...
+      if (wrapperType == memberfn || (newobject && current_class)) {
 	Printf(output, "\tfunction %s(%s) {\n", methodname, args);
 	// We don't need this code if the wrapped class has a copy ctor
 	// since the flat function new_CLASSNAME will handle it for us.
@@ -2554,19 +2559,8 @@ public:
     return SWIG_OK;
   }
 
-
-  String * SwigToPhpType(Node *n, int shadow_flag) {
-    String *ptype = 0;
+  String * GetShadowReturnType(Node *n) {
     SwigType *t = Getattr(n, "type");
-
-    if (shadow_flag) {
-      ptype = PhpTypeFromTypemap((char *) "pstype", n, (char *) "");
-    }
-    if (!ptype) {
-      ptype = PhpTypeFromTypemap((char *) "ptype", n, (char *) "");
-    }
-
-    if (ptype) return ptype;
 
     /* Map type here */
     switch (SwigType_type(t)) {
@@ -2588,7 +2582,7 @@ public:
       case T_POINTER:
       case T_REFERENCE:
       case T_USER:
-	if (shadow_flag && is_shadow(t)) {
+	if (is_shadow(t)) {
 	  return NewString(Char(is_shadow(t)));
 	}
 	break;
@@ -2596,7 +2590,7 @@ public:
 	/* TODO */
 	break;
       default:
-	Printf(stderr, "SwigToPhpType: unhandled data type: %s\n", SwigType_str(t, 0));
+	Printf(stderr, "GetShadowReturnType: unhandled data type: %s\n", SwigType_str(t, 0));
 	break;
     }
 
