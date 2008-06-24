@@ -1468,13 +1468,11 @@ public:
    * ------------------------------------------------------------ */
   String* make_pyParmList(Node *n, bool in_class, bool is_calling, int kw)
   {
-    //TODO: kwargs
-    
     /* For overloaded function, just use *args */
     /* TODO: functions have default args also be treated as overloaded, 
      * we should have a way to sperate them, then try to generate 
      * the default args list...*/
-//    Swig_print_node(n);
+    //Swig_print_node(n);
     if (Getattr(n, "sym:overloaded") ||
         GetFlag(n, "feature:compactdefaultargs") ||
         !is_primitive_defaultargs(n))
@@ -1568,6 +1566,18 @@ public:
     return have_pythonappend(n) || have_pythonprepend(n) || have_docstring(n);
   }
 
+  
+  /* ------------------------------------------------------------
+   * returnTypeAnnotation()
+   *    Helper function for constructing the function annotation
+   *    of the returning type, return a empty string for Python 2.x
+   * ------------------------------------------------------------ */
+  String* returnTypeAnnotation(Node *n)
+  {
+    String *rettype = Getattr(n, "type");
+    return (rettype && py3) ? NewStringf(" -> \"%s\" ", rettype)
+                            : NewString("");
+  }
 
   /* ------------------------------------------------------------
    * emitFunctionShadowHelper()
@@ -1580,7 +1590,7 @@ public:
     String *parms = make_pyParmList(n, false, false, kw);
     String *callParms = make_pyParmList(n, false, true, kw);
     /* Make a wrapper function to insert the code into */
-    Printv(f_dest, "\ndef ", name, "(", parms, "):\n", NIL);
+    Printv(f_dest, "\ndef ", name, "(", parms, ")", returnTypeAnnotation(n), ":\n", NIL);
     if (have_docstring(n))
       Printv(f_dest, ctab4, docstring(n, AUTODOC_FUNC, tab4), "\n", NIL);
     if (have_pythonprepend(n))
@@ -3036,11 +3046,11 @@ public:
           String *callParms = make_pyParmList(n, true, true, allow_kwargs);
 	  if (!have_addtofunc(n)) {
 	    if (!fastproxy || olddefs) {
-	      Printv(f_shadow, tab4, "def ", symname, "(", parms, "):", NIL);
+	      Printv(f_shadow, tab4, "def ", symname, "(", parms, ")", returnTypeAnnotation(n), ":", NIL);
 	      Printv(f_shadow, " return ", funcCall(Swig_name_member(class_name, symname), callParms), "\n", NIL);
 	    }
 	  } else {
-	    Printv(f_shadow, tab4, "def ", symname, "(",parms , "):", NIL);
+	    Printv(f_shadow, tab4, "def ", symname, "(",parms , ")", returnTypeAnnotation(n), ":", NIL);
 	    Printv(f_shadow, "\n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow, tab8, docstring(n, AUTODOC_METHOD, tab8), "\n", NIL);
@@ -3087,17 +3097,19 @@ public:
     if (shadow) {
       if (!classic && !Getattr(n, "feature:python:callback") && have_addtofunc(n)) {
 	int kw = (check_kwargs(n) && !Getattr(n, "sym:overloaded")) ? 1 : 0;
-	Printv(f_shadow, tab4, "def ", symname, "(*args", (kw ? ", **kwargs" : ""), "):\n", NIL);
+        String *parms = make_pyParmList(n, true, false, kw);
+        String *callParms = make_pyParmList(n, true, true, kw);
+	Printv(f_shadow, tab4, "def ", symname, "(", parms, ")", returnTypeAnnotation(n), ":\n", NIL);
 	if (have_docstring(n))
 	  Printv(f_shadow, tab8, docstring(n, AUTODOC_STATICFUNC, tab8), "\n", NIL);
 	if (have_pythonprepend(n))
 	  Printv(f_shadow, tab8, pythonprepend(n), "\n", NIL);
 	if (have_pythonappend(n)) {
-	  Printv(f_shadow, tab8, "val = ", funcCallHelper(Swig_name_member(class_name, symname), kw), "\n", NIL);
+	  Printv(f_shadow, tab8, "val = ", funcCall(Swig_name_member(class_name, symname), callParms), "\n", NIL);
 	  Printv(f_shadow, tab8, pythonappend(n), "\n", NIL);
 	  Printv(f_shadow, tab8, "return val\n\n", NIL);
 	} else {
-	  Printv(f_shadow, tab8, "return ", funcCallHelper(Swig_name_member(class_name, symname), kw), "\n\n", NIL);
+	  Printv(f_shadow, tab8, "return ", funcCall(Swig_name_member(class_name, symname), callParms), "\n\n", NIL);
 	}
 	Printv(f_shadow, tab4, modern ? "" : "if _newclass:", symname, " = staticmethod(", symname, ")\n", NIL);
 
@@ -3197,7 +3209,7 @@ public:
               Printv(pass_self, tab8, tab4, "_self = None\n", tab8, "else:\n", tab8, tab4, "_self = self\n", NIL);
 	    }
 
-	    Printv(f_shadow, tab4, "def __init__(", parms, "): \n", NIL);
+	    Printv(f_shadow, tab4, "def __init__(", parms, ")", returnTypeAnnotation(n), ": \n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow, tab8, docstring(n, AUTODOC_CTOR, tab8), "\n", NIL);
 	    if (have_pythonprepend(n))
@@ -3230,7 +3242,7 @@ public:
             String *parms = make_pyParmList(n, true, false, allow_kwargs);
             String *callParms = make_pyParmList(n, true, true, allow_kwargs);
 
-	    Printv(f_shadow_stubs, "\ndef ", symname, "(", parms, "):\n", NIL);
+	    Printv(f_shadow_stubs, "\ndef ", symname, "(", parms, ")", returnTypeAnnotation(n), ":\n", NIL);
 	    if (have_docstring(n))
 	      Printv(f_shadow_stubs, tab4, docstring(n, AUTODOC_CTOR, tab4), "\n", NIL);
 	    if (have_pythonprepend(n))
