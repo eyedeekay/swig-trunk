@@ -315,7 +315,13 @@ SWIG_Python_FixMethods(PyMethodDef *methods,
 extern "C"
 #endif
 
-/*SWIGEXPORT*/ PyMODINIT_FUNC SWIG_init(void) {
+SWIGEXPORT 
+#if PY_VERSION_HEX >= 0x03000000
+  PyObject*
+#else
+  void
+#endif
+SWIG_init(void) {
   PyObject *m, *d;
   
   /* Fix SwigMethods to carry the callback ptrs when needed */
