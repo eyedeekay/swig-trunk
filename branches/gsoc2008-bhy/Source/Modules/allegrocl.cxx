@@ -2271,7 +2271,7 @@ int ALLEGROCL::emit_dispatch_defun(Node *n) {
   return SWIG_OK;
 }
 
-int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
+int ALLEGROCL::emit_defun(Node *n, File *fcl) {
 #ifdef ALLEGROCL_WRAP_DEBUG
   Printf(stderr, "emit_defun: ENTER... ");
 #endif
@@ -2307,27 +2307,27 @@ int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
   if (Generate_Wrapper) {
     String *extra_parms = id_converter_arguments(n)->noname_str();
     if (Getattr(n, "sym:overloaded"))
-      Printf(f_cl, "(swig-defmethod (\"%s\" \"%s\"%s)\n", funcname, mangled_name, extra_parms);
+      Printf(fcl, "(swig-defmethod (\"%s\" \"%s\"%s)\n", funcname, mangled_name, extra_parms);
     else
-      Printf(f_cl, "(swig-defun (\"%s\" \"%s\"%s)\n", funcname, mangled_name, extra_parms);
+      Printf(fcl, "(swig-defun (\"%s\" \"%s\"%s)\n", funcname, mangled_name, extra_parms);
     Delete(extra_parms);
   }
   // Just C
   else {
-    Printf(f_cl, "(swig-defun (\"%s\" \"%s\")\n", funcname, Generate_Wrapper ? mangled_name : funcname);
+    Printf(fcl, "(swig-defun (\"%s\" \"%s\")\n", funcname, Generate_Wrapper ? mangled_name : funcname);
   }
 
   //////////////////////////////////////
   // Lisp foreign call parameter list //
   //////////////////////////////////////
-  Printf(f_cl, "  (");
+  Printf(fcl, "  (");
 
   /* Special cases */
 
   if (ParmList_len(pl) == 0) {
-    Printf(f_cl, ":void");
+    Printf(fcl, ":void");
 /*  } else if (any_varargs(pl)) {
-    Printf(f_cl, "#| varargs |#");
+    Printf(fcl, "#| varargs |#");
     varargs=1; */
   } else {
     String *largs = NewString("");
@@ -2337,7 +2337,7 @@ int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
       SwigType *argtype = Swig_cparse_type(Getattr(p, "tmap:ctype"));
 
       if (!first) {
-	Printf(f_cl, "\n   ");
+	Printf(fcl, "\n   ");
       }
 
       if (SwigType_isvarargs(argtype)) {
@@ -2393,7 +2393,7 @@ int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
 	// if this parameter has been removed from the C/++ wrapper
 	// it shouldn't be in the lisp wrapper either.
 	if (!checkAttribute(p, "tmap:in:numinputs", "0")) {
-	  Printf(f_cl, "(%s %s %s %s %s)",
+	  Printf(fcl, "(%s %s %s %s %s)",
 		 // parms in the ff wrapper, but not in the lisp wrapper.
 		 (checkAttribute(p, "tmap:lin:numinputs", "0") ? ":p-" : ":p+"), argname, dispatchtype, ffitype, lisptype);
 
@@ -2479,12 +2479,12 @@ int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
   Replaceall(wrap->code, "$ldestructor", ldestructor);
   Delete(ldestructor);
 
-  Printf(f_cl, ")\n");		/* finish arg list */
+  Printf(fcl, ")\n");		/* finish arg list */
 
   /////////////////////////////////////////////////////
   // Lisp foreign call return type and optimizations //
   /////////////////////////////////////////////////////
-  Printf(f_cl, "  (:returning (%s %s)", compose_foreign_type(result_type), get_lisp_type(Getattr(n, "type"), "result"));
+  Printf(fcl, "  (:returning (%s %s)", compose_foreign_type(result_type), get_lisp_type(Getattr(n, "type"), "result"));
 
   for (Iterator option = First(n); option.item; option = Next(option)) {
     if (Strncmp("feature:ffargs:", option.key, 15))
@@ -2494,12 +2494,12 @@ int ALLEGROCL::emit_defun(Node *n, File *f_cl) {
     Replaceall(option_name, "_", "-");
 
     // TODO: varargs vs call-direct ?
-    Printf(f_cl, "\n   %s %s", option_name, option_val);
+    Printf(fcl, "\n   %s %s", option_name, option_val);
 
     Delete(option_name);
   }
 
-  Printf(f_cl, ")\n  %s)\n\n", wrap->code);
+  Printf(fcl, ")\n  %s)\n\n", wrap->code);
   // Wrapper_print(wrap, stderr);
 
   Delete(result_type);
@@ -2518,6 +2518,8 @@ int ALLEGROCL::functionWrapper(Node *n) {
 
   ParmList *parms = CopyParmList(Getattr(n, "parms"));
   Wrapper *f = NewWrapper();
+  SwigType *t = Getattr(n, "type");
+  String *name = Getattr(n, "name");
 
   String *raw_return_type = Swig_typemap_lookup("ctype", n, "", 0);
   SwigType *return_type = Swig_cparse_type(raw_return_type);
@@ -2556,7 +2558,7 @@ int ALLEGROCL::functionWrapper(Node *n) {
     if (Getattr(n, "overload:ignore")) {
       // if we're the last overload, make sure to force the emit
       // of the rest of the overloads before we leave.
-      Printf(stderr, "ignored overload %s(%x)\n", Getattr(n, "name"), Getattr(n, "sym:nextSibling"));
+      Printf(stderr, "ignored overload %s(%x)\n", name, Getattr(n, "sym:nextSibling"));
       if (!Getattr(n, "sym:nextSibling")) {
 	update_package_if_needed(n);
 	emit_buffered_defuns(n);
@@ -2571,7 +2573,7 @@ int ALLEGROCL::functionWrapper(Node *n) {
   int gencomma = 0;
 
 #ifdef ALLEGROCL_DEBUG
-  Printf(stderr, "Walking parameters for %s '%s'\n", Getattr(n, "allegrocl:kind"), Getattr(n, "name"));
+  Printf(stderr, "Walking parameters for %s '%s'\n", Getattr(n, "allegrocl:kind"), name);
 #endif
   // Now walk the function parameter list and generate code to get arguments
   String *name_and_parms = NewStringf("%s (", mangled);
@@ -2625,12 +2627,16 @@ int ALLEGROCL::functionWrapper(Node *n) {
 
   String *actioncode = emit_action(n);
 
-  String *result_convert = Swig_typemap_lookup_out("out", n, "result", f, actioncode);
-  Replaceall(result_convert, "$result", "lresult");
-  Printf(f->code, "%s\n", result_convert);
-  Printf(f->code, "    return lresult;\n");
-  Delete(result_convert);
-  emit_return_variable(n, Getattr(n, "type"), f);
+  String *tm = Swig_typemap_lookup_out("out", n, "result", f, actioncode);
+  if (tm) {
+    Replaceall(tm, "$result", "lresult");
+    Printf(f->code, "%s\n", tm);
+    Printf(f->code, "    return lresult;\n");
+    Delete(tm);
+  } else {
+    Swig_warning(WARN_TYPEMAP_OUT_UNDEF, input_file, line_number, "Unable to use return type %s in function %s.\n", SwigType_str(t, 0), name);
+  }
+  emit_return_variable(n, t, f);
 
   if (CPlusPlus) {
     Printf(f->code, "  } catch (...) {\n");

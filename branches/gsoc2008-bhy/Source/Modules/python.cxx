@@ -702,17 +702,43 @@ public:
 	mod_docstring = NULL;
       }
 
-      Printf(f_shadow, "\nimport %s\n", module);
+      Printv(f_shadow, "\nfrom sys import version_info\n", NULL);
 
       if(fastproxy)
       {
-        Printv(f_shadow, "from sys import version_info\n", NULL);
         Printv(f_shadow, "if version_info >= (3,0,0):\n", NULL);
         Printf(f_shadow, tab4 "new_instancemethod = lambda func, inst, cls: %s.SWIG_PyInstanceMethod_New(func)\n", module);
         Printv(f_shadow, "else:\n", NULL);
         Printv(f_shadow, tab4, "from new import instancemethod as new_instancemethod\n", NULL);
-        Printv(f_shadow, "del version_info\n", NULL);
       }
+      /* Import the C-extension module.  This should be a relative import,
+       * since the shadow module may also have been imported by a relative
+       * import, and there is thus no guarantee that the C-extension is on
+       * sys.path.  Relative imports must be explicitly specified from 2.6.0
+       * onwards (implicit relative imports will raise a DeprecationWarning
+       * in 2.6, and fail in 2.7 onwards), but the relative import syntax
+       * isn't available in python 2.4 or earlier, so we have to write some
+       * code conditional on the python version.
+       */
+      Printv(f_shadow, "if version_info >= (2,6,0):\n", NULL);
+      Printv(f_shadow, tab4, "def swig_import_helper():\n", NULL);
+      Printv(f_shadow, tab8, "from os.path import dirname\n", NULL);
+      Printv(f_shadow, tab8, "import imp\n", NULL);
+      Printv(f_shadow, tab8, "try:\n", NULL);
+      Printf(f_shadow, tab4 tab8 "fp, pathname, description = imp.find_module('%s', [dirname(__file__)])\n", module);
+      Printf(f_shadow, tab4 tab8 "_mod = imp.load_module('%s', fp, pathname, description)\n", module);
+      Printv(f_shadow, tab8, "finally:\n", NULL);
+      Printv(f_shadow, tab4 tab8, "if fp is not None: fp.close()\n", NULL);
+      Printv(f_shadow, tab8, "return _mod\n", NULL);
+      Printf(f_shadow, tab4 "%s = swig_import_helper()\n", module);
+      Printv(f_shadow, tab4, "del swig_import_helper\n", NULL);
+      Printv(f_shadow, "else:\n", NULL);
+      Printf(f_shadow, tab4 "import %s\n", module);
+
+      /* Delete the version_info symbol since we don't use it elsewhere in the
+       * module. */
+      Printv(f_shadow, "del version_info\n", NULL);
+
       if (modern || !classic) {
 	Printv(f_shadow, "try:\n", tab4, "_swig_property = property\n", "except NameError:\n", tab4, "pass # Python < 2.2 doesn't have 'property'.\n", NULL);
       } 
