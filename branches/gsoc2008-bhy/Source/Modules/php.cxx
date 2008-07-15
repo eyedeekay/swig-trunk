@@ -37,7 +37,7 @@
 
 /*
  * TODO: Replace remaining stderr messages with Swig_error or Swig_warning
- * (may need to add more WARN_PHP4_xxx codes...)
+ * (may need to add more WARN_PHP_xxx codes...)
  */
 
 char cvsroot_php4_cxx[] = "$Id$";
@@ -52,12 +52,6 @@ PHP Options (available with -php5)\n\
      -cppext          - cpp file extension (default to .cpp)\n\
      -noproxy         - Don't generate proxy classes.\n\
      -prefix <prefix> - Prepend <prefix> to all class names in PHP5 wrappers\n\
-     -make            - Create simple makefile\n\
-     -phpfull         - Create full make files\n\
-     -withincs <incs> - With -phpfull writes needed incs in config.m4\n\
-     -withlibs <libs> - With -phpfull writes needed libs in config.m4\n\
-     -withc <files>   - With -phpfull makes extra C files in Makefile.in\n\
-     -withcxx <files> - With -phpfull makes extra C++ files in Makefile.in\n\
 \n";
 
 /* The original class wrappers for PHP4 store the pointer to the C++ class in
@@ -74,15 +68,8 @@ static Node *classnode = 0;
 static String *module = 0;
 static String *cap_module = 0;
 static String *prefix = 0;
-static String *withlibs = 0;
-static String *withincs = 0;
-static String *withc = 0;
-static String *withcxx = 0;
 
 static String *shadow_classname = 0;
-
-static int gen_extra = 0;
-static int gen_make = 0;
 
 static File *f_runtime = 0;
 static File *f_h = 0;
@@ -211,321 +198,54 @@ public:
    * ------------------------------------------------------------ */
 
   virtual void main(int argc, char *argv[]) {
-    int i;
-    SWIG_library_directory("php4");
+    SWIG_library_directory("php");
     SWIG_config_cppext("cpp");
 
-    for (i = 1; i < argc; i++) {
-      if (argv[i]) {
-	if (strcmp(argv[i], "-phpfull") == 0) {
-	  gen_extra = 1;
+    for (int i = 1; i < argc; i++) {
+      if (strcmp(argv[i], "-prefix") == 0) {
+	if (argv[i + 1]) {
+	  prefix = NewString(argv[i + 1]);
 	  Swig_mark_arg(i);
-	} else if (strcmp(argv[i], "-dlname") == 0) {
-	  Printf(stderr, "*** -dlname is no longer supported\n*** if you want to change the module name, use -module instead.\n");
-	  SWIG_exit(EXIT_FAILURE);
-	} else if (strcmp(argv[i], "-prefix") == 0) {
-	  if (argv[i + 1]) {
-	    prefix = NewString(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if (strcmp(argv[i], "-withlibs") == 0) {
-	  if (argv[i + 1]) {
-	    withlibs = NewString(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if (strcmp(argv[i], "-withincs") == 0) {
-	  if (argv[i + 1]) {
-	    withincs = NewString(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if (strcmp(argv[i], "-withc") == 0) {
-	  if (argv[i + 1]) {
-	    withc = NewString(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if (strcmp(argv[i], "-withcxx") == 0) {
-	  if (argv[i + 1]) {
-	    withcxx = NewString(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if (strcmp(argv[i], "-cppext") == 0) {
-	  if (argv[i + 1]) {
-	    SWIG_config_cppext(argv[i + 1]);
-	    Swig_mark_arg(i);
-	    Swig_mark_arg(i + 1);
-	    i++;
-	  } else {
-	    Swig_arg_error();
-	  }
-	} else if ((strcmp(argv[i], "-noshadow") == 0) || (strcmp(argv[i], "-noproxy") == 0)) {
-	  shadow = 0;
-	  Swig_mark_arg(i);
-	} else if (strcmp(argv[i], "-make") == 0) {
-	  gen_make = 1;
-	  Swig_mark_arg(i);
-	} else if (strcmp(argv[i], "-help") == 0) {
-	  fputs(usage, stdout);
+	  Swig_mark_arg(i + 1);
+	  i++;
+	} else {
+	  Swig_arg_error();
 	}
+      } else if (strcmp(argv[i], "-cppext") == 0) {
+	if (argv[i + 1]) {
+	  SWIG_config_cppext(argv[i + 1]);
+	  Swig_mark_arg(i);
+	  Swig_mark_arg(i + 1);
+	  i++;
+	} else {
+	  Swig_arg_error();
+	}
+      } else if ((strcmp(argv[i], "-noshadow") == 0) || (strcmp(argv[i], "-noproxy") == 0)) {
+	shadow = 0;
+	Swig_mark_arg(i);
+      } else if (strcmp(argv[i], "-help") == 0) {
+	fputs(usage, stdout);
+      } else if (strcmp(argv[i], "-make") == 0 ||
+		 strcmp(argv[i], "-withc") == 0 ||
+		 strcmp(argv[i], "-withcxx") == 0) {
+	Printf(stderr, "*** %s is no longer supported.\n", argv[i]);
+	SWIG_exit(EXIT_FAILURE);
+      } else if (strcmp(argv[i], "-phpfull") == 0 ||
+		 strcmp(argv[i], "-withlibs") == 0 ||
+		 strcmp(argv[i], "-withincs") == 0) {
+	Printf(stderr, "*** %s is no longer supported.\n*** We recommend building as a dynamically loadable module.\n", argv[i]);
+	SWIG_exit(EXIT_FAILURE);
+      } else if (strcmp(argv[i], "-dlname") == 0) {
+	Printf(stderr, "*** -dlname is no longer supported.\n*** If you want to change the module name, use -module instead.\n");
+	SWIG_exit(EXIT_FAILURE);
       }
     }
 
-    Preprocessor_define((void *) "SWIGPHP 1", 0);
-    Preprocessor_define((void *) "SWIGPHP5 1", 0);
+    Preprocessor_define("SWIGPHP 1", 0);
+    Preprocessor_define("SWIGPHP5 1", 0);
     SWIG_typemap_lang("php4");
-    /* DB: Suggest using a language configuration file */
-    SWIG_config_file("php4.swg");
+    SWIG_config_file("php.swg");
     allow_overloading();
-  }
-
-  void create_simple_make(void) {
-    File *f_make;
-
-    f_make = NewFile((void *) "makefile", "w");
-    Printf(f_make, "CC=gcc\n");
-    Printf(f_make, "CXX=g++\n");
-    Printf(f_make, "CXX_SOURCES=%s\n", withcxx);
-    Printf(f_make, "C_SOURCES=%s\n", withc);
-    Printf(f_make, "OBJS=%s_wrap.o $(C_SOURCES:.c=.o) $(CXX_SOURCES:.cxx=.o)\n", module);
-    Printf(f_make, "MODULE=%s.so\n", module);
-    Printf(f_make, "CFLAGS=-fpic\n");
-    Printf(f_make, "LDFLAGS=-shared\n");
-    Printf(f_make, "PHP_INC=`php-config --includes`\n");
-    Printf(f_make, "EXTRA_INC=\n");
-    Printf(f_make, "EXTRA_LIB=\n\n");
-    Printf(f_make, "$(MODULE): $(OBJS)\n");
-    if (CPlusPlus || (withcxx != NULL)) {
-      Printf(f_make, "\t$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(EXTRA_LIB)\n\n");
-    } else {
-      Printf(f_make, "\t$(CC) $(LDFLAGS) $(OBJS) -o $@ $(EXTRA_LIB)\n\n");
-    }
-    Printf(f_make, "%%.o: %%.cpp\n");
-    Printf(f_make, "\t$(CXX) $(EXTRA_INC) $(PHP_INC) $(CFLAGS) -c $<\n");
-    Printf(f_make, "%%.o: %%.cxx\n");
-    Printf(f_make, "\t$(CXX) $(EXTRA_INC) $(PHP_INC) $(CFLAGS) -c $<\n");
-    Printf(f_make, "%%.o: %%.c\n");
-    Printf(f_make, "\t$(CC) $(EXTRA_INC) $(PHP_INC) $(CFLAGS) -c $<\n");
-
-    Close(f_make);
-  }
-
-  void create_extra_files(String *outfile) {
-    File *f_extra;
-
-    static String *configm4 = 0;
-    static String *makefilein = 0;
-    static String *credits = 0;
-
-    configm4 = NewStringEmpty();
-    Printv(configm4, SWIG_output_directory(), "config.m4", NIL);
-
-    makefilein = NewStringEmpty();
-    Printv(makefilein, SWIG_output_directory(), "Makefile.in", NIL);
-
-    credits = NewStringEmpty();
-    Printv(credits, SWIG_output_directory(), "CREDITS", NIL);
-
-    // are we a --with- or --enable-
-    int with = (withincs || withlibs) ? 1 : 0;
-
-    // Note Makefile.in only copes with one source file
-    // also withincs and withlibs only take one name each now
-    // the code they generate should be adapted to take multiple lines
-
-    /* Write out Makefile.in */
-    f_extra = NewFile(makefilein, "w");
-    if (!f_extra) {
-      FileErrorDisplay(makefilein);
-      SWIG_exit(EXIT_FAILURE);
-    }
-
-    Printf(f_extra, "# $Id$\n\n" "LTLIBRARY_NAME          = %s.la\n", module);
-
-    // C++ has more and different entries to C in Makefile.in
-    if (!CPlusPlus) {
-      Printf(f_extra, "LTLIBRARY_SOURCES       = %s %s\n", Swig_file_filename(outfile), withc);
-      Printf(f_extra, "LTLIBRARY_SOURCES_CPP   = %s\n", withcxx);
-    } else {
-      Printf(f_extra, "LTLIBRARY_SOURCES       = %s\n", withc);
-      Printf(f_extra, "LTLIBRARY_SOURCES_CPP   = %s %s\n", Swig_file_filename(outfile), withcxx);
-      Printf(f_extra, "LTLIBRARY_OBJECTS_X = $(LTLIBRARY_SOURCES_CPP:.cpp=.lo) $(LTLIBRARY_SOURCES_CPP:.cxx=.lo)\n");
-    }
-    Printf(f_extra, "LTLIBRARY_SHARED_NAME   = %s.la\n", module);
-    Printf(f_extra, "LTLIBRARY_SHARED_LIBADD = $(%s_SHARED_LIBADD)\n\n", cap_module);
-    Printf(f_extra, "include $(top_srcdir)/build/dynlib.mk\n");
-
-    Printf(f_extra, "\n# patch in .cxx support to php build system to work like .cpp\n");
-    Printf(f_extra, ".SUFFIXES: .cxx\n\n");
-
-    Printf(f_extra, ".cxx.o:\n");
-    Printf(f_extra, "\t$(CXX_COMPILE) -c $<\n\n");
-
-    Printf(f_extra, ".cxx.lo:\n");
-    Printf(f_extra, "\t$(CXX_PHP_COMPILE)\n\n");
-    Printf(f_extra, ".cxx.slo:\n");
-
-    Printf(f_extra, "\t$(CXX_SHARED_COMPILE)\n\n");
-
-    Printf(f_extra, "\n# make it easy to test module\n");
-    Printf(f_extra, "testmodule:\n");
-    Printf(f_extra, "\tphp -q -d extension_dir=modules %s\n\n", Swig_file_filename(phpfilename));
-
-    Close(f_extra);
-
-    /* Now config.m4 */
-    // Note: # comments are OK in config.m4 if you don't mind them
-    // appearing in the final ./configure file
-    // (which can help with ./configure debugging)
-
-    // NOTE2: phpize really ought to be able to write out a sample
-    // config.m4 based on some simple data, I'll take this up with
-    // the php folk!
-    f_extra = NewFile(configm4, "w");
-    if (!f_extra) {
-      FileErrorDisplay(configm4);
-      SWIG_exit(EXIT_FAILURE);
-    }
-
-    Printf(f_extra, "dnl $Id$\n");
-    Printf(f_extra, "dnl ***********************************************************************\n");
-    Printf(f_extra, "dnl ** THIS config.m4 is provided for PHPIZE and PHP's consumption NOT\n");
-    Printf(f_extra, "dnl ** for any part of the rest of the %s build system\n", module);
-    Printf(f_extra, "dnl ***********************************************************************\n\n");
-
-
-    if (!with) {		// must be enable then
-      Printf(f_extra, "PHP_ARG_ENABLE(%s, whether to enable %s support,\n", module, module);
-      Printf(f_extra, "[  --enable-%s             Enable %s support])\n\n", module, module);
-    } else {
-      Printf(f_extra, "PHP_ARG_WITH(%s, for %s support,\n", module, module);
-      Printf(f_extra, "[  --with-%s[=DIR]             Include %s support.])\n\n", module, module);
-      // These tests try and file the library we need
-      Printf(f_extra, "dnl THESE TESTS try and find the library and header files\n");
-      Printf(f_extra, "dnl your new php module needs. YOU MAY NEED TO EDIT THEM\n");
-      Printf(f_extra, "dnl as written they assume your header files are all in the same place\n\n");
-
-      Printf(f_extra, "dnl ** are we looking for %s_lib.h or something else?\n", module);
-      if (withincs)
-	Printf(f_extra, "HNAMES=\"%s\"\n\n", withincs);
-      else
-	Printf(f_extra, "HNAMES=\"\"; # %s_lib.h ?\n\n", module);
-
-      Printf(f_extra, "dnl ** Are we looking for lib%s.a or lib%s.so or something else?\n", module, module);
-
-      if (withlibs)
-	Printf(f_extra, "LIBNAMES=\"%s\"\n\n", withlibs);
-      else
-	Printf(f_extra, "LIBNAMES=\"\"; # lib%s.so ?\n\n", module);
-
-      Printf(f_extra, "dnl IF YOU KNOW one of the symbols in the library and you\n");
-      Printf(f_extra, "dnl specify it below then we can have a link test to see if it works\n");
-      Printf(f_extra, "LIBSYMBOL=\"\"\n\n");
-    }
-
-    // Now write out tests to find thing.. they may need to extend tests
-    Printf(f_extra, "if test \"$PHP_%s\" != \"no\"; then\n\n", cap_module);
-
-    // Ready for when we add libraries as we find them
-    Printf(f_extra, "  PHP_SUBST(%s_SHARED_LIBADD)\n\n", cap_module);
-
-    if (withlibs) {		// find more than one library
-      Printf(f_extra, "  for LIBNAME in $LIBNAMES ; do\n");
-      Printf(f_extra, "    LIBDIR=\"\"\n");
-      // For each path element to try...
-      Printf(f_extra, "    for i in $PHP_%s $PHP_%s/lib /usr/lib /usr/local/lib ; do\n", cap_module, cap_module);
-      Printf(f_extra, "      if test -r $i/lib$LIBNAME.a -o -r $i/lib$LIBNAME.so ; then\n");
-      Printf(f_extra, "        LIBDIR=\"$i\"\n");
-      Printf(f_extra, "        break\n");
-      Printf(f_extra, "      fi\n");
-      Printf(f_extra, "    done\n\n");
-      Printf(f_extra, "    dnl ** and $LIBDIR should be the library path\n");
-      Printf(f_extra, "    if test \"$LIBNAME\" != \"\" -a -z \"$LIBDIR\" ; then\n");
-      Printf(f_extra, "      AC_MSG_RESULT(Library files $LIBNAME not found)\n");
-      Printf(f_extra, "      AC_MSG_ERROR(Is the %s distribution installed properly?)\n", module);
-      Printf(f_extra, "    else\n");
-      Printf(f_extra, "      AC_MSG_RESULT(Library files $LIBNAME found in $LIBDIR)\n");
-      Printf(f_extra, "      PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $LIBDIR, %s_SHARED_LIBADD)\n", cap_module);
-      Printf(f_extra, "    fi\n");
-      Printf(f_extra, "  done\n\n");
-    }
-
-    if (withincs) {		// Find more than once include
-      Printf(f_extra, "  for HNAME in $HNAMES ; do\n");
-      Printf(f_extra, "    INCDIR=\"\"\n");
-      // For each path element to try...
-      Printf(f_extra, "    for i in $PHP_%s $PHP_%s/include $PHP_%s/includes $PHP_%s/inc $PHP_%s/incs /usr/local/include /usr/include; do\n", cap_module,
-	     cap_module, cap_module, cap_module, cap_module);
-      // Try and find header files
-      Printf(f_extra, "      if test \"$HNAME\" != \"\" -a -r $i/$HNAME ; then\n");
-      Printf(f_extra, "        INCDIR=\"$i\"\n");
-      Printf(f_extra, "        break\n");
-      Printf(f_extra, "      fi\n");
-      Printf(f_extra, "    done\n\n");
-
-      Printf(f_extra, "    dnl ** Now $INCDIR should be the include file path\n");
-      Printf(f_extra, "    if test \"$HNAME\" != \"\" -a -z \"$INCDIR\" ; then\n");
-      Printf(f_extra, "      AC_MSG_RESULT(Include files $HNAME not found)\n");
-      Printf(f_extra, "      AC_MSG_ERROR(Is the %s distribution installed properly?)\n", module);
-      Printf(f_extra, "    else\n");
-      Printf(f_extra, "      AC_MSG_RESULT(Include files $HNAME found in $INCDIR)\n");
-      Printf(f_extra, "      PHP_ADD_INCLUDE($INCDIR)\n");
-      Printf(f_extra, "    fi\n\n");
-      Printf(f_extra, "  done\n\n");
-    }
-
-    if (CPlusPlus) {
-      Printf(f_extra, "  # As this is a C++ module..\n");
-    }
-
-    Printf(f_extra, "  PHP_REQUIRE_CXX\n");
-    Printf(f_extra, "  AC_CHECK_LIB(stdc++, cin)\n");
-
-    if (with) {
-      Printf(f_extra, "  if test \"$LIBSYMBOL\" != \"\" ; then\n");
-      Printf(f_extra, "    old_LIBS=\"$LIBS\"\n");
-      Printf(f_extra, "    LIBS=\"$LIBS -L$TEST_DIR/lib -lm -ldl\"\n");
-      Printf(f_extra, "    AC_CHECK_LIB($LIBNAME, $LIBSYMBOL, [AC_DEFINE(HAVE_TESTLIB,1,  [ ])],\n");
-      Printf(f_extra, "    [AC_MSG_ERROR(wrong test lib version or lib not found)])\n");
-      Printf(f_extra, "    LIBS=\"$old_LIBS\"\n");
-      Printf(f_extra, "  fi\n\n");
-    }
-
-    Printf(f_extra, "  AC_DEFINE(HAVE_%s, 1, [ ])\n", cap_module);
-    Printf(f_extra, "dnl  AC_DEFINE_UNQUOTED(PHP_%s_DIR, \"$%s_DIR\", [ ])\n", cap_module, cap_module);
-    Printf(f_extra, "  PHP_EXTENSION(%s, $ext_shared)\n", module);
-
-    // and thats all!
-    Printf(f_extra, "fi\n");
-
-    Close(f_extra);
-
-    /*  CREDITS */
-    f_extra = NewFile(credits, "w");
-    if (!f_extra) {
-      FileErrorDisplay(credits);
-      SWIG_exit(EXIT_FAILURE);
-    }
-    Printf(f_extra, "%s\n", module);
-    Close(f_extra);
   }
 
   /* ------------------------------------------------------------
@@ -717,9 +437,6 @@ public:
     Printf(s_init, "};\n");
     Printf(s_init, "zend_module_entry* SWIG_module_entry = &%s_module_entry;\n\n", module);
 
-    if (gen_extra) {
-      Printf(s_init, "#ifdef COMPILE_DL_%s\n", cap_module);
-    }
     Printf(s_init, "#ifdef __cplusplus\n");
     Printf(s_init, "extern \"C\" {\n");
     Printf(s_init, "#endif\n");
@@ -729,10 +446,6 @@ public:
     Printf(s_init, "#ifdef __cplusplus\n");
     Printf(s_init, "}\n");
     Printf(s_init, "#endif\n\n");
-
-    if (gen_extra) {
-      Printf(s_init, "#endif\n\n");
-    }
 
     /* We have to register the constants before they are (possibly) used
      * by the pointer typemaps. This all needs re-arranging really as
@@ -829,12 +542,6 @@ public:
     }
     Printf(f_phpcode, "%s\n?>\n", s_phpclasses);
     Close(f_phpcode);
-
-    if (gen_extra) {
-      create_extra_files(outfile);
-    } else if (gen_make) {
-      create_simple_make();
-    }
 
     return SWIG_OK;
   }
@@ -1884,7 +1591,7 @@ public:
 	    Printf(pragma_phpinfo, "%s\n", value);
 	  }
 	} else {
-	  Swig_warning(WARN_PHP4_UNKNOWN_PRAGMA, input_file, line_number, "Unrecognized pragma <%s>.\n", type);
+	  Swig_warning(WARN_PHP_UNKNOWN_PRAGMA, input_file, line_number, "Unrecognized pragma <%s>.\n", type);
 	}
       }
     }
@@ -1941,7 +1648,7 @@ public:
 	    }
 	    String *proxyclassname = SwigType_str(Getattr(n, "classtypeobj"), 0);
 	    String *baseclassname = SwigType_str(Getattr(base.item, "name"), 0);
-	    Swig_warning(WARN_PHP4_MULTIPLE_INHERITANCE, input_file, line_number,
+	    Swig_warning(WARN_PHP_MULTIPLE_INHERITANCE, input_file, line_number,
 			 "Warning for %s proxy: Base %s ignored. Multiple inheritance is not supported in PHP.\n", proxyclassname, baseclassname);
 	    base = Next(base);
 	  }
