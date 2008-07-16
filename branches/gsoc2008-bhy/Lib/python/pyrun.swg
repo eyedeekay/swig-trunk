@@ -482,7 +482,6 @@ PySwigObject_type(void) {
 
 SWIGRUNTIMEINLINE int
 PySwigObject_Check(PyObject *op) {
-  /* TODO: define Py_TYPE marcos for Python below 2.5 so we can unify the code*/
 #if PY_VERSION_HEX>=0x03000000
   return (Py_TYPE(op) == PySwigObject_type())
     || (strcmp(Py_TYPE(op)->tp_name,"PySwigObject") == 0);
@@ -679,7 +678,6 @@ _PySwigObject_type(void) {
     0,		   /*nb_and*/
     0,		   /*nb_xor*/
     0,		   /*nb_or*/
-    /* nb_coerce removed in Python 3*/
 #if PY_VERSION_HEX < 0x03000000
     0,   /*nb_coerce*/
 #endif
@@ -690,8 +688,6 @@ _PySwigObject_type(void) {
     (unaryfunc)PySwigObject_oct,  /*nb_oct*/
     (unaryfunc)PySwigObject_hex,  /*nb_hex*/
 #endif
-    /* TODO: Seems we do not need to pad the zeros carefully? 
-     * It would be done automatically by compiler */
 #if PY_VERSION_HEX >= 0x03000000 /* 3.0 */
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /* nb_inplace_add -> nb_index, nb_inplace_divide removed */
 #elif PY_VERSION_HEX >= 0x02050000 /* 2.5.0 */
@@ -961,7 +957,6 @@ _PySwigPacked_type(void) {
       };
     pyswigpacked_type = tmp;
     /* for Python 3 the ob_type already assigned in PyVarObject_HEAD_INIT() */
-    /* TODO: seems older Python also support this so we can have shorter code */
 #if PY_VERSION_HEX < 0x03000000
     pyswigpacked_type.ob_type = &PyType_Type;
 #endif

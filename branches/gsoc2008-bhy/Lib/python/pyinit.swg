@@ -44,8 +44,8 @@ SWIGINTERN PyObject *
 swig_varlink_str(swig_varlinkobject *v) {
 #if PY_VERSION_HEX >= 0x03000000
   PyObject *str = PyUnicode_InternFromString("(");
-  PyObject * tail;
-  PyObject * joined;
+  PyObject *tail;
+  PyObject *joined;
   swig_globalvar *var;
   for (var = v->vars; var; var=var->next) {
     tail = PyUnicode_FromString(var->name);
@@ -54,11 +54,11 @@ swig_varlink_str(swig_varlinkobject *v) {
     Py_DecRef(tail);
     str = joined;
     if (var->next) {
-	tail = PyUnicode_InternFromString(", ");
-	joined = PyUnicode_Concat(str, tail);
-	Py_DecRef(str);
-	Py_DecRef(tail);
-	str = joined;
+        tail = PyUnicode_InternFromString(", ");
+        joined = PyUnicode_Concat(str, tail);
+        Py_DecRef(str);
+        Py_DecRef(tail);
+        str = joined;
     }
   }
   tail = PyUnicode_InternFromString(")");

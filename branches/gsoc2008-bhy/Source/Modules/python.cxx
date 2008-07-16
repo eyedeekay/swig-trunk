@@ -150,7 +150,8 @@ static const char *usage3 = (char *) "\
      -O              - Enable all the optimization options: \n\
                          -modern -fastdispatch -dirvtable -nosafecstrings -fvirtual -noproxydel \n\
                          -fastproxy -fastinit -fastunpack -fastquery -modernargs -nobuildnone \n\
-     -py3              - (Experimental) Generate code for Python 3 \n\
+     -py3            - Generate code with Python 3 specific features:\n\
+                         Function annotation \n\
 \n";
 
 class PYTHON:public Language {
@@ -1156,7 +1157,6 @@ public:
 
    /* -----------------------------------------------------------------------------
    * makeParameterName()
-   *    Copy and adopted form java.cxx. :p   
    *    Note: the generated name should consist with that in kwnames[]
    *
    * Inputs: 
@@ -1212,14 +1212,12 @@ public:
     
     if (pdocs)
       Append(pdocs, "\n");
-    //printf("******Printing node \n");
-    //Swig_print_node(n);
 
     Swig_typemap_attach_parms("in", plist, 0);
     Swig_typemap_attach_parms("doc", plist, 0);
     
     if (Strcmp(ParmList_protostr(plist), "void")==0) {
-      //No parameters acctually
+      //No parameters actually
       return doc;
     }
     
@@ -1281,19 +1279,12 @@ public:
         Printf(doc, "%s ", type);
 
       
-      //if (name) {
-	Append(doc, name);
-	if (pdoc) {
-	  if (!pdocs)
-	    pdocs = NewString("Parameters:\n");
-	  Printf(pdocs, "   %s\n", pdoc);
-	}
-      /*}  else {
-	//Append(doc, "?");
-        Printf(doc, "arg__%d", nonameArgs);
-        nonameArgs++;
+      Append(doc, name);
+      if (pdoc) {
+        if (!pdocs)
+          pdocs = NewString("Parameters:\n");
+        Printf(pdocs, "   %s\n", pdoc);
       }
-      */
 
       // Write the function annoation
       if (func_annotation)
@@ -1302,18 +1293,11 @@ public:
       // Write default value
       if (value && !calling) {
         String* pv = pyvalue(value, Getattr(p, "type"));
-	/*if (Strcmp(value, "NULL") == 0)
-	  value = NewString("None");
-	else if (Strcmp(value, "true") == 0 || Strcmp(value, "TRUE") == 0)
-	  value = NewString("True");
-	else if (Strcmp(value, "false") == 0 || Strcmp(value, "FALSE") == 0)
-	  value = NewString("False"); */
         if (pv)
           value = pv;
 	else {
 	  lookup = Swig_symbol_clookup(value, 0);
 	  if (lookup) {
-            //Swig_print_node(lookup);
 	    value = Getattr(lookup, "sym:name");
           }
 	}
@@ -1506,13 +1490,6 @@ public:
       }
       String *type = Getattr(p, "type");
       String *value = Getattr(p, "value");
-      /*if (value)
-      {
-        String *basetype = SwigType_base(type);
-        Printf(stdout, "Checking %s which type=%s base=%s...\n", value, type, basetype);
-        if (SwigType_type(SwigType_base(basetype)) == T_USER)
-          return false;
-      }*/
       if (!pyvalue(value, type))
         return false;
     }
@@ -1522,8 +1499,9 @@ public:
 
   /* ------------------------------------------------------------
    * is_real_overloaded()
-   *   Check if the function is really overloaded but no just have
-   *   default args.
+   *   Check if the function is overloaded, but not just have some
+   *   siblings generated due to the original function have 
+   *   default arguments.
    * ------------------------------------------------------------ */
   bool is_real_overloaded(Node *n)
   {
@@ -1559,7 +1537,6 @@ public:
     if (nn) n = nn;
 
     /* For overloaded function, just use *args */
-    //Swig_print_node(n);
     if (is_real_overloaded(n) ||
         GetFlag(n, "feature:compactdefaultargs") ||
         !is_primitive_defaultargs(n))
@@ -1667,7 +1644,6 @@ public:
     /* Try to guess the returning type by argout typemap,
      * however the result may not accurate. */
     while (p) {
-      //Swig_print_node(p);
       if ((tm=Getattr(p, "tmap:argout:match_type"))) {
         tm = SwigType_str(tm, 0);
 	if (ret)
