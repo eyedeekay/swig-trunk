@@ -1,6 +1,4 @@
 from director_exception import *
-#The below is *never* needed. (From Python documentation)
-#from exceptions import *
 
 class MyFoo(Foo):
 	def ping(self):
