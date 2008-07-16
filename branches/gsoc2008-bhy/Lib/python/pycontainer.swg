@@ -526,9 +526,6 @@ namespace swig
 }
 }
 
-/*TODO: disable warning temporaly, fix it then!! */
-#pragma SWIG nowarn=467
-
 %define %swig_sequence_iterator(Sequence...)
 #if defined(SWIG_EXPORT_ITERATOR_METHODS)
   class iterator;
@@ -638,34 +635,12 @@ namespace swig
     }
 
     /* typemap for slice object support */
-//  %typemap(in) (int i, int j) {
-//    PySliceObject *r;
-//    int step; /*TODO: don't ignore step */
-//    if(PySlice_Check($input)) {
-//      /* We don't know self->size() so can't use this API
-//      PySlice_GetIndices($input, self->size(), &$1, &$2, &step); */
-//      r = (PySliceObject*) $input;
-//      $1 = PyLong_AsLong(r->start);
-//      $2 = PyLong_AsLong(r->stop);
-//    } else {
-//      SWIG_exception(SWIG_TypeError, "Slice object expected.");
-//    }
-//  }
-
-//  %typemap(typecheck) (int i, int j) {
-//    $1 = PySlice_Check($input);
-//  }
-    
     %typemap(in) PySliceObject* {
       $1 = (PySliceObject *) $input;
     }
-
-    %typemap(typecheck) PySliceObject* {
+    %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) PySliceObject* {
       $1 = PySlice_Check($input);
     }
-
-    //%typemap(typecheck) std::basic_string<wchar_t>::difference_type = int;
-
 
     Sequence* __getslice__(difference_type i, difference_type j) throw (std::out_of_range) {
       return swig::getslice(self, i, j);
@@ -688,7 +663,6 @@ namespace swig
     /* Overloaded methods for Python 3 compatibility 
      * (Also useful in Python 2.x)
      */
-//    Sequence* __getitem__(int i, int j) throw (std::out_of_range) {
     Sequence* __getitem__(PySliceObject *slice) throw (std::out_of_range) {
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
@@ -699,7 +673,6 @@ namespace swig
       return swig::getslice(self, i, j);
     }
 
-//    void __setitem__(int i, int j, const Sequence& v) 
     void __setitem__(PySliceObject *slice, const Sequence& v)
       throw (std::out_of_range, std::invalid_argument) {
       Py_ssize_t i, j, step;
@@ -711,7 +684,6 @@ namespace swig
       swig::setslice(self, i, j, v);
     }
 
-//    void __delitem__(int i, int j)
     void __delitem__(PySliceObject *slice)
       throw (std::out_of_range) {
       Py_ssize_t i, j, step;
@@ -720,7 +692,6 @@ namespace swig
         return;
       }
       PySlice_GetIndices(slice, self->size(), &i, &j, &step);
-      //printf("delitem ing %d %d\n",i,j);
       swig::delslice(self, i,j);
     }
      
