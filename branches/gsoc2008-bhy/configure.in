@@ -717,13 +717,13 @@ if test -n "$PYTHON3" -a -n "$PY3CONFIG"; then
            break
         fi
     done
-    if test -z "$P3YLIB"; then
+    if test -z "$PY3LIB"; then
         AC_MSG_RESULT([Not found])
     else
         AC_MSG_RESULT($PY3LIB)
     fi
 
-    PY3LINK="-l$PYVERSION"
+    PY3LINK="-l$PY3VERSION"
 fi
 
 # Cygwin (Windows) needs the library for dynamic linking
@@ -1938,7 +1938,8 @@ AC_SUBST(SKIP_OCTAVE)
 
 
 SKIP_PYTHON=
-if test -z "$PYINCLUDE" || test -z "$PYLIB" ; then
+if (test -z "$PYINCLUDE" || test -z "$PYLIB") &&
+   (test -z "$PY3INCLUDE" || test -z "PY3LIB") ; then
     SKIP_PYTHON="1"
 fi
 AC_SUBST(SKIP_PYTHON)
