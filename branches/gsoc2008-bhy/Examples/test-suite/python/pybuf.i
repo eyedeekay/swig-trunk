@@ -6,16 +6,26 @@
 %cstring_mutable(char *str2);
 
 %inline %{
-void upper1(char *str1) {
-    while(*str1) {
-        *str1 = toupper(*str1);
-        str1++;
+void title(char *str) {
+    int outword = 0;
+    while(*str) {
+        if (isalnum(*str)) {
+            if (outword) {
+                outword = 1;
+                *str = toupper(*str);
+            }            
+        }
+        else {
+            outword = 0;
+        }
+        str++;
     }
 }
-void upper2(char *str2) {
-    while(*str2) {
-        *str2 = toupper(*str2);
-        str2++;
-    }
+
+void title1(char *str1) {
+    title(str1);
+}
+void title2(char *str2) {
+    title(str2);
 }
 %}
