@@ -1,16 +1,16 @@
 import pybuf
 import time
-k=100000
-n=10
+k=1000000
+n=7
 
 t=time.time()
-a = bytearray(b'a'*n)
+a = bytearray(b'hello world')
 for i in range(k):
-  pybuf.upper1(a)
+  pybuf.title1(a)
 print("Time used by bytearray:",time.time()-t)
 
 t=time.time()
-b = 'b'*n
+b = 'hello world'
 for i in range(k):
-  pybuf.upper2(b)
+  pybuf.title2(b)
 print("Time used by string:",time.time()-t)
