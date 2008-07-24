@@ -1,4 +1,4 @@
-%module pybuf
+%module pybuf_benchmark
 
 %include<pybuffer.i>
 %include<cstring.i>
