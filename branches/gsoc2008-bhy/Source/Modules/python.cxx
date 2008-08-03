@@ -2914,6 +2914,16 @@ public:
 	  }
 	}
       }
+
+      /* dealing with abstract base class */
+      String *abcs = Getattr(n, "feature:python:abc");
+      if (py3 && abcs) {
+        if (Len(base_class)) {
+          Putc(',', base_class);
+        }
+        Printv(base_class, abcs, NIL);
+      }
+      
       Printv(f_shadow, "class ", class_name, NIL);
 
       if (Len(base_class)) {
