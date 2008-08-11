@@ -2775,11 +2775,7 @@ public:
       Printf(f_directors_h, "    PyObject *swig_get_method(size_t method_index, const char *method_name) const {\n");
       Printf(f_directors_h, "      PyObject *method = vtable[method_index];\n");
       Printf(f_directors_h, "      if (!method) {\n");
-      Printf(f_directors_h, "#if PY_VERSION_HEX >= 0x03000000\n");
-      Printf(f_directors_h, "        swig::PyObject_var name = PyUnicode_FromString(method_name);\n");
-      Printf(f_directors_h, "#else\n");
-      Printf(f_directors_h, "        swig::PyObject_var name = PyString_FromString(method_name);\n");
-      Printf(f_directors_h, "#endif\n");
+      Printf(f_directors_h, "        swig::PyObject_var name = SWIG_Python_str_FromChar(method_name);\n");
       Printf(f_directors_h, "        method = PyObject_GetAttr(swig_get_self(), name);\n");
       Printf(f_directors_h, "        if (method == NULL) {\n");
       Printf(f_directors_h, "          std::string msg = \"Method in class %s doesn't exist, undefined \";\n", classname);
@@ -3923,22 +3919,14 @@ int PYTHON::classDirectorMethod(Node *n, Node *parent, String *super) {
 	Printf(w->code, "swig::PyObject_var result = PyObject_CallMethod(swig_get_self(), (char *)\"%s\", (char *)\"(%s)\" %s);\n",
 	       pyname, parse_args, arglist);
       } else {        
-        Printf(w->code, "#if PY_VERSION_HEX >= 0x03000000\n"); /* Fix for Python 3 */
-	Printf(w->code, "swig::PyObject_var swig_method_name = PyUnicode_FromString((char *)\"%s\");\n", pyname);
-        Printf(w->code, "#else\n");
-	Printf(w->code, "swig::PyObject_var swig_method_name = PyString_FromString((char *)\"%s\");\n", pyname);
-        Printf(w->code, "#endif\n");
+	Printf(w->code, "swig::PyObject_var swig_method_name = SWIG_Python_str_FromChar((char *)\"%s\");\n", pyname);
 	Printf(w->code, "swig::PyObject_var result = PyObject_CallMethodObjArgs(swig_get_self(), (PyObject *) swig_method_name %s, NULL);\n", arglist);
       }
     } else {
       if (!modernargs) {
 	Printf(w->code, "swig::PyObject_var result = PyObject_CallMethod(swig_get_self(), (char *) \"%s\", NULL);\n", pyname);
       } else {
-        Printf(w->code, "#if PY_VERSION_HEX >= 0x03000000\n"); /* Fix for Python 3 */
-	Printf(w->code, "swig::PyObject_var swig_method_name = PyUnicode_FromString((char *)\"%s\");\n", pyname);
-        Printf(w->code, "#else\n");
-	Printf(w->code, "swig::PyObject_var swig_method_name = PyString_FromString((char *)\"%s\");\n", pyname);
-        Printf(w->code, "#endif\n");
+	Printf(w->code, "swig::PyObject_var swig_method_name = SWIG_Python_str_FromChar((char *)\"%s\");\n", pyname);
 	Append(w->code, "swig::PyObject_var result = PyObject_CallMethodObjArgs(swig_get_self(), (PyObject *) swig_method_name, NULL);\n");
       }
     }

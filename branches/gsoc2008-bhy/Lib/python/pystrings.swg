@@ -14,7 +14,8 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
   {
     char *cstr; Py_ssize_t len;
 %#if PY_VERSION_HEX>=0x03000000
-    cstr = PyUnicode_AsStringAndSize(obj, &len);
+    obj = PyUnicode_AsUTF8String(obj);
+    PyBytes_AsStringAndSize(obj, &cstr, &len);
 %#else
     PyString_AsStringAndSize(obj, &cstr, &len);
 %#endif
@@ -43,11 +44,7 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 	  *alloc = SWIG_OLDOBJ;
 	}
       } else {
-%#if PY_VERSION_HEX >= 0x03000000      
-	*cptr = PyUnicode_AsString(obj);
-%#else
-	*cptr = PyString_AsString(obj);
-%#endif
+	*cptr = SWIG_Python_str_AsChar(obj);
       }
     }
     if (psize) *psize = len + 1;

@@ -60,17 +60,10 @@ SWIG_Python_AddErrorMsg(const char* mesg)
     Py_XINCREF(type);
 
     PyErr_Format(type, "%s %s", 
-#if PY_VERSION_HEX >= 0x03000000            
-        PyUnicode_AsString(old_str),
-#else
-        PyString_AsString(old_str), 
-#endif
-        mesg);
+        SWIG_Python_str_AsChar(old_str), mesg);
     Py_DECREF(old_str);
     Py_DECREF(value);
   } else {
     PyErr_SetString(PyExc_RuntimeError, mesg);
   }
 }
-
-

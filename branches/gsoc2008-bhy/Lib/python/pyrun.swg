@@ -348,11 +348,7 @@ PySwigObject_format(const char* fmt, PySwigObject *v)
   PyObject *args = PyTuple_New(1);
   if (args) {
     if (PyTuple_SetItem(args, 0, PySwigObject_long(v)) == 0) {
-#if PY_VERSION_HEX>=0x03000000
-      PyObject *ofmt = PyUnicode_FromString(fmt);
-#else
-      PyObject *ofmt = PyString_FromString(fmt);
-#endif
+      PyObject *ofmt = SWIG_Python_str_FromChar(fmt);
       if (ofmt) {
 #if PY_VERSION_HEX >= 0x03000000
 	res = PyUnicode_Format(ofmt,args);
@@ -388,11 +384,7 @@ PySwigObject_repr(PySwigObject *v, PyObject *args)
 {
   const char *name = SWIG_TypePrettyName(v->ty);
   PyObject *hex = PySwigObject_hex(v);    
-#if PY_VERSION_HEX >= 0x03000000
-  PyObject *repr = PyUnicode_FromFormat("<Swig Object of type '%s' at 0x%s>", name, PyUnicode_AsString(hex));
-#else
-  PyObject *repr = PyString_FromFormat("<Swig Object of type '%s' at 0x%s>", name, PyString_AsString(hex));
-#endif
+  PyObject *repr = SWIG_Python_str_FromFormat("<Swig Object of type '%s' at 0x%U>", name, hex);
   Py_DECREF(hex);
   if (v->next) {
 #ifdef METH_NOARGS
@@ -421,11 +413,7 @@ PySwigObject_print(PySwigObject *v, FILE *fp, int SWIGUNUSEDPARM(flags))
   PyObject *repr = PySwigObject_repr(v, NULL);
 #endif
   if (repr) {
-#if PY_VERSION_HEX >= 0x03000000
-    fputs(PyUnicode_AsString(repr), fp);
-#else
-    fputs(PyString_AsString(repr), fp);
-#endif
+    fputs(SWIG_Python_str_AsChar(repr), fp);
     Py_DECREF(repr);
     return 0; 
   } else {
@@ -438,12 +426,7 @@ PySwigObject_str(PySwigObject *v)
 {
   char result[SWIG_BUFFER_SIZE];
   return SWIG_PackVoidPtr(result, v->ptr, v->ty->name, sizeof(result)) ?
-#if PY_VERSION_HEX>=0x03000000
-    /* seems Python 3 use Unicode str for object name now */
-    PyUnicode_FromString(result) : 0;
-#else
-    PyString_FromString(result) : 0;
-#endif
+    SWIG_Python_str_FromChar(result) : 0;
 }
 
 SWIGRUNTIME int
@@ -482,13 +465,8 @@ PySwigObject_type(void) {
 
 SWIGRUNTIMEINLINE int
 PySwigObject_Check(PyObject *op) {
-#if PY_VERSION_HEX>=0x03000000
   return (Py_TYPE(op) == PySwigObject_type())
     || (strcmp(Py_TYPE(op)->tp_name,"PySwigObject") == 0);
-#else
-  return ((op)->ob_type == PySwigObject_type())
-    || (strcmp((op)->ob_type->tp_name,"PySwigObject") == 0);
-#endif
 }
 
 SWIGRUNTIME PyObject *
@@ -821,17 +799,9 @@ PySwigPacked_repr(PySwigPacked *v)
 {
   char result[SWIG_BUFFER_SIZE];
   if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))) {
-#if PY_VERSION_HEX >= 0x03000000
-    return PyUnicode_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
-#else
-    return PyString_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
-#endif
+    return SWIG_Python_str_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
   } else {
-#if PY_VERSION_HEX >= 0x03000000
-    return PyUnicode_FromFormat("<Swig Packed %s>", v->ty->name);
-#else
-    return PyString_FromFormat("<Swig Packed %s>", v->ty->name);
-#endif
+    return SWIG_Python_str_FromFormat("<Swig Packed %s>", v->ty->name);
   }  
 }
 
@@ -840,17 +810,9 @@ PySwigPacked_str(PySwigPacked *v)
 {
   char result[SWIG_BUFFER_SIZE];
   if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))){
-#if PY_VERSION_HEX >= 0x03000000
-    return PyUnicode_FromFormat("%s%s", result, v->ty->name);
-#else
-    return PyString_FromFormat("%s%s", result, v->ty->name);
-#endif
+    return SWIG_Python_str_FromFormat("%s%s", result, v->ty->name);
   } else {
-#if PY_VERSION_HEX >= 0x03000000
-    return PyUnicode_FromString(v->ty->name);
-#else
-    return PyString_FromString(v->ty->name);
-#endif
+    return SWIG_Python_str_FromChar(v->ty->name);
   }  
 }
 
@@ -1004,11 +966,7 @@ PySwigPacked_UnpackData(PyObject *obj, void *ptr, size_t size)
 SWIGRUNTIMEINLINE PyObject *
 _SWIG_This(void)
 {
-#if PY_VERSION_HEX>=0x03000000
-    return PyUnicode_FromString("this");
-#else
-    return PyString_FromString("this");
-#endif
+    return SWIG_Python_str_FromChar("this");
 }
 
 SWIGRUNTIME PyObject *
@@ -1453,21 +1411,7 @@ SWIG_Python_SetModule(swig_module_info *swig_module) {
   static PyMethodDef swig_empty_runtime_method_table[] = { {NULL, NULL, 0, NULL} };/* Sentinel */
 
 #if PY_VERSION_HEX >= 0x03000000
-/*  static struct PyModuleDef SWIG_runtime_module = {
-    PyModuleDef_HEAD_INIT,
-    (char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
-    NULL,
-    -1,
-    swig_empty_runtime_method_table,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-  };
-
-  PyObject *module = PyModule_Create(&SWIG_runtime_module);*/
-  /* PyModule_Create don't add the module into sys.modules,
-     since we just need a dummy object, PyImport_AddModule is enough */
+ /* Add a dummy module object into sys.modules */
   PyObject *module = PyImport_AddModule((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION);
 #else
   PyObject *module = Py_InitModule((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
@@ -1492,11 +1436,7 @@ SWIGRUNTIME swig_type_info *
 SWIG_Python_TypeQuery(const char *type)
 {
   PyObject *cache = SWIG_Python_TypeCache();
-#if PY_VERSION_HEX >= 0x03000000
-  PyObject *key = PyUnicode_FromString(type); 
-#else
-  PyObject *key = PyString_FromString(type); 
-#endif
+  PyObject *key = SWIG_Python_str_FromChar(type); 
   PyObject *obj = PyDict_GetItem(cache, key);
   swig_type_info *descriptor;
   if (obj) {
@@ -1534,17 +1474,9 @@ SWIG_Python_AddErrMesg(const char* mesg, int infront)
       Py_XINCREF(type);
       PyErr_Clear();
       if (infront) {
-#if PY_VERSION_HEX >= 0x03000000
-	PyErr_Format(type, "%s %s", mesg, PyUnicode_AsString(old_str));
-#else
-	PyErr_Format(type, "%s %s", mesg, PyString_AsString(old_str));
-#endif
+	PyErr_Format(type, "%s %s", mesg, SWIG_Python_str_AsChar(old_str));
       } else {
-#if PY_VERSION_HEX >= 0x03000000
-	PyErr_Format(type, "%s %s", PyUnicode_AsString(old_str), mesg);
-#else
-	PyErr_Format(type, "%s %s", PyString_AsString(old_str), mesg);
-#endif
+	PyErr_Format(type, "%s %s", SWIG_Python_str_AsChar(old_str), mesg);
       }
       Py_DECREF(old_str);
     }
@@ -1593,11 +1525,7 @@ SWIG_Python_TypeError(const char *type, PyObject *obj)
       const char *otype = (obj ? obj->ob_type->tp_name : 0); 
       if (otype) {
 	PyObject *str = PyObject_Str(obj);
-#if PY_VERSION_HEX >= 0x03000000
-	const char *cstr = str ? PyUnicode_AsString(str) : 0;
-#else
-	const char *cstr = str ? PyString_AsString(str) : 0;
-#endif
+	const char *cstr = str ? SWIG_Python_str_AsChar(str) : 0;
 	if (cstr) {
 	  PyErr_Format(PyExc_TypeError, "a '%s' is expected, '%s(%s)' is received",
 		       type, otype, cstr);

@@ -82,11 +82,7 @@ SWIGINTERN int
 swig_varlink_print(swig_varlinkobject *v, FILE *fp, int SWIGUNUSEDPARM(flags)) {
   PyObject *str = swig_varlink_str(v);
   fprintf(fp,"Swig global variables ");
-#if PY_VERSION_HEX >= 0x03000000
-  fprintf(fp,"%s\n", PyUnicode_AsString(str));
-#else
-  fprintf(fp,"%s\n", PyString_AsString(str));
-#endif
+  fprintf(fp,"%s\n", SWIG_Python_str_AsChar(str));
   Py_DECREF(str);
   return 0;
 }
