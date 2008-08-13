@@ -6,7 +6,6 @@ SWIGINTERN int
 SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 {
 %#if PY_VERSION_HEX>=0x03000000
-  /* TODO: Check this! Should we use a seperate function for Unicode string? */
   if (PyUnicode_Check(obj)) 
 %#else  
   if (PyString_Check(obj)) 

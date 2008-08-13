@@ -848,7 +848,6 @@ public:
     Printf(f_wrappers, "%s\n", const_code);
     initialize_threads(f_init);
 
-    /* TODO: is it possible to put these into .swg files? */
     Printf(f_init, "#if PY_VERSION_HEX >= 0x03000000\n");
     Printf(f_init, "  return m;\n");
     Printf(f_init, "#else\n");
@@ -861,10 +860,6 @@ public:
     Printf(f_wrappers, "#endif\n");
 
     if (shadow) {
-      /*
-         Printf(f_shadow_imports,"\nimport %s\n", module);
-         Printv(f_shadow_py, f_shadow_imports, "\n",NIL);
-       */
       Printv(f_shadow_py, f_shadow, "\n", NIL);
       Printv(f_shadow_py, f_shadow_stubs, "\n", NIL);
 
