@@ -75,13 +75,7 @@ namespace test {
     class string_class;
 #ifdef SWIGPYTHON
 	%typemap(in) string_class * {
-	    $1 = new string_class(
-%#if PY_VERSION_HEX >= 0x03000000
-            PyUnicode_AsString($input)
-%#else
-            PyString_AsString($input)
-%#endif
-            );
+	    $1 = new string_class(SWIG_Python_str_AsChar($input));
 	}
 	%typemap(freearg) string_class * {
 	    delete $1;
