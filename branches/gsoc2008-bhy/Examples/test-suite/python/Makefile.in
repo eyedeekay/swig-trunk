@@ -32,6 +32,7 @@ PY2TO3 = 2to3 `2to3 -l | grep -v -E "Available|import$$" | awk '{print "-f "$$0}
 
 
 CPP_TEST_CASES += \
+        abstractbase \
 	argcargvtest \
 	autodoc \
 	callback \

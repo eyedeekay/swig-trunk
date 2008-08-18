@@ -49,7 +49,6 @@ static String *shadow_indent = 0;
 static int in_class = 0;
 static int classic = 0;
 static int modern = 0;
-static int apply = 0;
 static int new_repr = 1;
 static int no_header_file = 0;
 
@@ -98,7 +97,6 @@ enum autodoc_t {
 static const char *usage1 = (char *) "\
 Python Options (available with -python)\n\
      -aliasobj0      - Alias obj0 when using fastunpack, needed for some old typemaps \n\
-     -apply          - Use apply() in proxy classes\n\
      -buildnone      - Use Py_BuildValue(" ") to obtain Py_None (default in Windows)\n\
      -castmode       - Enable the casting mode, which allows implicit cast between types in python\n\
      -classic        - Use classic classes only\n\
@@ -263,9 +261,6 @@ public:
 	} else if ((strcmp(argv[i], "-shadow") == 0) || ((strcmp(argv[i], "-proxy") == 0))) {
 	  shadow = 1;
 	  Swig_mark_arg(i);
-	} else if (strcmp(argv[i], "-apply") == 0) {
-	  apply = 1;
-	  Swig_mark_arg(i);
 	} else if ((strcmp(argv[i], "-new_repr") == 0) || (strcmp(argv[i], "-newrepr") == 0)) {
 	  new_repr = 1;
 	  Swig_mark_arg(i);
@@ -288,7 +283,6 @@ public:
 	} else if (strcmp(argv[i], "-classic") == 0) {
 	  classic = 1;
 	  modernargs = 0;
-	  apply = 1;
 	  modern = 0;
 	  Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-cppcast") == 0) {
@@ -394,7 +388,6 @@ public:
 	  proxydel = 0;
 	  Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-modern") == 0) {
-	  apply = 0;
 	  classic = 0;
 	  modern = 1;
 	  modernargs = 1;
@@ -412,7 +405,6 @@ public:
 	  no_header_file = 1;
 	  Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-O") == 0) {
-	  apply = 0;
 	  classic = 0;
 	  modern = 1;
 	  dirvtable = 1;
@@ -443,7 +435,6 @@ public:
 
     if (py3) {
         /* force disable features that not compatible with Python 3.x */
-        apply = 0;
         classic = 0;
     }
 
@@ -949,26 +940,6 @@ public:
     return Language::importDirective(n);
   }
 
-
-  /* ------------------------------------------------------------
-   * funcCallHelper()
-   *    Write the shadow code to call a function in the extension
-   *    module.  Takes into account the -apply flag and whether
-   *    to use keyword args or not.
-   * ------------------------------------------------------------ */
-
-  String *funcCallHelper(String *name, int kw) {
-    String *str;
-
-    str = NewString("");
-    if (apply) {
-      Printv(str, "apply(", module, ".", name, ", args", (kw ? ", kwargs" : ""), ")", NIL);
-    } else {
-      Printv(str, module, ".", name, "(*args", (kw ? ", **kwargs" : ""), ")", NIL);
-    }
-    return str;
-  }
-
   /* ------------------------------------------------------------
    * funcCall()
    *    Emit shadow code to call a function in the extension
@@ -978,7 +949,6 @@ public:
    String *funcCall(String *name, String *parms) {
     String *str = NewString("");
 
-    //TODO: apply and kwargs
     Printv(str, module, ".", name, "(", parms, ")", NIL);
     return str;
    }
