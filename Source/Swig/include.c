@@ -188,8 +188,9 @@ static FILE *Swig_open_file(const_String_or_char_ptr name, int sysfile, int use_
   }
   if (f) {
     Delete(lastpath);
-    lastpath = filename;
+    lastpath = Swig_filename_escape(filename);
   }
+  Delete(filename);
   return f;
 }
 
@@ -247,7 +248,7 @@ static String *Swig_include_any(const_String_or_char_ptr name, int sysfile) {
   str = Swig_read_file(f);
   fclose(f);
   Seek(str, 0, SEEK_SET);
-  file = Copy(Swig_last_file());
+  file = Copy(lastpath);
   Setfile(str, file);
   Delete(file);
   Setline(str, 1);

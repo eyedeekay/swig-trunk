@@ -11,6 +11,8 @@
  * Main header file for SWIG modules.
  * ----------------------------------------------------------------------------- */
 
+/* $Id$ */
+
 #ifndef SWIG_SWIGMOD_H_
 #define SWIG_SWIGMOD_H_
 
@@ -210,9 +212,8 @@ public:
 
   /* Miscellaneous */
   virtual int validIdentifier(String *s);	/* valid identifier? */
-  virtual int addSymbol(const String *s, const Node *n, const_String_or_char_ptr scope = "");	/* Add symbol        */
-  virtual void dumpSymbols();
-  virtual Node *symbolLookup(String *s, const_String_or_char_ptr scope = "");			/* Symbol lookup     */
+  virtual int addSymbol(const String *s, const Node *n);	/* Add symbol        */
+  virtual Node *symbolLookup(String *s);	/* Symbol lookup     */
   virtual Node *classLookup(SwigType *s);	/* Class lookup      */
   virtual Node *enumLookup(SwigType *s);	/* Enum lookup       */
   virtual int abstractClassTest(Node *n);	/* Is class really abstract? */
@@ -265,16 +266,13 @@ protected:
   void allow_overloading(int val = 1);
 
   /* Wrapping class query */
-  int is_wrapping_class() const;
+  int is_wrapping_class();
 
   /* Return the node for the current class */
   Node *getCurrentClass() const;
 
   /* Return C++ mode */
   int getCPlusMode() const;
-
-  /* Return the namespace for the class/enum - the nspace feature */
-  String *getNSpace() const;
 
   /* Return the real name of the current class */
   String *getClassName() const;
@@ -310,7 +308,7 @@ protected:
   int director_language;
 
 private:
-  Hash *symtabs; /* symbol tables */
+  Hash *symbols;
   Hash *classtypes;
   Hash *enumtypes;
   int overloading;
@@ -327,7 +325,6 @@ void SWIG_exit(int);		/* use EXIT_{SUCCESS,FAILURE} */
 void SWIG_config_file(const_String_or_char_ptr );
 const String *SWIG_output_directory();
 void SWIG_config_cppext(const char *ext);
-void Swig_print_xml(Node *obj, String *filename);
 
 /* get the list of generated files */
 List *SWIG_output_files();

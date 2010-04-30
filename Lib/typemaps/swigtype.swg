@@ -21,15 +21,15 @@
 %typemap(freearg) SWIGTYPE [] "";
 
 
-%typemap(in, noblock=1) SWIGTYPE *const&  (void *argp = 0, int res = 0, $*1_ltype temp) {
+%typemap(in, noblock=1) SWIGTYPE* const&  (void *argp = 0, int res = 0, $*ltype temp) {
   res = SWIG_ConvertPtr($input, &argp, $*descriptor, $disown | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     %argument_fail(res, "$*ltype", $symname, $argnum); 
   }
   temp = %reinterpret_cast(argp, $*ltype);
-  $1 = %reinterpret_cast(&temp, $1_ltype);
+  $1 = &temp;
 }
-%typemap(freearg) SWIGTYPE *const& "";
+%typemap(freearg) SWIGTYPE* const& "";
 
 
 /* Reference */
@@ -106,7 +106,7 @@
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, $owner | %newpointer_flags));
 }
 
-%typemap(out, noblock=1) SWIGTYPE *const& {
+%typemap(out, noblock=1) SWIGTYPE* const& {
   %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, $owner | %newpointer_flags));
 }
 
@@ -299,12 +299,6 @@
   $1 = SWIG_CheckState(res);
 }
 
-%typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER,noblock=1) SWIGTYPE *const& {
-  void *vptr = 0;
-  int res = SWIG_ConvertPtr($input, &vptr, $descriptor, 0);
-  $1 = SWIG_CheckState(res);
-}
-
 %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER,noblock=1) SWIGTYPE & {
   void *vptr = 0;
   int res = SWIG_ConvertPtr($input, &vptr, $descriptor, 0);
@@ -343,7 +337,7 @@
 
 /* directorin */
 
-%typemap(directorin,noblock=1) SWIGTYPE *, SWIGTYPE *const& {
+%typemap(directorin,noblock=1) SWIGTYPE*, SWIGTYPE* const& {
   $input = SWIG_NewPointerObj(%as_voidptr($1_name), $descriptor, %newpointer_flags);
 }
 
@@ -351,7 +345,7 @@
   $input = SWIG_NewPointerObj(%as_voidptr(&$1_name), $&descriptor, %newpointer_flags);
 }
 
-%typemap(directorin,noblock=1) SWIGTYPE & {
+%typemap(directorin,noblock=1) SWIGTYPE& {
   $input = SWIG_NewPointerObj(%as_voidptr(&$1_name), $descriptor, %newpointer_flags);
 }
 
@@ -413,7 +407,7 @@
  * --- Constants ---
  * ------------------------------------------------------------ */
 
-%typemap(constcode,noblock=1) SWIGTYPE *, SWIGTYPE &, SWIGTYPE [] {
+%typemap(constcode,noblock=1) SWIGTYPE *, SWIGTYPE &, SWIGTYPE []{ 
   %set_constant("$symname", SWIG_NewPointerObj(%as_voidptr($value),$descriptor,%newpointer_flags));
 }
 
@@ -553,7 +547,6 @@
 }
 #endif
 
-%apply SWIGTYPE * { SWIGTYPE *const }
 
 /* ------------------------------------------------------------
  * --- Special typemaps ---
@@ -609,4 +602,3 @@
 %typemap(varout,noblock=1) SWIGTYPE INSTANCE {
   %set_varoutput(SWIG_NewInstanceObj(%as_voidptr(&$1), $&1_descriptor, %newinstance_flags));
 }
-

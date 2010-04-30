@@ -745,10 +745,3 @@ FROM BlaBla IMPORT Bla;
 /* Some ANSI C typemaps */
 
 %apply unsigned long { size_t };
-
-/* Array reference typemaps */
-%apply SWIGTYPE & { SWIGTYPE ((&)[ANY]) }
-
-/* const pointers */
-%apply SWIGTYPE * { SWIGTYPE *const }
-

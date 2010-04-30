@@ -264,12 +264,6 @@ extern "C" {
   }
 }
 
-/* Array reference typemaps */
-%apply SWIGTYPE & { SWIGTYPE ((&)[ANY]) }
-
-/* const pointers */
-%apply SWIGTYPE * { SWIGTYPE *const }
-
 /* ------------------------------------------------------------
  * Overloaded operator support
  * ------------------------------------------------------------ */

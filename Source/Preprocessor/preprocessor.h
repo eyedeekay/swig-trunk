@@ -11,6 +11,8 @@
  * SWIG preprocessor module.
  * ----------------------------------------------------------------------------- */
 
+/* $Id$ */
+
 #ifndef SWIG_PREPROCESSOR_H_
 #define SWIG_PREPROCESSOR_H_
 

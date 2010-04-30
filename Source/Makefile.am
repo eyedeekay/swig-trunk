@@ -62,6 +62,7 @@ eswig_SOURCES =	CParse/cscanner.c		\
 		Modules/r.cxx			\
 		Modules/ruby.cxx		\
 		Modules/s-exp.cxx		\
+		Modules/scilab.cxx		\
 		Modules/swigmain.cxx		\
 		Modules/tcl8.cxx		\
 		Modules/typepass.cxx		\
@@ -104,9 +105,6 @@ clean-local:
 	rm -f $(top_builddir)/swig@EXEEXT@
 	rm -f core @EXTRA_CLEAN@
 
-distclean-local:
-	rm -f $(top_builddir)/Source/Include/swigconfig.h
-	rm -f $(top_builddir)/Source/Include/stamp-h1
 
 # Beautify the code.
 # Note that this works well on C code, but does some odd joining of lines for C++ code.

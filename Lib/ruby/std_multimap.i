@@ -115,8 +115,7 @@
     {
       MultiMap::iterator i = $self->begin();
       MultiMap::iterator e = $self->end();
-      const char *type_name = swig::type_name< MultiMap >();
-      VALUE str = rb_str_new2( type_name );
+      VALUE str = rb_str_new2( swig::type_name< MultiMap >() );
       str = rb_str_cat2( str, " {" );
       VALUE tmp;
       while ( i != e )

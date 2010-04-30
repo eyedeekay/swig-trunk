@@ -29,10 +29,10 @@ struct Struct {
   static Struct *pInstance;
 };
 
-void set(Struct *const& s) {
+void set(Struct *& s) {
   Struct::instance = *s;
 }
-Struct *const& get() {
+Struct *& get() {
   return Struct::pInstance;
 }
 %}

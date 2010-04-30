@@ -66,44 +66,47 @@ static void replace_embedded_typemap(String *s, ParmList *parm_sublist, Wrapper 
 static Hash *typemaps[MAX_SCOPE];
 static int tm_scope = 0;
 
-static Hash *get_typemap(int tm_scope, const SwigType *type) {
+static Hash *get_typemap(int tm_scope, SwigType *type) {
   Hash *tm = 0;
   SwigType *dtype = 0;
-  SwigType *hashtype;
-
   if (SwigType_istemplate(type)) {
     String *ty = Swig_symbol_template_deftype(type, 0);
     dtype = Swig_symbol_type_qualify(ty, 0);
+    /* Printf(stderr,"gettm %s %s\n", type, dtype); */
     type = dtype;
     Delete(ty);
   }
+  tm = Getattr(typemaps[tm_scope], type);
 
-  /* remove unary scope operator (::) prefix indicating global scope for looking up in the hashmap */
-  hashtype = SwigType_remove_global_scope_prefix(type);
-  tm = Getattr(typemaps[tm_scope], hashtype);
 
-  Delete(dtype);
-  Delete(hashtype);
+  if (dtype) {
+    if (!tm) {
+      String *t_name = SwigType_templateprefix(type);
+      if (!Equal(t_name, type)) {
+	tm = Getattr(typemaps[tm_scope], t_name);
+      }
+      Delete(t_name);
+    }
+    Delete(dtype);
+  }
 
   return tm;
 }
 
-static void set_typemap(int tm_scope, const SwigType *type, Hash *tm) {
-  SwigType *hashtype = 0;
+static void set_typemap(int tm_scope, SwigType *type, Hash *tm) {
+  SwigType *dtype = 0;
   if (SwigType_istemplate(type)) {
     String *ty = Swig_symbol_template_deftype(type, 0);
-    String *tyq = Swig_symbol_type_qualify(ty, 0);
-    hashtype = SwigType_remove_global_scope_prefix(tyq);
-    Delete(tyq);
+    dtype = Swig_symbol_type_qualify(ty, 0);
+    /* Printf(stderr,"settm %s %s\n", type, dtype); */
+    type = dtype;
     Delete(ty);
   } else {
-    hashtype = SwigType_remove_global_scope_prefix(type);
+    dtype = Copy(type);
+    type = dtype;
   }
-
-  /* note that the unary scope operator (::) prefix indicating global scope has been removed from the type */
-  Setattr(typemaps[tm_scope], hashtype, tm);
-
-  Delete(hashtype);
+  Setattr(typemaps[tm_scope], type, tm);
+  Delete(dtype);
 }
 
 
@@ -635,56 +638,6 @@ static void debug_search_result_display(Node *tm) {
 }
 
 /* -----------------------------------------------------------------------------
- * typemap_search_helper()
- *
- * Helper function for typemap_search to see if there is a type match in the typemap
- * tm. A match is sought in this order:
- * %typemap(tm_method) ctype cqualifiedname
- * %typemap(tm_method) ctype cname
- * %typemap(tm_method) ctype 
- * ----------------------------------------------------------------------------- */
-
-static Hash *typemap_search_helper(int debug_display, Hash *tm, const String *tm_method, SwigType *ctype, const String *cqualifiedname, const String *cname, Hash **backup) {
-  Hash *result = 0;
-  Hash *tm1;
-  if (debug_display && cqualifiedname)
-    Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, cqualifiedname));
-  if (tm && cqualifiedname) {
-    tm1 = Getattr(tm, cqualifiedname);
-    if (tm1) {
-      result = Getattr(tm1, tm_method);	/* See if there is a type - qualified name match */
-      if (result && Getattr(result, "code"))
-	goto ret_result;
-      if (result)
-	*backup = result;
-    }
-  }
-  if (debug_display && cname)
-    Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, cname));
-  if (tm && cname) {
-    tm1 = Getattr(tm, cname);
-    if (tm1) {
-      result = Getattr(tm1, tm_method);	/* See if there is a type - name match */
-      if (result && Getattr(result, "code"))
-	goto ret_result;
-      if (result)
-	*backup = result;
-    }
-  }
-  if (debug_display)
-    Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, 0));
-  if (tm) {
-    result = Getattr(tm, tm_method);	/* See if there is simply a type without name match */
-    if (result && Getattr(result, "code"))
-      goto ret_result;
-    if (result)
-      *backup = result;
-  }
-ret_result:
-  return result;
-}
-
-/* -----------------------------------------------------------------------------
  * typemap_search()
  *
  * Search for a typemap match. This is where the typemap pattern matching rules 
@@ -693,9 +646,9 @@ ret_result:
  * ----------------------------------------------------------------------------- */
 
 static Hash *typemap_search(const_String_or_char_ptr tmap_method, SwigType *type, const_String_or_char_ptr name, const_String_or_char_ptr qualifiedname, SwigType **matchtype, Node *node) {
-  Hash *result = 0;
-  Hash *tm;
+  Hash *result = 0, *tm, *tm1, *tma;
   Hash *backup = 0;
+  SwigType *noarrays = 0;
   SwigType *primitive = 0;
   SwigType *ctype = 0;
   int ts;
@@ -722,33 +675,82 @@ static Hash *typemap_search(const_String_or_char_ptr tmap_method, SwigType *type
     while (ctype) {
       /* Try to get an exact type-match */
       tm = get_typemap(ts, ctype);
-      result = typemap_search_helper(debug_display, tm, tm_method, ctype, cqualifiedname, cname, &backup);
-      if (result)
-	goto ret_result;
-
-      {
-	/* Look for the type reduced to just the template prefix */
-	SwigType *template_prefix = SwigType_istemplate_templateprefix(ctype);
-	if (template_prefix) {
-	  tm = get_typemap(ts, template_prefix);
-	  result = typemap_search_helper(debug_display, tm, tm_method, template_prefix, cqualifiedname, cname, &backup);
-	  Delete(template_prefix);
-	  if (result)
+      if (debug_display && cqualifiedname)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, cqualifiedname));
+      if (tm && cqualifiedname) {
+	tm1 = Getattr(tm, cqualifiedname);
+	if (tm1) {
+	  result = Getattr(tm1, tm_method);	/* See if there is a type - qualified name match */
+	  if (result && Getattr(result, "code"))
 	    goto ret_result;
+	  if (result)
+	    backup = result;
 	}
       }
-
-      /* look for [ANY] arrays */
+      if (debug_display && cname)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, cname));
+      if (tm && cname) {
+	tm1 = Getattr(tm, cname);
+	if (tm1) {
+	  result = Getattr(tm1, tm_method);	/* See if there is a type - name match */
+	  if (result && Getattr(result, "code"))
+	    goto ret_result;
+	  if (result)
+	    backup = result;
+	}
+      }
+      if (debug_display)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(ctype, 0));
+      if (tm) {
+	result = Getattr(tm, tm_method);	/* See if there is simply a type match */
+	if (result && Getattr(result, "code"))
+	  goto ret_result;
+	if (result)
+	  backup = result;
+      }
       isarray = SwigType_isarray(ctype);
       if (isarray) {
 	/* If working with arrays, strip away all of the dimensions and replace with "ANY".
 	   See if that generates a match */
-	SwigType *noarrays = strip_arrays(ctype);
-	tm = get_typemap(ts, noarrays);
-	result = typemap_search_helper(debug_display, tm, tm_method, noarrays, cqualifiedname, cname, &backup);
+	if (!noarrays) {
+	  noarrays = strip_arrays(ctype);
+	}
+	tma = get_typemap(ts, noarrays);
+	if (debug_display && cqualifiedname)
+	  Printf(stdout, "  Looking for: %s\n", SwigType_str(noarrays, cqualifiedname));
+	if (tma && cqualifiedname) {
+	  tm1 = Getattr(tma, cqualifiedname);
+	  if (tm1) {
+	    result = Getattr(tm1, tm_method);	/* See if there is a type - qualified name match */
+	    if (result && Getattr(result, "code"))
+	      goto ret_result;
+	    if (result)
+	      backup = result;
+	  }
+	}
+	if (debug_display && cname)
+	  Printf(stdout, "  Looking for: %s\n", SwigType_str(noarrays, cname));
+	if (tma && cname) {
+	  tm1 = Getattr(tma, cname);
+	  if (tm1) {
+	    result = Getattr(tm1, tm_method);	/* See if there is a type - name match */
+	    if (result && Getattr(result, "code"))
+	      goto ret_result;
+	    if (result)
+	      backup = result;
+	  }
+	}
+	if (debug_display)
+	  Printf(stdout, "  Looking for: %s\n", SwigType_str(noarrays, 0));
+	if (tma) {
+	  result = Getattr(tma, tm_method);	/* See if there is a type match */
+	  if (result && Getattr(result, "code"))
+	    goto ret_result;
+	  if (result)
+	    backup = result;
+	}
 	Delete(noarrays);
-	if (result)
-	  goto ret_result;
+	noarrays = 0;
       }
 
       /* No match so far.   If the type is unstripped, we'll strip its
@@ -779,15 +781,38 @@ static Hash *typemap_search(const_String_or_char_ptr tmap_method, SwigType *type
 
     /* Hmmm. Well, no match seems to be found at all. See if there is some kind of default (SWIGTYPE) mapping */
 
-    primitive = SwigType_default_create(type);
+    primitive = SwigType_default(type);
     while (primitive) {
       tm = get_typemap(ts, primitive);
-      result = typemap_search_helper(debug_display, tm, tm_method, primitive, cqualifiedname, cname, &backup);
-      if (result)
-	goto ret_result;
-
+      if (debug_display && cqualifiedname)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(primitive, cqualifiedname));
+      if (tm && cqualifiedname) {
+	tm1 = Getattr(tm, cqualifiedname);
+	if (tm1) {
+	  result = Getattr(tm1, tm_method);	/* See if there is a type - qualified name match */
+	  if (result)
+	    goto ret_result;
+	}
+      }
+      if (debug_display && cname)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(primitive, cname));
+      if (tm && cname) {
+	tm1 = Getattr(tm, cname);
+	if (tm1) {
+	  result = Getattr(tm1, tm_method);	/* See if there is a type - name match */
+	  if (result)
+	    goto ret_result;
+	}
+      }
+      if (debug_display)
+	Printf(stdout, "  Looking for: %s\n", SwigType_str(primitive, 0));
+      if (tm) {
+	result = Getattr(tm, tm_method);	/* See if there is simply a type match */
+	if (result)
+	  goto ret_result;
+      }
       {
-	SwigType *nprim = SwigType_default_deduce(primitive);
+	SwigType *nprim = SwigType_default(primitive);
 	Delete(primitive);
 	primitive = nprim;
       }
@@ -801,6 +826,7 @@ static Hash *typemap_search(const_String_or_char_ptr tmap_method, SwigType *type
   result = backup;
 
 ret_result:
+  Delete(noarrays);
   Delete(primitive);
   if ((unstripped) && (unstripped != type))
     Delete(unstripped);

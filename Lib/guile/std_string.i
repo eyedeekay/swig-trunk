@@ -26,7 +26,7 @@ namespace std {
     %typemap(typecheck) string = char *;
     %typemap(typecheck) const string & = char *;
 
-    %typemap(in) string (char * tempptr) {
+    %typemap(in) string (char* tempptr) {
         if (gh_string_p($input)) {
             tempptr = SWIG_scm2str($input);
             $1.assign(tempptr);
@@ -36,7 +36,8 @@ namespace std {
         }
     }
 
-    %typemap(in) const string & (std::string temp, char *tempptr) {
+    %typemap(in) const string & (std::string temp,
+                                 char* tempptr) {
         if (gh_string_p($input)) {
             tempptr = SWIG_scm2str($input);
             temp.assign(tempptr);
@@ -47,7 +48,7 @@ namespace std {
         }
     }
 
-    %typemap(in) string * (char *tempptr) {
+    %typemap(in) string * (char* tempptr) {
         if (gh_string_p($input)) {
             tempptr = SWIG_scm2str($input);
             $1 = new std::string(tempptr);

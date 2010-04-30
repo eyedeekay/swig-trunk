@@ -156,11 +156,6 @@
 #define %nonaturalvar    %feature("naturalvar","0")
 #define %clearnaturalvar %feature("naturalvar","")
 
-/* nspace directives */
-#define %nspace      %feature("nspace")
-#define %nonspace    %feature("nspace","0")
-#define %clearnspace %feature("nspace","")
-
 /* valuewrapper directives */
 #define %valuewrapper        %feature("valuewrapper")
 #define %clearvaluewrapper   %feature("valuewrapper","")

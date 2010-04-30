@@ -84,11 +84,6 @@ CXXSHARED=      @CXXSHARED@
 
 OBJS      = $(SRCS:.c=.@OBJEXT@) $(CXXSRCS:.cxx=.@OBJEXT@)
 
-distclean:
-	rm -f Makefile
-	rm -f guile/Makefile
-	rm -f xml/Makefile
-
 ##################################################################
 #####                       Tcl/Tk                          ######
 ##################################################################
@@ -1141,3 +1136,46 @@ r_clean:
 	rm -f *.@OBJEXT@ *@SO@ NAMESPACE
 	rm -f $(RRSRC) runme.Rout .RData
 
+##################################################################
+#####                 SCILAB                                ######
+##################################################################
+
+# Make sure these locate your Scilab installation
+SCILAB_INCLUDE= $(DEFS) @SCILABINCLUDE@
+SCILAB_LIB    = @SCILABLIB@
+SCILAB        = @SCILAB@
+
+# ----------------------------------------------------------------
+# Build a C dynamically loadable module
+# ----------------------------------------------------------------
+
+scilab: $(SRCS)
+	$(SWIG) -scilab $(SWIGOPT) $(INTERFACEPATH)
+	if [ -f builder.sce ]; then \
+	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f builder.sce; \
+	fi
+
+# ----------------------------------------------------------------
+# Build a C++ dynamically loadable module
+# ----------------------------------------------------------------
+
+scilab_cpp: $(SRCS)
+	$(SWIG) -scilab -c++ $(SWIGOPT) $(INTERFACEPATH)
+	if [ -f builder.sce ]; then \
+	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f builder.sce; \
+	fi
+
+# ----------------------------------------------------------------- 
+# Running a Scilab example
+# ----------------------------------------------------------------- 
+
+scilab_run:
+	 env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f runme.sci
+	
+# -----------------------------------------------------------------
+# Cleaning the scilab examples
+# -----------------------------------------------------------------
+
+scilab_clean:
+	rm -f *.sce *.so lib*lib.c 
+	

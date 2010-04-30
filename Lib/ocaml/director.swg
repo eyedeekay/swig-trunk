@@ -10,8 +10,6 @@
 
 #include <string>
 
-# define SWIG_DIRECTOR_CAST(ARG) dynamic_cast<Swig::Director *>(ARG)
-
 namespace Swig {
   /* base class for director exceptions */
   class DirectorException {

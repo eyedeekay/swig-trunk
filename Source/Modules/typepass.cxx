@@ -36,7 +36,6 @@ class TypePass:private Dispatcher {
   Node *module;
   int importmode;
   String *nsname;
-  String *nssymname;
   Hash *classhash;
   List *normalize;
 
@@ -297,7 +296,6 @@ class TypePass:private Dispatcher {
     inclass = 0;
     normalize = 0;
     nsname = 0;
-    nssymname = 0;
     classhash = Getattr(n, "classes");
     emit_children(n);
     normalize_list();
@@ -416,10 +414,6 @@ class TypePass:private Dispatcher {
 	tdname = NewStringf("%s::%s", nsname, tdname);
 	Setattr(n, "tdname", tdname);
       }
-    }
-    if (nssymname) {
-      if (GetFlag(n, "feature:nspace"))
-	Setattr(n, "sym:nspace", nssymname);
     }
     SwigType_new_scope(scopename);
     SwigType_attach_symtab(Getattr(n, "symtab"));
@@ -541,9 +535,7 @@ class TypePass:private Dispatcher {
 	}
       }
       String *oldnsname = nsname;
-      String *oldnssymname = nssymname;
       nsname = Swig_symbol_qualified(Getattr(n, "symtab"));
-      nssymname = Swig_symbol_qualified_language_scopename(Getattr(n, "symtab"));
       symtab = Swig_symbol_setscope(Getattr(n, "symtab"));
       emit_children(n);
       Swig_symbol_setscope(symtab);
@@ -565,8 +557,6 @@ class TypePass:private Dispatcher {
       }
       normalize = olist;
 
-      Delete(nssymname);
-      nssymname = oldnssymname;
       Delete(nsname);
       nsname = oldnsname;
       return SWIG_OK;
@@ -743,11 +733,6 @@ class TypePass:private Dispatcher {
       enumtype = Copy(Getattr(n, "type"));
     }
     Setattr(n, "enumtype", enumtype);
-
-    if (nssymname) {
-      if (GetFlag(n, "feature:nspace"))
-	Setattr(n, "sym:nspace", nssymname);
-    }
 
     // This block of code is for dealing with %ignore on an enum item where the target language
     // attempts to use the C enum value in the target language itself and expects the previous enum value

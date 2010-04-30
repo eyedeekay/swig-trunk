@@ -1,5 +1,5 @@
 #######################################################################
-# SWIG top level Makefile
+# $Id$
 #######################################################################
 
 .PHONY: ccache source swig
@@ -75,6 +75,7 @@ skip-clisp	= test -n "@SKIP_CLISP@"
 skip-cffi	= test -n "@SKIP_CFFI@"
 skip-uffi	= test -n "@SKIP_UFFI@"
 skip-r		= test -n "@SKIP_R@"
+skip-scilab     = test -n "@SKIP_SCILAB@"
 
 # Additional dependencies for some tests
 skip-gcj        = test -n "@SKIP_GCJ@"
@@ -110,7 +111,7 @@ check-aliveness:
 	@$(skip-modula3)  || ./$(TARGET) -modula3  -help
 	@$(skip-lua)      || ./$(TARGET) -lua      -help
 	@$(skip-r) 	  || ./$(TARGET) -r        -help
-
+	@$(skip-scilab)   || ./$(TARGET) -scilab    -help
 check-ccache:
 	test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) check)
 
@@ -135,8 +136,8 @@ check-examples:					\
 	check-clisp-examples			\
 	check-uffi-examples			\
 	check-cffi-examples			\
-	check-r-examples
-
+	check-r-examples			\
+	check-scilab-examples       
 tcl_examples       :=$(shell sed '/^\#/d' $(srcdir)/Examples/tcl/check.list)
 perl5_examples     :=$(shell sed '/^\#/d' $(srcdir)/Examples/perl5/check.list)
 python_examples    :=$(shell sed '/^\#/d' $(srcdir)/Examples/python/check.list)
@@ -157,6 +158,7 @@ clisp_examples     :=
 uffi_examples      :=
 cffi_examples      :=
 r_examples         :=$(shell sed '/^\#/d' $(srcdir)/Examples/r/check.list)
+scilab_examples    :=$(shell sed '/^\#/d' $(srcdir)/Examples/scilab/check.list)
 
 # all examples
 check-%-examples :
@@ -206,8 +208,8 @@ check-test-suite:				\
 	check-uffi-test-suite			\
 	check-cffi-test-suite			\
 	check-chicken-test-suite		\
-	check-r-test-suite
-
+	check-r-test-suite               \
+	check-scilab-test-suite		
 check-%-test-suite:
 	@if test -z "$(skip-$*)"; then					\
 	  echo $* unknown;						\
@@ -257,8 +259,8 @@ all-test-suite:					\
 	all-uffi-test-suite			\
 	all-cffi-test-suite			\
 	all-chicken-test-suite			\
-	all-r-test-suite
-
+	all-r-test-suite                   \
+	all-scilab-test-suite   
 all-%-test-suite:
 	@$(MAKE) -k -s check-$*-test-suite ACTION=all
 
@@ -284,7 +286,8 @@ broken-test-suite:				\
 	broken-uffi-test-suite			\
 	broken-cffi-test-suite			\
 	broken-chicken-test-suite		\
-	broken-r-test-suite
+	broken-r-test-suite               \
+	broken-scilab-test-suite           
 
 broken-%-test-suite:
 	@$(MAKE) -k -s check-$*-test-suite ACTION=broken
@@ -293,7 +296,7 @@ broken-%-test-suite:
 # CLEAN
 #####################################################################
 
-clean: clean-objects clean-examples clean-test-suite
+clean: clean-objects clean-libfiles clean-examples clean-test-suite clean-docs
 
 clean-objects: clean-source clean-ccache
 
@@ -301,6 +304,9 @@ clean-source:
 	@echo cleaning Source
 	@cd $(SOURCE) && $(MAKE) -s clean
 	@rm -f $(TARGET)
+
+clean-libfiles:
+	@rm -f $(srcdir)/Lib/swigwarn.swg
 
 clean-examples:
 	@$(MAKE) -k -s check-examples ACTION=clean
@@ -317,15 +323,27 @@ clean-%-test-suite:
 clean-ccache:
 	test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) -s clean)
 
+clean-docs: clean-docs-main clean-docs-ccache
+
+clean-docs-main:
+	@echo cleaning Docs
+	@test -d $(DOCS) || exit 0; cd $(DOCS) && $(MAKE) clean
+
+clean-docs-ccache:
+	@# Use distclean-docs-ccache, else a user requires the yodl tools to generate the docs after a clean
+
+maintainer-clean: clean-libfiles
+	@cd $(SOURCE) && $(MAKE) maintainer-clean
+
 #####################################################################
-# DISTCLEAN - clean what configure built
+# DISTCLEAN
 #####################################################################
 
-DISTCLEAN-DEAD = config.status config.log config.cache swig.spec Makefile mkmf.log libtool preinst-swig Lib/ocaml/swigp4.ml
+DISTCLEAN-DEAD = config.status config.log config.cache swig.spec Makefile mkmf.log libtool
 
-distclean-helper: distclean-test-suite distclean-examples distclean-dead
+distclean: clean-docs distclean-objects clean-examples distclean-test-suite distclean-dead distclean-ccache
 
-distclean: distclean-source distclean-ccache distclean-helper
+distclean-objects: distclean-source
 
 distclean-source:
 	@echo distcleaning Source
@@ -336,35 +354,14 @@ distclean-test-suite:
 	@echo distcleaning Examples/test-suite
 	@$(MAKE) -k -s check-test-suite ACTION=distclean NOSKIP=1
 
-distclean-examples:
-	@echo distcleaning Examples
-	@$(MAKE) -k -s clean-examples
-	@cd Examples && $(MAKE) -k -s distclean
-
 distclean-ccache:
-	@test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) -s distclean)
+	test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) -s distclean)
+
+distclean-docs-ccache:
+	@test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) distclean-docs)
 
 distclean-dead:
 	rm -f $(DISTCLEAN-DEAD)
-	rm -rf autom4te.cache
-
-#####################################################################
-# MAINTAINER CLEAN - clean what the maintainer builds and ships in
-# the distributed tarball - should not delete anything needed to run
-# ./configure && make
-#####################################################################
-
-maintainer-clean:
-	@echo maintainer-cleaning source
-	@cd $(SOURCE) && $(MAKE) -k -s maintainer-clean
-	@echo maintainer-cleaning CCache
-	@test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) -s maintainer-clean)
-	@echo maintainer-cleaning docs
-	@cd $(DOCS) && $(MAKE) -k -s maintainer-clean
-	@echo maintainer-cleaning Lib files
-	@rm -f $(srcdir)/Lib/swigwarn.swg
-	@echo distcleaning
-	@$(MAKE) -k -s distclean-helper
 
 #####################################################################
 # Update the Lib/swigwarn.swg file
@@ -401,7 +398,7 @@ install-main:
 	@$(INSTALL_PROGRAM) $(TARGET) $(DESTDIR)$(BIN_DIR)/`echo $(TARGET_NOEXE) | sed '$(transform)'`@EXEEXT@
 
 lib-languages = gcj typemaps tcl perl5 python guile java mzscheme ruby php ocaml octave \
-	pike chicken csharp modula3 allegrocl clisp lua cffi uffi r
+	pike chicken csharp modula3 allegrocl clisp lua cffi uffi r scilab
 
 lib-modules = std
 
@@ -436,7 +433,7 @@ install-lib:
 	done
 
 install-ccache:
-	@test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) -s install)
+	test -z "$(ENABLE_CCACHE)" || (cd $(CCACHE) && $(MAKE) install)
 
 
 #####################################################################

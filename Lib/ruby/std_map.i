@@ -345,8 +345,7 @@
     {
       Map::const_iterator i = $self->begin();
       Map::const_iterator e = $self->end();
-      const char *type_name = swig::type_name< Map >();
-      VALUE str = rb_str_new2( type_name );
+      VALUE str = rb_str_new2( swig::type_name< Map >() );
       str = rb_str_cat2( str, " {" );
       bool comma = false;
       VALUE tmp;

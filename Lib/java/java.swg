@@ -897,7 +897,6 @@
     SWIGTYPE, 
     SWIGTYPE *, 
     SWIGTYPE &, 
-    SWIGTYPE *const&, 
     SWIGTYPE [],
     SWIGTYPE (CLASS::*)
     ""
@@ -1026,19 +1025,22 @@
   }
 
 /* Pointer reference typemaps */
-%typemap(jni) SWIGTYPE *const& "jlong"
-%typemap(jtype) SWIGTYPE *const& "long"
-%typemap(jstype) SWIGTYPE *const& "$*javaclassname"
-%typemap(javain) SWIGTYPE *const& "$*javaclassname.getCPtr($javainput)"
-%typemap(javaout) SWIGTYPE *const& {
+%typemap(jni) SWIGTYPE *& "jlong"
+%typemap(jtype) SWIGTYPE *& "long"
+%typemap(jstype) SWIGTYPE *& "$*javaclassname"
+%typemap(javain) SWIGTYPE *& "$*javaclassname.getCPtr($javainput)"
+%typemap(javaout) SWIGTYPE *& {
     long cPtr = $jnicall;
     return (cPtr == 0) ? null : new $*javaclassname(cPtr, $owner);
   }
-%typemap(in) SWIGTYPE *const& ($*1_ltype temp = 0)
+%typemap(in) SWIGTYPE *& ($*1_ltype temp = 0)
 %{ temp = *($1_ltype)&$input;
-   $1 = ($1_ltype)&temp; %}
-%typemap(out) SWIGTYPE *const&
+   $1 = &temp; %}
+%typemap(out) SWIGTYPE *&
 %{ *($1_ltype)&$result = *$1; %} 
+
+/* Array reference typemaps */
+%apply SWIGTYPE & { SWIGTYPE ((&)[ANY]) }
 
 /* Typemaps used for the generation of proxy and type wrapper class code */
 %typemap(javabase)             SWIGTYPE, SWIGTYPE *, SWIGTYPE &, SWIGTYPE [], SWIGTYPE (CLASS::*) ""
@@ -1070,7 +1072,7 @@
   private long swigCPtr;
 
   PTRCTOR_VISIBILITY $javaclassname(long cPtr, boolean cMemoryOwn) {
-    super($imclassname.$javaclazznameSWIGUpcast(cPtr), cMemoryOwn);
+    super($imclassname.SWIG$javaclassnameUpcast(cPtr), cMemoryOwn);
     swigCPtr = cPtr;
   }
 
@@ -1083,7 +1085,7 @@
 /* Set the default for SWIGTYPE: pointer constructor is protected,
    getCPtr is protected. Season to your own taste! */
 
-SWIG_JAVABODY_METHODS(public, public, SWIGTYPE)
+SWIG_JAVABODY_METHODS(protected, protected, SWIGTYPE)
 
 // Typewrapper classes
 %typemap(javabody) SWIGTYPE *, SWIGTYPE &, SWIGTYPE [], SWIGTYPE (CLASS::*) %{
@@ -1130,7 +1132,7 @@ SWIG_JAVABODY_METHODS(public, public, SWIGTYPE)
  */
 
 %define SWIG_PROXY_CONSTRUCTOR(OWNERSHIP, WEAKREF, TYPENAME...)
-%typemap(javaconstruct,directorconnect="\n    $imclassname.$javaclazznamedirector_connect(this, swigCPtr, swigCMemOwn, WEAKREF);") TYPENAME {
+%typemap(javaconstruct,directorconnect="\n    $imclassname.$javaclassname_director_connect(this, swigCPtr, swigCMemOwn, WEAKREF);") TYPENAME {
     this($imcall, OWNERSHIP);$directorconnect
   }
 %enddef
@@ -1193,19 +1195,13 @@ SWIG_PROXY_CONSTRUCTOR(true, true, SWIGTYPE)
 #define %nojavaexception            %feature("except","0",throws="")
 #define %clearjavaexception         %feature("except","",throws="")
 
-%pragma(java) jniclassclassmodifiers="public class"
+%pragma(java) jniclassclassmodifiers="class"
 %pragma(java) moduleclassmodifiers="public class"
 
 /* Some ANSI C typemaps */
 
 %apply unsigned long { size_t };
 %apply const unsigned long & { const size_t & };
-
-/* Array reference typemaps */
-%apply SWIGTYPE & { SWIGTYPE ((&)[ANY]) }
-
-/* const pointers */
-%apply SWIGTYPE * { SWIGTYPE *const }
 
 /* java keywords */
 %include <javakw.swg>
