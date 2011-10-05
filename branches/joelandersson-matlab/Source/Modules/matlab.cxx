@@ -75,7 +75,7 @@ public:
    }
 #endif // 0
   virtual void main(int argc, char *argv[]) {
-    printf("I'm the Matlab module.\n");
+    printf("Running the Matlab module.\n");
 #if 0
     for (int i = 1; i < argc; i++) {
       if (argv[i]) {
@@ -113,13 +113,13 @@ public:
       global_name = NewString("cvar");
     if (!op_prefix)
       op_prefix = NewString("op_");
+#endif // 0
 
     SWIG_library_directory("matlab");
     Preprocessor_define("SWIGMATLAB 1", 0);
     SWIG_config_file("matlab.swg");
     SWIG_typemap_lang("matlab");
     allow_overloading();
-#endif // 0
   }
 
   virtual int top(Node *n) {
