@@ -201,14 +201,13 @@ public:
     Printf(s_global_tab, "\nstatic const struct swig_matlab_member swig_globals[] = {\n");
     Printf(f_init, "static void SWIG_init_user(matlab_swig_type* module_ns)\n{\n");
 
+#endif
     if (!CPlusPlus)
       Printf(f_header,"extern \"C\" {\n");
-#endif
     Language::top(n);
-#if 0
     if (!CPlusPlus)
       Printf(f_header,"}\n");
-
+#if 0
     if (Len(docs))
       emit_doc_texinfo();
 
@@ -398,14 +397,15 @@ public:
     return Language::importDirective(n);
   }
 
-  const char *get_implicitconv_flag(Node *n) {
+#endif
+const char *get_implicitconv_flag(Node *n) {
     int conv = 0;
     if (n && GetFlag(n, "feature:implicitconv")) {
       conv = 1;
     }
     return conv ? "SWIG_POINTER_IMPLICIT_CONV" : "0";
   }
-
+#if 0
   /* -----------------------------------------------------------------------------
    * addMissingParameterNames()
    *  For functions that have not had nameless parameters set in the Language class.
@@ -538,6 +538,7 @@ public:
     }
     return 0;
   }
+#endif
 
   virtual int functionWrapper(Node *n) {
     Wrapper *f = NewWrapper();
@@ -563,8 +564,8 @@ public:
 
     if (overloaded)
       Append(overname, Getattr(n, "sym:overname"));
-
-    Printv(f->def, "static matlab_value_list ", overname, " (const matlab_value_list& args, int nargout) {", NIL);
+    
+    Printv(f->def, "void ", overname, " (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){", NIL);
 
     emit_parameter_variables(l, f);
     emit_attach_parmmaps(l, f);
@@ -575,7 +576,7 @@ public:
     int varargs = emit_isvarargs(l);
     char source[64];
 
-    Printf(f->code, "if (!SWIG_check_num_args(\"%s\",args.length(),%i,%i,%i)) " 
+    Printf(f->code, "if (!SWIG_check_num_args(\"%s\",nrhs,%i,%i,%i)) " 
 	   "{\n SWIG_fail;\n }\n", iname, num_arguments, num_required, varargs);
 
     if (constructor && num_arguments == 1 && num_required == 1) {
@@ -588,7 +589,6 @@ public:
 	}
       }
     }
-
     for (j = 0, p = l; j < num_arguments; ++j) {
       while (checkAttribute(p, "tmap:in:numinputs", "0")) {
 	p = Getattr(p, "tmap:in:next");
@@ -712,10 +712,6 @@ public:
     Swig_director_emit_dynamic_cast(n, f);
     String *actioncode = emit_action(n);
 
-    Wrapper_add_local(f, "_out", "matlab_value_list _out");
-    Wrapper_add_local(f, "_outp", "matlab_value_list *_outp=&_out");
-    Wrapper_add_local(f, "_outv", "matlab_value _outv");
-
     // Return the function value
     if ((tm = Swig_typemap_lookup_out("out", n, "result", f, actioncode))) {
       Replaceall(tm, "$source", "result");
@@ -753,7 +749,6 @@ public:
     }
 
     Printf(f->code, "fail:\n");	// we should free locals etc if this happens
-    Printf(f->code, "return _out;\n");
     Printf(f->code, "}\n");
 
     Replaceall(f->code, "$symname", iname);
@@ -763,22 +758,24 @@ public:
     if (last_overload)
       dispatchFunction(n);
 
+#if 0
     if (!overloaded || last_overload) {
       process_autodoc(n);
       String *tname = texinfo_name(n);
       Printf(s_global_tab, "{\"%s\",%s,0,0,2,%s},\n", iname, wname, tname);
       Delete(tname);
     }
+#endif
 
     Delete(overname);
     Delete(wname);
     Delete(cleanup);
     Delete(outarg);
-
     return SWIG_OK;
   }
 
   void dispatchFunction(Node *n) {
+#if 0
     Wrapper *f = NewWrapper();
 
     String *iname = Getattr(n, "sym:name");
@@ -804,8 +801,10 @@ public:
     DelWrapper(f);
     Delete(dispatch);
     Delete(wname);
+#endif
   }
 
+#if 0
   virtual int variableWrapper(Node *n) {
     String *name = Getattr(n, "name");
     String *iname = Getattr(n, "sym:name");
