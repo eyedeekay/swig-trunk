@@ -33,14 +33,14 @@ Matlab Options (available with -matlab)\n\
 
 
 class MATLAB : public Language{
-private:
-#if 0
+protected:
   File *f_begin;
   File *f_runtime;
   File *f_header;
   File *f_doc;
   File *f_wrappers;
   File *f_init;
+#if 0
   File *f_initbeforefunc;
   File *f_directors;
   File *f_directors_h;
@@ -124,7 +124,6 @@ public:
 
   virtual int top(Node *n) {
       printf("Generating code.\n");
-#if 0
     {
       Node *mod = Getattr(n, "module");
       if (mod) {
@@ -158,21 +157,25 @@ public:
     f_doc = NewString("");
     f_wrappers = NewString("");
     f_init = NewString("");
+#if 0
     f_initbeforefunc = NewString("");
     f_directors_h = NewString("");
     f_directors = NewString("");
     s_global_tab = NewString("");
+#endif
     Swig_register_filebyname("begin", f_begin);
     Swig_register_filebyname("runtime", f_runtime);
     Swig_register_filebyname("header", f_header);
     Swig_register_filebyname("doc", f_doc);
     Swig_register_filebyname("wrapper", f_wrappers);
     Swig_register_filebyname("init", f_init);
+#if 0
     Swig_register_filebyname("initbeforefunc", f_initbeforefunc);
     Swig_register_filebyname("director", f_directors);
     Swig_register_filebyname("director_h", f_directors_h);
-
+#endif
     Swig_banner(f_begin);
+#if 0
 
     Printf(f_runtime, "\n");
     Printf(f_runtime, "#define SWIGMATLAB\n");
@@ -200,9 +203,9 @@ public:
 
     if (!CPlusPlus)
       Printf(f_header,"extern \"C\" {\n");
-
+#endif
     Language::top(n);
-
+#if 0
     if (!CPlusPlus)
       Printf(f_header,"}\n");
 
@@ -217,29 +220,36 @@ public:
 
     Printv(f_wrappers, s_global_tab, NIL);
     SwigType_emit_type_table(f_runtime, f_wrappers);
+#endif
     Dump(f_runtime, f_begin);
     Dump(f_header, f_begin);
     Dump(f_doc, f_begin);
+#if 0    
     if (directorsEnabled()) {
       Dump(f_directors_h, f_begin);
       Dump(f_directors, f_begin);
     }
+#endif
     Dump(f_wrappers, f_begin);
+#if 0    
     Dump(f_initbeforefunc, f_begin);
+#endif
     Wrapper_pretty_print(f_init, f_begin);
-
+#if 0
     Delete(s_global_tab);
     Delete(f_initbeforefunc);
+#endif
     Delete(f_init);
     Delete(f_wrappers);
     Delete(f_doc);
     Delete(f_header);
+#if 0    
     Delete(f_directors);
     Delete(f_directors_h);
+#endif
     Close(f_begin);
     Delete(f_runtime);
     Delete(f_begin);
-#endif // 0
     return SWIG_OK;
   }
 
