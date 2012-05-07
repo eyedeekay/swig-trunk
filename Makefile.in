@@ -75,6 +75,7 @@ skip-clisp	= test -n "@SKIP_CLISP@"
 skip-cffi	= test -n "@SKIP_CFFI@"
 skip-uffi	= test -n "@SKIP_UFFI@"
 skip-r		= test -n "@SKIP_R@"
+skip-c		= test -n "@SKIP_C@"
 skip-go		= test -n "@SKIP_GO@"
 skip-d		= test -n "@SKIP_D@"
 
@@ -117,6 +118,7 @@ check-aliveness:
 	@$(skip-cffi)     || ./$(TARGET) -cffi       -help
 	@$(skip-lua)      || ./$(TARGET) -lua        -help
 	@$(skip-r) 	  || ./$(TARGET) -r          -help
+	@$(skip-c) 	  || ./$(TARGET) -c          -help
 	@$(skip-go)	  || ./$(TARGET) -go         -help
 	@$(skip-d) 	  || ./$(TARGET) -d          -help
 
@@ -146,6 +148,7 @@ check-examples:					\
 	check-uffi-examples			\
 	check-cffi-examples			\
 	check-r-examples			\
+	check-c-examples			\
 	check-go-examples			\
 	check-d-examples
 
@@ -170,6 +173,7 @@ clisp_examples     :=
 uffi_examples      :=
 cffi_examples      :=
 r_examples         :=$(shell sed '/^\#/d' $(srcdir)/Examples/r/check.list)
+c_examples         :=$(shell sed '/^\#/d' $(srcdir)/Examples/c/check.list)
 go_examples        :=$(shell sed '/^\#/d' $(srcdir)/Examples/go/check.list)
 d_examples         :=$(shell sed '/^\#/d' $(srcdir)/Examples/d/check.list)
 
@@ -224,6 +228,7 @@ check-test-suite:				\
 	check-cffi-test-suite			\
 	check-chicken-test-suite		\
 	check-r-test-suite			\
+	check-c-test-suite			\
 	check-go-test-suite			\
 	check-d-test-suite
 
@@ -277,6 +282,7 @@ all-test-suite:					\
 	all-cffi-test-suite			\
 	all-chicken-test-suite			\
 	all-r-test-suite			\
+	all-c-test-suite			\
 	all-go-test-suite			\
 	all-d-test-suite
 
@@ -306,6 +312,7 @@ broken-test-suite:				\
 	broken-cffi-test-suite			\
 	broken-chicken-test-suite		\
 	broken-r-test-suite			\
+	broken-c-test-suite			\
 	broken-go-test-suite			\
 	broken-d-test-suite
 
@@ -424,7 +431,7 @@ install-main:
 	@$(INSTALL_PROGRAM) $(TARGET) $(DESTDIR)$(BIN_DIR)/`echo $(TARGET_NOEXE) | sed '$(transform)'`@EXEEXT@
 
 lib-languages = gcj typemaps tcl perl5 python guile java mzscheme ruby php ocaml octave \
-	pike chicken csharp modula3 allegrocl clisp lua cffi uffi r go d
+	pike chicken csharp modula3 allegrocl clisp lua cffi uffi r c go d
 
 lib-modules = std
 

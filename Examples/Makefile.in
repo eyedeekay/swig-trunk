@@ -1165,6 +1165,32 @@ r_clean:
 	rm -f $(RRSRC) runme.Rout .RData
 
 ##################################################################
+#####                           C                           ######
+##################################################################
+
+# ----------------------------------------------------------------
+# Build a C dynamically loadable module
+# ----------------------------------------------------------------
+
+CLIBPREFIX = lib
+C_LDSHARED = @C_LDSHARED@
+CXX_LDSHARED = @CXX_LDSHARED@
+C_SO = @C_SO@
+
+c: $(SRCS)
+	$(SWIG) -c $(SWIGOPT) $(INTERFACEPATH)
+	$(CC) -c $(CCSHARED) $(CFLAGS) $(ISRCS) $(SRCS) $(INCLUDES)
+	$(C_LDSHARED) $(CFLAGS) $(OBJS) $(IOBJS) $(LIBS) -o $(CLIBPREFIX)$(TARGET)$(C_SO)
+	
+c_cpp: $(SRCS)
+	$(SWIG) -c++ -c $(SWIGOPT) $(INTERFACEPATH)
+	$(CXX) -c $(CCSHARED) $(CXXFLAGS) $(ICXXSRCS) $(SRCS) $(CXXSRCS) $(INCLUDES)
+	$(CXX_LDSHARED) $(CFLAGS) $(OBJS) $(IOBJS) $(LIBS) $(CPP_DLLIBS) -o $(CLIBPREFIX)$(TARGET)$(C_SO)
+
+c_compile: $(RUNME) $(PROXY)
+	$(CC) $(RUNME) $(PROXY) -L. -l$(TARGET) -o $(RUNME:.c=)
+
+##################################################################
 #####                        Go                             ######
 ##################################################################
 
@@ -1299,3 +1325,4 @@ d_clean:
 	rm -f *_wrap* *~ .~* runme runme.exe `find . -name \*.d | grep -v runme.d`
 	rm -f core @EXTRA_CLEAN@
 	rm -f *.@OBJEXT@ *@SO@
+

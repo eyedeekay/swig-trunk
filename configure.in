@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl The macros which aren't shipped with the autotools are stored in the
 dnl Tools/config directory in .m4 files.
 
-AC_INIT([swig],[2.0.7],[http://www.swig.org])
+AC_INIT([swig],[2.0.6],[http://www.swig.org])
 
 dnl NB: When this requirement is increased to 2.60 or later, AC_PROG_SED
 dnl     definition below can be removed
@@ -2056,6 +2056,24 @@ fi
 
 AC_SUBST(RBIN)
 
+# C module on Mac OS X tweaks
+case $host in
+*-*-darwin*) 
+        C_LDSHARED="cc -dynamiclib"
+        CXX_LDSHARED="g++ -dynamiclib"
+        C_SO=".dylib"
+        ;;
+*)
+        C_LDSHARED='$(LDSHARED)'
+        CXX_LDSHARED='$(CXXSHARED)'
+        C_SO='$(SO)'
+        ;;
+esac
+
+AC_SUBST(C_LDSHARED)
+AC_SUBST(CXX_LDSHARED)
+AC_SUBST(C_SO)
+
 #----------------------------------------------------------------
 # Look for Go compilers
 #----------------------------------------------------------------
@@ -2082,12 +2100,9 @@ else
   if test -n "$GO" ; then
     if $GO --help 2>/dev/null | grep gccgo >/dev/null 2>&1 ; then
       GOGCC=true
-      AC_MSG_CHECKING([whether gccgo version is too old])
       go_version=`$GO --version | sed -e 's/[^0-9]* \([0-9.]*\) .*$/\1/' -e 's/[.]//g'`
       if test "$go_version" -lt 470; then
-        AC_MSG_RESULT([yes - minimum version is 4.7.0])
-      else
-	AC_MSG_RESULT([no])
+        AC_DEFINE(HAVE_GCCGO_46, 1, [Define if using gccgo before 4.7.0])
       fi
     elif test "`echo $GO | sed -e 's|.*/||'`" = "go"; then
       GO1=true
@@ -2346,6 +2361,12 @@ SKIP_UFFI=
 #fi
 AC_SUBST(SKIP_UFFI)
 
+SKIP_C=
+if test -x "$CC" || test -z "$CXX" ; then
+  SKIP_C="1"
+fi
+AC_SUBST(SKIP_C)
+
 SKIP_GO=
 if test -z "$GO" ; then
     SKIP_GO="1"
@@ -2445,6 +2466,7 @@ AC_CONFIG_FILES([			        \
     Examples/test-suite/cffi/Makefile		\
     Examples/test-suite/uffi/Makefile		\
     Examples/test-suite/r/Makefile		\
+    Examples/test-suite/c/Makefile		\
     Examples/test-suite/go/Makefile		\
     Lib/ocaml/swigp4.ml
 ])
