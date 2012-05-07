@@ -19,6 +19,8 @@ char cvsroot_python_cxx[] = "$Id$";
 static int treduce = SWIG_cparse_template_reduce(0);
 
 #include <ctype.h>
+#include <sstream>
+#include "../DoxygenTranslator/src/DoxygenTranslator.h"
 
 #define PYSHADOW_MEMBER  0x2
 #define WARN_PYTHON_MULTIPLE_INH 405
@@ -83,6 +85,7 @@ static int buildnone = 0;
 static int nobuildnone = 0;
 static int safecstrings = 0;
 static int dirvtable = 0;
+static int doxygen = 1;
 static int proxydel = 1;
 static int fastunpack = 0;
 static int fastproxy = 0;
@@ -117,6 +120,7 @@ Python Options (available with -python)\n\
      -classptr       - Generate shadow 'ClassPtr' as in older swig versions\n\
      -cppcast        - Enable C++ casting operators (default) \n\
      -dirvtable      - Generate a pseudo virtual table for directors for faster dispatch \n\
+	 -doxygen		 - Convert C++ doxygen comments to pydoc comments in proxy classes \n\
      -extranative    - Return extra native C++ wraps for std containers when possible \n\
      -fastinit       - Use fast init mechanism for classes (default)\n\
      -fastunpack     - Use fast unpack mechanism to parse the argument functions \n\
@@ -413,6 +417,9 @@ public:
 	  Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-dirvtable") == 0) {
 	  dirvtable = 1;
+	  Swig_mark_arg(i);
+	} else if (strcmp(argv[i], "-doxygen") == 0) {
+	  doxygen = 1;
 	  Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-nodirvtable") == 0) {
 	  dirvtable = 0;
@@ -3685,6 +3692,17 @@ public:
 	}
 
 	Printf(f_shadow, ":\n");
+
+	// translate and write pydoc comment if flagged
+	if (doxygen){
+	  String *doxygen_comments;
+	  if(DoxygenTranslator::getDocumentation(n, PyDoc, doxygen_comments)){
+	    Printf(f_shadow, Char(pythoncode(doxygen_comments, shadow_indent))); 
+	    Delete(doxygen_comments);
+	  }
+	}
+
+	// otherwise use default docstrings if requested
 	if (have_docstring(n)) {
 	  String *str = docstring(n, AUTODOC_CLASS, tab4);
 	  if (str && Len(str))
@@ -3962,11 +3980,25 @@ public:
 	    if (!fastproxy || olddefs) {
 	      Printv(f_shadow, tab4, "def ", symname, "(", parms, ")", returnTypeAnnotation(n), ":", NIL);
 	      Printv(f_shadow, " return ", funcCall(fullname, callParms), "\n", NIL);
+	      if (doxygen) {
+		String *doxygen_comments;
+		if (DoxygenTranslator::getDocumentation(n, PyDoc, doxygen_comments)) {
+		  Printf(f_shadow, Char(pythoncode(doxygen_comments, tab8))); 
+		  Delete(doxygen_comments);
+		}
+	      }
 	    }
 	  } else {
 	    Printv(f_shadow, tab4, "def ", symname, "(", parms, ")", returnTypeAnnotation(n), ":", NIL);
 	    Printv(f_shadow, "\n", NIL);
-	    if (have_docstring(n))
+	    if (doxygen) {
+	      String *doxygen_comments;
+	      if(DoxygenTranslator::getDocumentation(n, PyDoc, doxygen_comments)){
+		Printf(f_shadow, Char(pythoncode(doxygen_comments, tab8))); 
+		Delete(doxygen_comments);
+	      }
+	    }
+	    else if (have_docstring(n))
 	      Printv(f_shadow, tab8, docstring(n, AUTODOC_METHOD, tab8), "\n", NIL);
 	    if (have_pythonprepend(n)) {
 	      fproxy = 0;

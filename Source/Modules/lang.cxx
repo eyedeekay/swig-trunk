@@ -141,6 +141,12 @@ int Dispatcher::emit_one(Node *n) {
     ret = namespaceDeclaration(n);
   } else if (strcmp(tag, "template") == 0) {
     ret = templateDeclaration(n);
+  } 
+  /* ===============================================================
+   *  Doxygen Comment
+   * =============================================================== */  
+  else if (strcmp(tag, "doxycomm") == 0) {
+	    ret = doxygenComment(n);
   }
 
   /* ===============================================================
@@ -305,7 +311,9 @@ int Dispatcher::usingDeclaration(Node *n) {
 int Dispatcher::namespaceDeclaration(Node *n) {
   return defaultHandler(n);
 }
-
+int Dispatcher::doxygenComment(Node *n){
+  return defaultHandler(n);
+}
 
 /* Allocators */
 Language::Language():
@@ -1664,8 +1672,6 @@ int Language::enumvalueDeclaration(Node *n) {
 
 int Language::enumforwardDeclaration(Node *n) {
   (void) n;
-  if (GetFlag(n, "enumMissing"))
-    enumDeclaration(n); // Generate an empty enum in target language
   return SWIG_OK;
 }
 
@@ -2859,6 +2865,17 @@ int Language::usingDeclaration(Node *n) {
 /* Stubs. Language modules need to implement these */
 
 /* ----------------------------------------------------------------------
+ * Language::doxygenComment()
+ * ---------------------------------------------------------------------- */
+int Language::doxygenComment(Node *n){
+	
+	String *comment = Getattr(n, "comment");
+
+	return SWIG_OK;
+	
+}
+
+/* ----------------------------------------------------------------------
  * Language::constantWrapper()
  * ---------------------------------------------------------------------- */
 
@@ -3158,9 +3175,7 @@ Node *Language::enumLookup(SwigType *s) {
       n = Swig_symbol_clookup(base, stab);
       if (!n)
 	break;
-      if (Equal(nodeType(n), "enum"))
-	break;
-      if (Equal(nodeType(n), "enumforward") && GetFlag(n, "enumMissing"))
+      if (Strcmp(nodeType(n), "enum") == 0)
 	break;
       n = parentNode(n);
       if (!n)
