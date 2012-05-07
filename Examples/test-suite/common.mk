@@ -495,7 +495,6 @@ C_TEST_CASES += \
 	constant_expr \
 	empty \
 	enums \
-	enum_forward \
 	extern_declaration \
 	funcptr \
 	function_typedef \
