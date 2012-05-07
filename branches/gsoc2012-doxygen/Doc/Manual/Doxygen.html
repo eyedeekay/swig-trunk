@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>SWIG and Doxygen Translation</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body bgcolor="#FFFFFF">
+<H1><a name="Doxygen"></a>35 SWIG and Doxygen Translation</H1>
+<!-- INDEX -->
+<div class="sectiontoc">
+<ul>
+<li><a href="#Doxygen_translation_overview">Doxygen Translation Overview</a>
+<li><a href="#Doxygen_file_preparation">Preparations</a>
+<ul>
+<li><a href="#Doxygen_running_swig">Enabling Doxygen Translation</a>
+<li><a href="#Doxygen_additional_options">Additional Commandline Options</a>
+</ul>
+<li><a href="#Doxygen_to_javadoc">Doxygen To JavaDoc</a>
+<ul>
+<li><a href="#Doxygen_basic_example">Basic Example</a>
+<li><a href="#Doxygen_javadoc_tags">JavaDoc Tags</a>
+<li><a href="#Doxygen_other_tags">Other Tags</a>
+<li><a href="#Doxygen_bad_behaviour">Bad Behaviour</a>
+<li><a href="#Doxygen_further_details">Further Details</a>
+</ul>
+<li><a href="#Doxygen_developer_details">Developer Information</a>
+<ul>
+<li><a href="#Doxygen_module_design">Module Design</a>
+</ul>
+<li><a href="#Doxygen_language_extension">Extending to Other Languages</a>
+</ul>
+</div>
+<!-- INDEX -->
+
+
+
+<p>
+This chapter describes SWIG's support for translating Doxygen comments found in interface and header files into a target language's normal documentation language.
+Currently only JavaDoc is supported.
+</p>
+
+<H2><a name="Doxygen_translation_overview"></a>35.1 Doxygen Translation Overview</H2>
+
+
+<p>
+The Doxygen Translation Module of SWIG is an ongoing effort from a <A HREF ="http://code.google.com/soc/2008/">Google Summer of Code</A> proposal from Summer 2008.
+It adds an extra layer of functionality to SWIG, allowing automated translation of <A HREF= "http://www.stack.nl/~dimitri/doxygen/">Doxygen</A> formatted comments from input files into a documentation language more suited for the target language.
+Currently this module only translates into JavaDoc for the SWIG Java Module, but other extensions are to be added in time.
+</p>
+
+<p>
+Questions about running SWIG are best answered in the <a href="SWIG.html#SWIG">SWIG Basics</a> chapter as well as the target language modules. (For now, only <A href = "Java.html">Java</A>).
+The behaviour of this functionality is wildly unpredictable if the interface file is not proper to begin with!
+</p>
+
+<H2><a name="Doxygen_file_preparation"></a>35.2 Preparations</H2>
+
+
+<p>
+To make use of the comment translation system, your documentation comments must be in properly formatted <A HREF= "http://www.stack.nl/~dimitri/doxygen/">Doxygen.</A> They can be present in your main interface file or any header file that it imports.
+It is advised that you are certain your comments compile properly with Doxygen before you try to translate them.
+Doxygen itself is a deeper tool and can provide you better feedback for correcting any syntax errors that may be present.
+Please look at Doxygen's <A HREF = "http://www.stack.nl/~dimitri/doxygen/docblocks.html"> Documenting the code</A> for proper specificatons for comment format.
+</p>
+
+<div class="code"><pre>
+/*! This is describing class Shape
+ \author Bob
+ */
+
+class Shape {
+</pre></div>
+
+<p>
+Because this functionality is currently only extended to Java, you must be able to run SWIG's <A href = "Java.html">Java Module</A> in order to make use of this tool.
+</p>
+<H3><a name="Doxygen_running_swig"></a>35.2.1 Enabling Doxygen Translation</H3>
+
+
+<p>
+NOT YET ADDED (current development branch has this feature automatically enabled).
+</p>
+
+<H3><a name="Doxygen_additional_options"></a>35.2.2 Additional Commandline Options</H3>
+
+
+<p>
+ALSO TO BE ADDED (JavaDoc Autobrief?)
+</p>
+
+<H2><a name="Doxygen_to_javadoc"></a>35.3 Doxygen To JavaDoc</H2>
+
+
+<p>
+If translation is enabled, JavaDoc formatted comments should be automatically placed in the correct locations in the resulting module and proxy files.
+</p>
+
+<H3><a name="Doxygen_basic_example"></a>35.3.1 Basic Example</H3>
+
+
+<p>
+Here is an example segment from an included header file
+</p>
+<div class="code"><pre>
+/*! This is describing class Shape
+ \author Bob
+ */
+
+class Shape {
+public:
+  Shape() {
+    nshapes++;
+  }
+  virtual ~Shape() {
+    nshapes--;
+  };
+  double  x, y; /*!&lt; Important Variables */
+  void    move(double dx, double dy); /*!&lt; Moves the Shape */
+  virtual double area(void) = 0; /*!&lt; \return the area */
+  virtual double perimeter(void) = 0; /*!&lt; \return the perimeter */
+  static  int nshapes;
+};
+</pre></div>
+
+<p>
+Simply running SWIG should result in the following code being present in Shapes.java
+</p>
+
+<div class="targetlang"><pre>
+
+/**
+ * This is describing class Shape  
+ * 
+ * @author	Bob  
+ */
+
+public class Shape {
+
+...
+
+/**
+ * Important Variables  
+ * 
+ */
+  public void setX(double value) {
+    exampleJNI.Shape_x_set(swigCPtr, this, value);
+  }
+
+/**
+ * Important variables  
+ */
+  public double getX() {
+    return exampleJNI.Shape_x_get(swigCPtr, this);
+  }
+
+...
+
+/**
+ * @return	the area  
+ */
+  public double area() {
+    return exampleJNI.Shape_area(swigCPtr, this);
+  }
+
+/**
+ * @return	the perimeter  
+ */
+  public double perimeter() {
+    return exampleJNI.Shape_perimeter(swigCPtr, this);
+  }
+
+</pre></div>
+
+
+
+<p>
+The code Java-wise should be identical to what would have been generated without this feature enabled.
+When the Doxygen Translator Module encounters a comment it finds nothing useful in or cannot parse, it should not effect the functionality of the SWIG generated code.
+</p>
+
+
+<H3><a name="Doxygen_javadoc_tags"></a>35.3.2 JavaDoc Tags</H3>
+
+
+<p>
+Doxygen has a wealth of tags such as @latexonly that have no equivalent in JavaDoc.
+As a result several tags that have no translation (or particular use, such as some linking and section tags) are supressed.
+If you are interested in more of the specifics of JavaDoc, please visit <A HREF="http://java.sun.com/j2se/javadoc/writingdoccomments/">How to Write Doc Comments for the Javadoc Tool.</A>
+</p>
+
+<p>
+<b>Doxygen and JavaDoc Equivalent Tags</b>
+</p>
+<div class="diagram"><pre>
+* @param      
+* @return      
+* @exception   
+* @author      
+* @version     
+* @see         
+* @since       
+* @serial      
+* @deprecated  
+</pre></div>
+
+<H3><a name="Doxygen_other_tags"></a>35.3.3 Other Tags</H3>
+
+
+<p>
+Because there are no specific JavaDoc tags for some important information, some tags are given plain English descriptions of their presence, such as @bug.
+This is a feature currently still being developed and it is likely that more information from the original Doxygen Comments will be reproduced as this module matures.
+</p>
+<H3><a name="Doxygen_bad_behaviour"></a>35.3.4 Bad Behaviour</H3>
+
+
+<p>
+There are some tags that the Doxygen Translator Module currently does not expect to encounter.
+This includes the PHP-only Doxygen commands such as @publicsection:
+</p>
+
+<p>
+<b> Completely Unsupported Tags</b>
+</p>
+<div class="diagram"><pre>
+"annotatedclasslist", "classhierarchy", "define", "functionindex", 
+"header", "headerfilelist", "inherit", "l", "postheader", "private",
+ "privatesection", "protected", "protectedsection", "public", "publicsection"
+</pre></div>
+
+<p>
+The parsing behaviour will be unpredictable if any of these are encountered for now.
+This should eventually be changed so that they are simply ignored.
+</p>
+<p>
+In general parsing errors should not interfere with the operation of SWIG itself.
+Blank comments or lack of comments could be an indication of either a parsing error or a lack of meaningful tags in a specific blob of doxygen. 
+</p>
+
+
+<H3><a name="Doxygen_further_details"></a>35.3.5 Further Details</H3>
+
+
+<p>
+TO BE ADDED.
+</p>
+
+
+<H2><a name="Doxygen_developer_details"></a>35.4 Developer Information</H2>
+
+
+<p>
+Currently a good deal of this Module still needs some reworking, particularly on the side of the parser and JavaDoc producer.
+</p>
+
+<H3><a name="Doxygen_module_design"></a>35.4.1 Module Design</H3>
+
+
+<p>
+If this functionality is turned on, SWIG places all comments found into the SWIG parse tree.
+Nodes contain an additional attribute called DoxygenComment when a comment is present.
+Individual nodes containing Doxygen with Structural Indicators, such as @file, as their first command, are also present in the parse tree.
+These individual "blobs" of Doxygen such as :
+</p>
+<div class="code"><pre>
+/*! This is describing function Foo
+ \param x some random variable
+ \author Bob
+ \return Foo
+ */
+</pre></div>
+
+<p>
+are passed on individually to the DoxygenTranslator Module.
+This module builds its own private parse tree and hands it to a separate class for translation into the target documentation language.
+For example, <tt>JavaDocConverter</tt> is the JavaDoc module class.
+</p>
+
+<H2><a name="Doxygen_language_extension"></a>35.5 Extending to Other Languages</H2>
+
+
+<p>
+In general, an extension to another language requires a fairly deep understanding of the target language module, such as Modules/python.cxx for Python.
+Searching for "doxygen" in the java.cxx module can give you a good idea of the process for placing documentation comments into the correct areas.
+The basic gist is that anywhere a comment may reside on a node, there needs to be a catch for it in front of where that function, class, or other object is written out to a target language file.
+The other half of extension is building a target documentation language comment generator that handles one blob at a time.
+However, this is relatively simple and nowhere near as complex as the wrapper generating modules in SWIG.
+See DoxygenTranslator/JavaDocConverter.cpp for a good example.
+The target language module hands the DoxygenTranslator the blob to translate, and receives back a translated text.
+</p>
+<p>
+<b> What is given to the Doxygen Translator</b>
+</p>
+<div class="code"><pre>
+/*! This is describing function Foo
+ \param x some random variable
+ \author Bob
+ \return Foo
+ */
+</pre></div>
+<p>
+<b> What is received back by java.cxx </b>
+</p>
+<div class="targetlang"><pre>
+/** This is describing function Foo
+ *
+ * @param x some random variable
+ * @author Bob
+ * @return Foo
+ */
+</pre></div>
+<p> Development of the comment translator itself is simplified by the fact that the DoxygenTranslator module can easily include a <tt>main</tt> function and thus be developed, compiled, and tested independently of SWIG.
+</p>
+
+</body>
+</html>
