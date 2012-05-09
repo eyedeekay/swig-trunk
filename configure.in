@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl The macros which aren't shipped with the autotools are stored in the
 dnl Tools/config directory in .m4 files.
 
-AC_INIT([swig],[2.0.7],[http://www.swig.org])
+AC_INIT([swig],[2.0.6],[http://www.swig.org])
 
 dnl NB: When this requirement is increased to 2.60 or later, AC_PROG_SED
 dnl     definition below can be removed
@@ -960,6 +960,70 @@ AC_SUBST(OCTAVE_SO)
 AC_SUBST(OCTAVEDYNAMICLINKING)
 AC_SUBST(OCTAVELIB)
 AC_SUBST(OCTAVECCFLAGS)
+
+#----------------------------------------------------------------
+# Look for Scilab
+#----------------------------------------------------------------
+
+SCILABBIN=
+SCILABDYNAMICLINKING=
+
+
+AC_ARG_WITH(scilab, AS_HELP_STRING([--without-scilab], [Disable Scilab])
+AS_HELP_STRING([--with-scilab=path], [Set location of Scilab executable]),[SCILABBIN="$withval"], [SCILABBIN=yes])
+AC_ARG_WITH(scilabincl,[  --with-scilabincl=path  Set location of Scilab include directory],[SCILABINCDIR="$withval"], [SCILABINCDIR="/usr/include"])
+
+# First, check for "--without-scilab" or "--with-scilab=no".
+if test x"${SCILABBIN}" = xno -o x"${with_alllang}" = xno ; then 
+AC_MSG_NOTICE([Disabling Scilab])
+SCILAB=
+else
+
+# First figure out what the name of Scilab is
+
+if test "x$SCILABBIN" = xyes; then
+AC_CHECK_PROGS(SCILAB, scilab)
+else
+SCILAB="$SCILABBIN"
+fi
+
+
+AC_MSG_CHECKING(for Scilab header files)
+if test -n "$SCILAB"; then
+	if test "$SCILABINCDIR" != ""; then
+		dirs="$SCILABINCDIR"
+		SCILABEXT=""
+		for i in $dirs; do
+			if test -r $i/scilab/stack.h; then
+				SCILABEXT="$i"
+				break;
+			fi
+			if test -r $i/scilab/scialab/stack.h; then
+				SCILABEXT="$i/scilab"
+				break;
+			fi
+		done
+		if test "$SCILABEXT" = "" ; then
+			AC_MSG_RESULT(not found)
+		else
+			AC_MSG_RESULT($SCILABEXT)
+		fi
+
+		AC_MSG_CHECKING(for Scilab compiler options)
+ 		SCILABCCFLAGS=""
+		AC_MSG_RESULT($SCILABCCFLAGS)
+	fi
+else
+       	AC_MSG_RESULT(could not figure out how to run scilab)
+fi
+
+fi
+
+AC_SUBST(SCILAB)
+AC_SUBST(SCILABEEXT)
+AC_SUBST(SCILABDYNAMICLINKING)
+AC_SUBST(SCILABLIB)
+AC_SUBST(SCILABCCFLAGS)
 
 #----------------------------------------------------------------
 # Look for java
@@ -2082,12 +2146,9 @@ else
   if test -n "$GO" ; then
     if $GO --help 2>/dev/null | grep gccgo >/dev/null 2>&1 ; then
       GOGCC=true
-      AC_MSG_CHECKING([whether gccgo version is too old])
       go_version=`$GO --version | sed -e 's/[^0-9]* \([0-9.]*\) .*$/\1/' -e 's/[.]//g'`
       if test "$go_version" -lt 470; then
-        AC_MSG_RESULT([yes - minimum version is 4.7.0])
-      else
-	AC_MSG_RESULT([no])
+        AC_DEFINE(HAVE_GCCGO_46, 1, [Define if using gccgo before 4.7.0])
       fi
     elif test "`echo $GO | sed -e 's|.*/||'`" = "go"; then
       GO1=true
@@ -2346,6 +2407,12 @@ SKIP_UFFI=
 #fi
 AC_SUBST(SKIP_UFFI)
 
+SKIP_SCILAB=
+if test -z "$SCILAB"; then
+    SKIP_SCILAB="1"
+fi
+AC_SUBST(SKIP_SCILAB)
+
 SKIP_GO=
 if test -z "$GO" ; then
     SKIP_GO="1"
@@ -2445,6 +2512,7 @@ AC_CONFIG_FILES([			        \
     Examples/test-suite/cffi/Makefile		\
     Examples/test-suite/uffi/Makefile		\
     Examples/test-suite/r/Makefile		\
+    Examples/test-suite/scilab/Makefile		\
     Examples/test-suite/go/Makefile		\
     Lib/ocaml/swigp4.ml
 ])

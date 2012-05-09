@@ -1,0 +1,48 @@
+#######################################################################
+# Makefile for scilab test-suite
+#######################################################################
+
+LANGUAGE     = scilab
+SCILAB       = @SCILAB@
+SCRIPTSUFFIX = _runme.sci
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+top_builddir = @top_builddir@
+
+# Overridden variables here
+# None!
+# - member_funcptr_galore (C++)
+# - member_pointer (C++)
+# - typemap_variables (C++)
+
+include $(srcdir)/../common.mk
+
+# Rules for the different types of tests
+%.cpptest:
+	$(setup)
+	+$(swig_and_compile_cpp)
+	$(run_testcase)
+
+%.ctest:
+	$(setup)
+	+$(swig_and_compile_c)
+	$(run_testcase)
+
+%.multicpptest:
+	$(setup)
+	+$(swig_and_compile_multi_cpp)
+	$(run_testcase)
+
+# Runs the testcase. A testcase is only run if
+# a file is found which has _runme.sci appended after the testcase name.
+run_testcase = \
+	if [ -f $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ]; then ( \
+		env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH $(RUNTOOL) $(SCILAB) -nwni -nb -f $(srcdir)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ; ) \
+	fi; 
+
+# Clean: remove the generated .sci file
+%.clean:
+	@rm -f $*.sci *_wrap.c *.h *_wrap.cxx
+
+clean:
+	$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile scilab_clean

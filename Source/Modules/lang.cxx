@@ -1664,8 +1664,6 @@ int Language::enumvalueDeclaration(Node *n) {
 
 int Language::enumforwardDeclaration(Node *n) {
   (void) n;
-  if (GetFlag(n, "enumMissing"))
-    enumDeclaration(n); // Generate an empty enum in target language
   return SWIG_OK;
 }
 
@@ -3158,9 +3156,7 @@ Node *Language::enumLookup(SwigType *s) {
       n = Swig_symbol_clookup(base, stab);
       if (!n)
 	break;
-      if (Equal(nodeType(n), "enum"))
-	break;
-      if (Equal(nodeType(n), "enumforward") && GetFlag(n, "enumMissing"))
+      if (Strcmp(nodeType(n), "enum") == 0)
 	break;
       n = parentNode(n);
       if (!n)

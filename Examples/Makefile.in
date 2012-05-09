@@ -1165,6 +1165,73 @@ r_clean:
 	rm -f $(RRSRC) runme.Rout .RData
 
 ##################################################################
+#####                 SCILAB                                ######
+##################################################################
+
+# Make sure these locate your Scilab installation
+SCILAB_INCLUDE= $(DEFS) @SCILABINCLUDE@
+SCILAB_LIB    = @SCILABLIB@
+SCILAB        = @SCILAB@
+
+# ----------------------------------------------------------------
+# Build a C dynamically loadable module
+# ----------------------------------------------------------------
+
+scilab: $(SRCS)
+	@if test ! -z "$(SRCS)"; then \
+		if test ! -z "$(INCLUDES)"; then \
+			$(SWIG) -scilab -addsrc $(SRCS) -addcflag $(INCLUDES) $(SWIGOPT) $(INTERFACEPATH); \
+		else \
+			$(SWIG) -scilab -addsrc $(SRCS) $(SWIGOPT) $(INTERFACEPATH); \
+		fi \
+	else \
+		if test ! -z "$(INCLUDES)"; then \
+			$(SWIG) -scilab -addcflag $(INCLUDES) $(SWIGOPT) $(INTERFACEPATH); \
+		else \
+			$(SWIG) -scilab $(SWIGOPT) $(INTERFACEPATH); \
+		fi \
+	fi
+	@if [ -f builder.sce ]; then \
+	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f builder.sce; \
+	fi
+
+# ----------------------------------------------------------------
+# Build a C++ dynamically loadable module
+# ----------------------------------------------------------------
+
+scilab_cpp: $(SRCS)
+	@if test ! -z "$(SRCS)"; then \
+		if test ! -z "$(INCLUDES)"; then \
+			$(SWIG) -scilab -c++ -addsrc $(SRCS) -addcflag $(INCLUDES) $(SWIGOPT) $(INTERFACEPATH); \
+		else \
+			$(SWIG) -scilab -c++ -addsrc $(SRCS) $(SWIGOPT) $(INTERFACEPATH); \
+		fi \
+	else \
+		if test ! -z "$(INCLUDES)"; then \
+			$(SWIG) -scilab -c++ -addcflag $(INCLUDES) $(SWIGOPT) $(INTERFACEPATH); \
+		else \
+			$(SWIG) -scilab -c++ $(SWIGOPT) $(INTERFACEPATH); \
+		fi \
+	fi
+	@if [ -f builder.sce ]; then \
+	  env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f builder.sce; \
+	fi
+
+# ----------------------------------------------------------------- 
+# Running a Scilab example
+# ----------------------------------------------------------------- 
+
+scilab_run:
+	 @env LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH SCILABPATH=$(srcdir):$$SCILABPATH $(SCILAB) -nwni -nb -f runme.sci
+
+# -----------------------------------------------------------------
+# Cleaning the scilab examples
+# -----------------------------------------------------------------
+
+scilab_clean:
+	rm -f *.sce *.so lib*lib.c 
+
+##################################################################
 #####                        Go                             ######
 ##################################################################
 
