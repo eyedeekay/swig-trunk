@@ -1,0 +1,38 @@
+Below are the changes for the current release.
+See the CHANGES file for changes in older releases.
+See the RELEASENOTES file for a summary of changes in each release.
+
+Version 2.0.8 (in progress)
+===========================
+2012-06-27: wsfulton
+            Fix display of pointers in various places on 64 bit systems - only 32 bits were being shown.
+
+2012-06-27: wsfulton
+            Fix gdb debugger functions 'swigprint' and 'locswigprint' to display to the gdb output window
+            rather than stdout. This fixes display problems in gdbtui and the ensures the output
+            appears where expected in other gdb based debuggers such as Eclipse CDT.
+
+2012-07-20: kwwette
+            [Octave] segfault-on-exit prevention hack now preserves exit status, and uses C99 _Exit().
+
+2012-06-25: wsfulton
+            Fix using declarations combined with using directives so that types are correctly found in scope.
+            Example:
+
+              namespace Outer2 {
+                namespace Space2 {
+                  class Thing2 {};
+                }
+              }
+              using namespace Outer2; // using directive
+              using Space2::Thing2; // using declaration
+              void useit2(Thing2 t) {}
+
+2012-05-29: wsfulton
+            Fix #3529601 - seg fault when a protected method has the "director"
+            feature but the parent class does not. Also fix similar problems with
+            the allprotected feature.
+
+2012-05-28: wsfulton
+            Fix seg fault when attempting to warn about an illegal destructor - #3530055, 3530078 and #3530118.
+
