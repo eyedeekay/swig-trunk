@@ -28,7 +28,7 @@ class string;
 
 %typemap(in) string 
 %{ if(!$input) {
-     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null std::string");
      return $null;
     } 
     const char *$1_pstr = (const char *)jenv->GetStringUTFChars($input, 0); 
@@ -38,7 +38,7 @@ class string;
 
 %typemap(directorout) string 
 %{ if(!$input) {
-     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null std::string");
      return $null;
    } 
    const char *$1_pstr = (const char *)jenv->GetStringUTFChars($input, 0); 
@@ -73,24 +73,24 @@ class string;
 
 %typemap(in) const string &
 %{ if(!$input) {
-     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null std::string");
      return $null;
    }
    const char *$1_pstr = (const char *)jenv->GetStringUTFChars($input, 0); 
    if (!$1_pstr) return $null;
-   $*1_ltype $1_str($1_pstr);
+   std::string $1_str($1_pstr);
    $1 = &$1_str;
    jenv->ReleaseStringUTFChars($input, $1_pstr); %}
 
 %typemap(directorout,warning=SWIGWARN_TYPEMAP_THREAD_UNSAFE_MSG) const string &
 %{ if(!$input) {
-     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null std::string");
      return $null;
    }
    const char *$1_pstr = (const char *)jenv->GetStringUTFChars($input, 0); 
    if (!$1_pstr) return $null;
    /* possible thread/reentrant code problem */
-   static $*1_ltype $1_str;
+   static std::string $1_str;
    $1_str = $1_pstr;
    $result = &$1_str;
    jenv->ReleaseStringUTFChars($input, $1_pstr); %}

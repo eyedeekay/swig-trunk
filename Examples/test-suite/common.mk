@@ -78,6 +78,7 @@ INTERFACEDIR = $(top_srcdir)/$(EXAMPLES)/$(TEST_SUITE)/
 
 # Broken C++ test cases. (Can be run individually using: make testcase.cpptest)
 CPP_TEST_BROKEN += \
+    abstract_access \
 	constants \
 	cpp_broken \
 	exception_partial_info \
@@ -108,7 +109,6 @@ CPP_TEST_CASES += \
 	aggregate \
 	allowexcept \
 	allprotected \
-	allprotected_not \
 	anonymous_bitfield \
 	apply_signed_char \
 	apply_strings \
@@ -257,7 +257,6 @@ CPP_TEST_CASES += \
 	namespace_class \
 	namespace_enum \
 	namespace_extend \
-	namespace_forward_declaration \
 	namespace_nested \
 	namespace_spaces \
 	namespace_template \
@@ -370,8 +369,6 @@ CPP_TEST_CASES += \
 	template_inherit_abstract \
 	template_int_const \
 	template_methods \
-	template_namespace_forward_declaration \
-	template_using_directive_and_declaration_forward \
 	template_nested \
 	template_nested_typemaps \
 	template_ns \
@@ -434,7 +431,6 @@ CPP_TEST_CASES += \
 	typemap_ns_using \
 	typemap_numinputs \
 	typemap_template \
-	typemap_template_parm_typedef \
 	typemap_out_optimal \
 	typemap_qualifier_strip \
 	typemap_variables \
@@ -445,8 +441,6 @@ CPP_TEST_CASES += \
 	using1 \
 	using2 \
 	using_composition \
-	using_directive_and_declaration \
-	using_directive_and_declaration_forward \
 	using_extend \
 	using_inherit \
 	using_namespace \
@@ -478,11 +472,9 @@ CPP_STD_TEST_CASES += \
 	li_std_except \
 	li_std_map \
         li_std_pair \
-        li_std_pair_using \
 	li_std_string \
 	li_std_vector \
 	li_std_vector_enum \
-	li_std_vector_member_var\
 	naturalvar \
 	smart_pointer_inherit \
 	template_typedef_fnc \
@@ -504,7 +496,6 @@ C_TEST_CASES += \
 	constant_expr \
 	empty \
 	enums \
-	enum_forward \
 	extern_declaration \
 	funcptr \
 	function_typedef \
@@ -582,7 +573,7 @@ check: 	$(NOT_BROKEN_TEST_CASES)
 
 # partialcheck target runs SWIG only, ie no compilation or running of tests (for a subset of languages)
 partialcheck:
-	$(MAKE) check CC=true CXX=true LDSHARED=true CXXSHARED=true RUNTOOL=true COMPILETOOL=true
+	$(MAKE) check CC=true CXX=true LDSHARED=true CXXSHARED=true RUNTOOL=true COMPILETOOL=true C_LDSHARED=true CXX_LDSHARED=true
 
 broken: $(BROKEN_TEST_CASES)
 

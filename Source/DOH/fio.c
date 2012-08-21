@@ -490,7 +490,6 @@ int DohCopyto(DOH *in, DOH *out) {
       return nbytes;
     }
   }
-  return nbytes;
 }
 
 
@@ -589,5 +588,4 @@ DOH *DohReadline(DOH *in) {
     Putc(c, s);
     n++;
   }
-  return s;
 }

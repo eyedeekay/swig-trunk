@@ -49,14 +49,6 @@
        return *(swig::cgetpos(self, i));
      }
 
-     void add(value_type x) {
-       self->insert(x);
-     }
-
-     void discard(value_type x) {
-       self->erase(x);
-     }
-
   };
 %enddef
 

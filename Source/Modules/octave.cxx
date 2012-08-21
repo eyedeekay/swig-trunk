@@ -15,13 +15,16 @@ char cvsroot_octave_cxx[] = "$Id$";
 
 #include "swigmod.h"
 
+static bool global_load = true;
 static String *global_name = 0;
 static String *op_prefix   = 0;
 
 static const char *usage = (char *) "\
 Octave Options (available with -octave)\n\
+     -global         - Load all symbols into the global namespace [default]\n\
      -globals <name> - Set <name> used to access C global variables [default: 'cvar']\n\
-                       Use '.' to load C global variables into module namespace\n\
+                         - Use '.' to load C global variables into module namespace\n\
+     -noglobal       - Do not load all symbols into the global namespace\n\
      -opprefix <str> - Prefix <str> for global operator functions [default: 'op_']\n\
 \n";
 
@@ -47,16 +50,6 @@ private:
 
   Hash *docs;
 
-  void Octave_begin_function(Node *n, File *f, const_String_or_char_ptr cname, const_String_or_char_ptr wname, bool dld) {
-    if (dld) {
-      String *tname = texinfo_name(n, "std::string()");
-      Printf(f, "SWIG_DEFUN( %s, %s, %s ) {", cname, wname, tname);
-    }
-    else {
-      Printf(f, "static octave_value_list %s (const octave_value_list& args, int nargout) {", wname);
-    }
-  }
-
 public:
    OCTAVE():f_begin(0), f_runtime(0), f_header(0), f_doc(0), f_wrappers(0),
 	    f_init(0), f_initbeforefunc(0), f_directors(0), f_directors_h(0), 
@@ -80,13 +73,12 @@ public:
       if (argv[i]) {
 	if (strcmp(argv[i], "-help") == 0) {
 	  fputs(usage, stdout);
-	} else if (strcmp(argv[i], "-global") == 0 ||
-                   strcmp(argv[i], "-noglobal") == 0) {
-	  Printv(stderr,
-                 "*** -global/-noglobal are no longer supported\n"
-                 "*** global load behaviour is now determined at module load\n"
-                 "*** see the Perl section in the manual for details.\n", NIL);
-	  SWIG_exit(EXIT_FAILURE);
+	} else if (strcmp(argv[i], "-global") == 0) {
+          global_load = true;
+          Swig_mark_arg(i);
+	} else if (strcmp(argv[i], "-noglobal") == 0) {
+          global_load = false;
+          Swig_mark_arg(i);
 	} else if (strcmp(argv[i], "-globals") == 0) {
 	  if (argv[i + 1]) {
 	    global_name = NewString(argv[i + 1]);
@@ -177,8 +169,10 @@ public:
     Printf(f_runtime, "#define SWIG_name        %s\n", module);
 
     Printf(f_runtime, "\n");
+    Printf(f_runtime, "#define SWIG_global_load      %s\n", global_load ? "true" : "false");
     Printf(f_runtime, "#define SWIG_global_name      \"%s\"\n", global_name);
     Printf(f_runtime, "#define SWIG_op_prefix        \"%s\"\n", op_prefix);
+    Printf(f_runtime, "#define SWIG_atexit_func      swig_atexit_%s\n", module);
 
     if (directorsEnabled()) {
       Printf(f_runtime, "#define SWIG_DIRECTORS\n");
@@ -299,14 +293,14 @@ public:
     return !Len(synopsis) && !Len(decl_info) && 
       !Len(cdecl_info) && !Len(args_info);
   }
-  String *texinfo_name(Node* n, const char* defval = "0") {
+  String *texinfo_name(Node* n) {
     String *tname = NewString("");
     String *iname = Getattr(n, "sym:name");
     String *wname = Swig_name_wrapper(iname);
     Node* d = Getattr(docs, wname);
 
     if (is_empty_doc_node(d))
-      Printf(tname, defval);
+      Printf(tname, "0");
     else
       Printf(tname, "%s_texinfo", wname);
 
@@ -379,7 +373,7 @@ public:
   virtual int importDirective(Node *n) {
     String *modname = Getattr(n, "module");
     if (modname)
-      Printf(f_init, "feval(\"%s\",octave_value_list(),1);\n", modname);
+      Printf(f_init, "feval(\"%s\",octave_value_list(),0);\n", modname);
     return Language::importDirective(n);
   }
 
@@ -549,10 +543,7 @@ public:
     if (overloaded)
       Append(overname, Getattr(n, "sym:overname"));
 
-    if (!overloaded || last_overload)
-      process_autodoc(n);
-
-    Octave_begin_function(n, f->def, iname, overname, !overloaded);
+    Printv(f->def, "static octave_value_list ", overname, " (const octave_value_list& args, int nargout) {", NIL);
 
     emit_parameter_variables(l, f);
     emit_attach_parmmaps(l, f);
@@ -752,6 +743,7 @@ public:
       dispatchFunction(n);
 
     if (!overloaded || last_overload) {
+      process_autodoc(n);
       String *tname = texinfo_name(n);
       Printf(s_global_tab, "{\"%s\",%s,0,0,2,%s},\n", iname, wname, tname);
       Delete(tname);
@@ -774,7 +766,7 @@ public:
     String *dispatch = Swig_overload_dispatch(n, "return %s(args, nargout);", &maxargs);
     String *tmp = NewString("");
 
-    Octave_begin_function(n, f->def, iname, wname, true);
+    Printv(f->def, "static octave_value_list ", wname, " (const octave_value_list& args, int nargout) {", NIL);
     Wrapper_add_local(f, "argc", "int argc = args.length()");
     Printf(tmp, "octave_value_ref argv[%d]={", maxargs);
     for (int j = 0; j < maxargs; ++j)
@@ -808,10 +800,7 @@ public:
     String *getname = Swig_name_get(NSPACE_TODO, iname);
     String *setname = Swig_name_set(NSPACE_TODO, iname);
 
-    String *getwname = Swig_name_wrapper(getname);
-    String *setwname = Swig_name_wrapper(setname);
-
-    Octave_begin_function(n, setf->def, setname, setwname, true);
+    Printf(setf->def, "static octave_value_list _wrap_%s(const octave_value_list& args,int nargout) {", setname);
     Printf(setf->def, "if (!SWIG_check_num_args(\"%s_set\",args.length(),1,1,0)) return octave_value_list();", iname);
     if (is_assignable(n)) {
       Setattr(n, "wrap:name", setname);
@@ -837,7 +826,7 @@ public:
 
     Setattr(n, "wrap:name", getname);
     int addfail = 0;
-    Octave_begin_function(n, getf->def, getname, getwname, true);
+    Printf(getf->def, "static octave_value_list _wrap_%s(const octave_value_list& args,int nargout) {", getname);
     Wrapper_add_local(getf, "obj", "octave_value obj");
     if ((tm = Swig_typemap_lookup("varout", n, name, 0))) {
       Replaceall(tm, "$source", name);
@@ -856,10 +845,7 @@ public:
     Append(getf->code, "}\n");
     Wrapper_print(getf, f_wrappers);
 
-    Printf(s_global_tab, "{\"%s\",0,%s,%s,2,0},\n", iname, getwname, setwname);
-
-    Delete(getwname);
-    Delete(setwname);
+    Printf(s_global_tab, "{\"%s\",0,_wrap_%s,_wrap_%s,2,0},\n", iname, getname, setname);
 
     return SWIG_OK;
   }
@@ -951,21 +937,20 @@ public:
       String *nspace = Getattr(n, "sym:nspace");
       String *cname = Swig_name_disown(nspace, class_name);
       String *wcname = Swig_name_wrapper(cname);
-      String *cnameshdw = NewStringf("%s_shadow", cname);
-      String *wcnameshdw = Swig_name_wrapper(cnameshdw);
-      Octave_begin_function(n, f_wrappers, cnameshdw, wcnameshdw, true);
-      Printf(f_wrappers, "  if (args.length()!=1) {\n");
-      Printf(f_wrappers, "    error(\"disown takes no arguments\");\n");
-      Printf(f_wrappers, "    return octave_value_list();\n");
-      Printf(f_wrappers, "  }\n");
-      Printf(f_wrappers, "  %s (args, nargout);\n", wcname);
-      Printf(f_wrappers, "  return args;\n");
-      Printf(f_wrappers, "}\n");
-      Printf(s_members_tab, "{\"__disown\",%s,0,0,0,0},\n", wcnameshdw);
+      String *disown_shadow = NewString("");
+      Printf(disown_shadow, "static octave_value_list %s_shadow " "(const octave_value_list& args, int nargout) {\n", wcname);
+      Printf(disown_shadow, "  if (args.length()!=1) {\n");
+      Printf(disown_shadow, "    error(\"disown takes no arguments\");\n");
+      Printf(disown_shadow, "    return octave_value_list();\n");
+      Printf(disown_shadow, "  }\n");
+      Printf(disown_shadow, "  %s (args, nargout);\n", wcname);
+      Printf(disown_shadow, "  return args;\n");
+      Printf(disown_shadow, "}\n");
+      Printv(f_wrappers, disown_shadow, NIL);
+      Delete(disown_shadow);
+      Printf(s_members_tab, "{\"__disown\",%s_shadow,0,0,0,0},\n", wcname);
       Delete(wcname);
       Delete(cname);
-      Delete(wcnameshdw);
-      Delete(cnameshdw);
     }
 
     Printf(s_members_tab, "{0,0,0,0}\n};\n");
@@ -1064,18 +1049,15 @@ public:
     assert(s_members_tab);
     assert(class_name);
     String *symname = Getattr(n, "sym:name");
-    String *getname = Swig_name_get(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname));
-    String *setname = Swig_name_set(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname));
-    String *getwname = Swig_name_wrapper(getname);
-    String *setwname = GetFlag(n, "feature:immutable") ? NewString("octave_set_immutable") : Swig_name_wrapper(setname);
+    String *getname = Swig_name_wrapper(Swig_name_get(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname)));
+    String *setname = GetFlag(n, "feature:immutable") ?
+	NewString("octave_set_immutable") : Swig_name_wrapper(Swig_name_set(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname)));
     assert(s_members_tab);
 
-    Printf(s_members_tab, "{\"%s\",0,%s,%s,0,0},\n", symname, getwname, setwname);
+    Printf(s_members_tab, "{\"%s\",0,%s,%s,0,0},\n", symname, getname, setname);
 
     Delete(getname);
     Delete(setname);
-    Delete(getwname);
-    Delete(setwname);
     return SWIG_OK;
   }
 
@@ -1150,18 +1132,15 @@ public:
       assert(s_members_tab);
       assert(class_name);
       String *symname = Getattr(n, "sym:name");
-      String *getname = Swig_name_get(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname));
-      String *setname = Swig_name_set(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname));
-      String *getwname = Swig_name_wrapper(getname);
-      String *setwname = GetFlag(n, "feature:immutable") ? NewString("octave_set_immutable") : Swig_name_wrapper(setname);
+      String *getname = Swig_name_wrapper(Swig_name_get(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname)));
+      String *setname = GetFlag(n, "feature:immutable") ?
+	  NewString("octave_set_immutable") : Swig_name_wrapper(Swig_name_set(NSPACE_TODO, Swig_name_member(NSPACE_TODO, class_name, symname)));
       assert(s_members_tab);
 
-      Printf(s_members_tab, "{\"%s\",0,%s,%s,1,0},\n", symname, getwname, setwname);
+      Printf(s_members_tab, "{\"%s\",0,%s,%s,1,0},\n", symname, getname, setname);
 
       Delete(getname);
       Delete(setname);
-      Delete(getwname);
-      Delete(setwname);
     }
     return SWIG_OK;
   }

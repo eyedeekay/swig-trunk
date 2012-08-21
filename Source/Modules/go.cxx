@@ -13,15 +13,21 @@ char cvsroot_go_cxx[] = "$Id";
 #include "cparse.h"
 #include <ctype.h>
 
+#ifdef HAVE_GCCGO_46
+ #define GCCGO_46_DEFAULT true
+#else
+ #define GCCGO_46_DEFAULT false
+#endif
+
 class GO:public Language {
   static const char *const usage;
 
   // Go package name.
   String *package;
-  // SWIG module name.
-  String *module;
   // Flag for generating gccgo output.
   bool gccgo_flag;
+  // Flag for generating gccgo 4.6 output.
+  bool gccgo_46_flag;
   // Prefix to use with gccgo.
   String *go_prefix;
   // Name of shared library to import.
@@ -83,8 +89,8 @@ class GO:public Language {
 
 public:
   GO():package(NULL),
-     module(NULL),
      gccgo_flag(false),
+     gccgo_46_flag(GCCGO_46_DEFAULT),
      go_prefix(NULL),
      soname(NULL),
      long_type_size(32),
@@ -142,6 +148,12 @@ private:
 	} else if (strcmp(argv[i], "-gccgo") == 0) {
 	  Swig_mark_arg(i);
 	  gccgo_flag = true;
+	} else if (strcmp(argv[i], "-gccgo-46") == 0) {
+	  Swig_mark_arg(i);
+	  gccgo_46_flag = true;
+	} else if (strcmp(argv[i], "-no-gccgo-46") == 0) {
+	  Swig_mark_arg(i);
+	  gccgo_46_flag = false;
 	} else if (strcmp(argv[i], "-go-prefix") == 0) {
 	  if (argv[i + 1]) {
 	    go_prefix = NewString(argv[i + 1]);
@@ -238,7 +250,7 @@ private:
       allow_allprotected(GetFlag(optionsnode, "allprotected"));
     }
 
-    module = Getattr(n, "name");
+    String *module = Getattr(n, "name");
     if (!package) {
       package = Copy(module);
     }
@@ -329,8 +341,6 @@ private:
 
     Swig_banner(f_c_begin);
 
-    Printf(f_c_runtime, "#define SWIGMODULE %s\n", module);
-
     if (directorsEnabled()) {
       Printf(f_c_runtime, "#define SWIG_DIRECTORS\n");
 
@@ -353,15 +363,6 @@ private:
     // Output module initialization code.
 
     Printf(f_go_begin, "\npackage %s\n\n", package);
-
-    Printf(f_go_runtime, "//extern %sSwigCgocall\n", module);
-    Printf(f_go_runtime, "func SwigCgocall()\n");
-    Printf(f_go_runtime, "//extern %sSwigCgocallDone\n", module);
-    Printf(f_go_runtime, "func SwigCgocallDone()\n");
-    Printf(f_go_runtime, "//extern %sSwigCgocallBack\n", module);
-    Printf(f_go_runtime, "func SwigCgocallBack()\n");
-    Printf(f_go_runtime, "//extern %sSwigCgocallBackDone\n", module);
-    Printf(f_go_runtime, "func SwigCgocallBackDone()\n\n");
 
     // All the C++ wrappers should be extern "C".
 
@@ -793,7 +794,7 @@ private:
     if (needs_wrapper) {
       wrapper_name = buildGoWrapperName(name, overname);
 
-      if (gccgo_flag) {
+      if (gccgo_flag && !gccgo_46_flag) {
 	Printv(f_go_wrappers, "//extern ", go_prefix, "_", wname, "\n", NULL);
       }
 
@@ -844,12 +845,16 @@ private:
 	}
       }
 
+      if (gccgo_flag && gccgo_46_flag) {
+	Printv(f_go_wrappers, " __asm__ (\"", go_prefix, "_", wname, "\")", NULL);
+      }
+
       Printv(f_go_wrappers, "\n\n", NULL);
     }
 
     // Start defining the Go function.
 
-    if (!needs_wrapper && gccgo_flag) {
+    if (!needs_wrapper && gccgo_flag && !gccgo_46_flag) {
       Printv(f_go_wrappers, "//extern ", go_prefix, "_", wname, "\n", NULL);
     }
 
@@ -954,33 +959,14 @@ private:
 	}
       }
 
-      if (gccgo_flag) {
-	if (!is_constructor) {
-	  Printv(f_go_wrappers, "\tdefer SwigCgocallDone()\n", NULL);
-	  Printv(f_go_wrappers, "\tSwigCgocall()\n", NULL);
-	} else {
-	  // For a constructor the wrapper function will return a
-	  // uintptr but we will return an interface.  We want to
-	  // convert the uintptr to the interface after calling
-	  // SwigCgocallDone, so that we don't try to allocate memory
-	  // while the Go scheduler can't see us.
-	  Printv(f_go_wrappers, "\tvar done bool\n", NULL);
-	  Printv(f_go_wrappers, "\tdefer func() {\n", NULL);
-	  Printv(f_go_wrappers, "\t\tif !done {\n", NULL);
-	  Printv(f_go_wrappers, "\t\t\tSwigCgocallDone()\n", NULL);
-	  Printv(f_go_wrappers, "\t\t}\n", NULL);
-	  Printv(f_go_wrappers, "\t}()\n", NULL);
-	  Printv(f_go_wrappers, "\tSwigCgocall()\n", NULL);
-	}
+      if (gccgo_flag && !gccgo_46_flag) {
+	Printv(f_go_wrappers, "\tsyscall.Entersyscall()\n", NULL);
+	Printv(f_go_wrappers, "\tdefer syscall.Exitsyscall()\n", NULL);
       }
 
       Printv(f_go_wrappers, "\t", NULL);
       if (SwigType_type(result) != T_VOID) {
-	if (gccgo_flag && is_constructor) {
-	  Printv(f_go_wrappers, "swig_r := ", NULL);
-	} else {
-	  Printv(f_go_wrappers, "return ", NULL);
-	}
+	Printv(f_go_wrappers, "return ", NULL);
       }
 
       Printv(f_go_wrappers, wrapper_name, "(", NULL);
@@ -1016,14 +1002,11 @@ private:
 	p = nextParm(p);
       }
       Printv(f_go_wrappers, ")\n", NULL);
-
-      if (gccgo_flag && is_constructor) {
-	Printv(f_go_wrappers, "\tSwigCgocallDone()\n", NULL);
-	Printv(f_go_wrappers, "\tdone = true\n", NULL);
-	Printv(f_go_wrappers, "\treturn swig_r\n", NULL);
-      }
-
       Printv(f_go_wrappers, "}\n", NULL);
+    } else {
+      if (gccgo_flag && gccgo_46_flag) {
+	Printv(f_go_wrappers, " __asm__ (\"", go_prefix, "_", wname, "\")\n", NULL);
+      }
     }
 
     Printv(f_go_wrappers, "\n", NULL);
@@ -2128,7 +2111,7 @@ private:
     }
 
     int flags = Extend | SmartPointer | use_naturalvar_mode(var);
-    if (isNonVirtualProtectedAccess(var)) {
+    if (is_non_virtual_protected_access(var)) {
       flags |= CWRAP_ALL_PROTECTED_ACCESS;
     }
 
@@ -2539,7 +2522,7 @@ private:
     if (!is_ignored) {
       // Declare the C++ wrapper.
 
-      if (gccgo_flag) {
+      if (gccgo_flag && !gccgo_46_flag) {
 	Printv(f_go_wrappers, "//extern ", go_prefix, "_", wname, "\n", NULL);
       }
 
@@ -2558,7 +2541,13 @@ private:
 	p = nextParm(p);
       }
 
-      Printv(f_go_wrappers, ") ", go_type_name, "\n\n", NULL);
+      Printv(f_go_wrappers, ") ", go_type_name, NULL);
+
+      if (gccgo_flag && gccgo_46_flag) {
+	Printv(f_go_wrappers, " __asm__(\"", go_prefix, "_", wname, "\")", NULL);
+      }
+
+      Printv(f_go_wrappers, "\n\n", NULL);
 
       Printv(f_go_wrappers, "func ", func_with_over_name, "(v interface{}", NULL);
 
@@ -2577,9 +2566,9 @@ private:
 
       Printv(f_go_wrappers, "\tp := &", director_struct_name, "{0, v}\n", NULL);
 
-      if (gccgo_flag) {
-	Printv(f_go_wrappers, "\tdefer SwigCgocallDone()\n", NULL);
-	Printv(f_go_wrappers, "\tSwigCgocall()\n", NULL);
+      if (gccgo_flag && !gccgo_46_flag) {
+	Printv(f_go_wrappers, "\tsyscall.Entersyscall()\n", NULL);
+	Printv(f_go_wrappers, "\tdefer syscall.Exitsyscall()\n", NULL);
       }
 
       Printv(f_go_wrappers, "\tp.", class_receiver, " = ", fn_name, NULL);
@@ -3037,7 +3026,7 @@ private:
 
       String *upcall_gc_name = buildGoWrapperName(upcall_name, overname);
 
-      if (gccgo_flag) {
+      if (gccgo_flag && !gccgo_46_flag) {
 	Printv(f_go_wrappers, "//extern ", go_prefix, "_", upcall_wname, "\n", NULL);
       }
 
@@ -3058,6 +3047,10 @@ private:
 	String *tm = goWrapperType(n, result, true);
 	Printv(f_go_wrappers, " ", tm, NULL);
 	Delete(tm);
+      }
+
+      if (gccgo_flag && gccgo_46_flag) {
+	Printv(f_go_wrappers, " __asm__(\"", go_prefix, "_", upcall_wname, "\")", NULL);
       }
 
       Printv(f_go_wrappers, "\n", NULL);
@@ -3089,6 +3082,11 @@ private:
 
       Printv(f_go_wrappers, " {\n", NULL);
 
+      if (gccgo_flag && !gccgo_46_flag) {
+	Printv(f_go_wrappers, "\tsyscall.Entersyscall()\n", NULL);
+	Printv(f_go_wrappers, "\tdefer syscall.Exitsyscall()\n", NULL);
+      }
+
       Printv(f_go_wrappers, "\tif swig_g, swig_ok := swig_p.v.(", interface_name, "); swig_ok {\n", NULL);
       Printv(f_go_wrappers, "\t\t", NULL);
       if (SwigType_type(result) != T_VOID) {
@@ -3111,12 +3109,6 @@ private:
 	Printv(f_go_wrappers, "\t\treturn\n", NULL);
       }
       Printv(f_go_wrappers, "\t}\n", NULL);
-
-      if (gccgo_flag) {
-	Printv(f_go_wrappers, "\tdefer SwigCgocallDone()\n", NULL);
-	Printv(f_go_wrappers, "\tSwigCgocall()\n", NULL);
-      }
-
       Printv(f_go_wrappers, "\t", NULL);
       if (SwigType_type(result) != T_VOID) {
 	Printv(f_go_wrappers, "return ", NULL);
@@ -3262,9 +3254,9 @@ private:
 
       Printv(f_go_wrappers, " {\n", NULL);
 
-      if (gccgo_flag) {
-	Printv(f_go_wrappers, "\tdefer SwigCgocallDone()\n", NULL);
-	Printv(f_go_wrappers, "\tSwigCgocall()\n", NULL);
+      if (gccgo_flag && !gccgo_46_flag) {
+	Printv(f_go_wrappers, "\tsyscall.Entersyscall()\n", NULL);
+	Printv(f_go_wrappers, "\tdefer syscall.Exitsyscall()\n", NULL);
       }
 
       Printv(f_go_wrappers, "\t", NULL);
@@ -3309,9 +3301,9 @@ private:
       }
       Printv(f_go_wrappers, "{\n", NULL);
 
-      if (gccgo_flag) {
-	Printv(f_go_wrappers, "\tSwigCgocallBack()\n", NULL);
-	Printv(f_go_wrappers, "\tdefer SwigCgocallBackDone()\n", NULL);
+      if (gccgo_flag && !gccgo_46_flag) {
+	Printv(f_go_wrappers, "\tsyscall.Exitsyscall()\n", NULL);
+	Printv(f_go_wrappers, "\tdefer syscall.Entersyscall()\n", NULL);
       }
 
       Printv(f_go_wrappers, "\t", NULL);
@@ -3742,9 +3734,9 @@ private:
     if (is_constructor) {
       assert(!is_upcall);
       if (!is_director) {
-	all_result = Copy(Getattr(class_node, "classtypeobj"));
+	all_result = Getattr(class_node, "classtypeobj");
       } else {
-	all_result = Copy(director_struct);
+	all_result = director_struct;
       }
       mismatch = false;
     } else {
@@ -4400,7 +4392,7 @@ private:
 	ret = exportedName(ret);
 
 	Node *cnmod = Getattr(cn, "module");
-	if (!cnmod || Strcmp(Getattr(cnmod, "name"), module) == 0) {
+	if (!cnmod || Strcmp(Getattr(cnmod, "name"), package) == 0) {
 	  Setattr(undefined_types, t, t);
 	} else {
 	  String *nw = NewString("");
@@ -4582,7 +4574,7 @@ private:
       }
       ex = exportedName(cname);
       Node *cnmod = Getattr(cn, "module");
-      if (!cnmod || Strcmp(Getattr(cnmod, "name"), module) == 0) {
+      if (!cnmod || Strcmp(Getattr(cnmod, "name"), package) == 0) {
 	if (add_to_hash) {
 	  Setattr(undefined_types, ty, ty);
 	}

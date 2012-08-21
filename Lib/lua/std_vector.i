@@ -7,7 +7,7 @@
 %{
 #include <vector>
 %}
-%include <std_except.i> // the general exceptions
+%include <std_except.i> // the general exepctions
 /*
 A really cut down version of the vector class.
 

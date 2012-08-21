@@ -227,6 +227,31 @@ String *Swig_name_member(const_String_or_char_ptr nspace, const_String_or_char_p
 }
 
 /* -----------------------------------------------------------------------------
+ * Swig_name_proxy()
+ *
+ * Returns the name of a proxy function.
+ * ----------------------------------------------------------------------------- */
+
+String *Swig_name_proxy(const_String_or_char_ptr nspace, const_String_or_char_ptr fname) {
+  String *r;
+  String *f;
+
+  r = NewStringEmpty();
+  if (!naming_hash)
+    naming_hash = NewHash();
+  f = Getattr(naming_hash, "proxyname");
+  if (!f) {
+    Append(r, "%n_%v");
+  } else {
+    Append(r, f);
+  }
+  Replace(r, (nspace ? "%n" : "%n_"), nspace, DOH_REPLACE_ANY);
+  Replace(r, "%v", fname, DOH_REPLACE_ANY);
+  name_mangle(r);
+  return r;
+}
+
+/* -----------------------------------------------------------------------------
  * Swig_name_get()
  *
  * Returns the name of the accessor function used to get a variable.
@@ -883,15 +908,12 @@ List *Swig_name_rename_list() {
 int Swig_need_name_warning(Node *n) {
   int need = 1;
   /* 
-     We don't use name warnings for:
+     we don't use name warnings for:
      - class forwards, no symbol is generated at the target language.
      - template declarations, only for real instances using %template(name).
-     - typedefs, have no effect at the target language.
-     - using declarations and using directives, have no effect at the target language.
+     - typedefs, they have no effect at the target language.
    */
   if (checkAttribute(n, "nodeType", "classforward")) {
-    need = 0;
-  } else if (checkAttribute(n, "nodeType", "using")) {
     need = 0;
   } else if (checkAttribute(n, "storage", "typedef")) {
     need = 0;

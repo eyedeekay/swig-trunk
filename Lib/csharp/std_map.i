@@ -215,13 +215,12 @@
 %}
 
   public:
-    typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
-    typedef K key_type;
-    typedef T mapped_type;
-
     map();
     map(const map< K, T > &other);
+
+    typedef K key_type;
+    typedef T mapped_type;
+    typedef size_t size_type;
     size_type size() const;
     bool empty() const;
     %rename(Clear) clear;

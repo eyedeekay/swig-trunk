@@ -3493,7 +3493,6 @@ public:
 
     if (returntype) {
 
-      Delete(qualified_return);
       qualified_return = SwigType_rcaststr(returntype, "c_result");
 
       if (!is_void && !ignored_method) {
@@ -3656,6 +3655,8 @@ public:
 	    if (!ignored_method)
 	      Printf(w->code, "%s\n", tm);
 
+	  Delete(tm);
+
 	  /* Add C type to callback typedef */
 	  if (i > 0)
 	    Printf(callback_typedef_parms, ", ");
@@ -3727,6 +3728,7 @@ public:
       Delete(ln);
       Delete(arg);
       Delete(c_decl);
+      Delete(c_param_type);
     }
 
     /* header declaration, start wrapper definition */
@@ -3896,6 +3898,7 @@ public:
     }
 
     Delete(qualified_return);
+    Delete(c_ret_type);
     Delete(declaration);
     Delete(callback_typedef_parms);
     Delete(delegate_parms);

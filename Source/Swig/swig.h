@@ -227,7 +227,6 @@ extern "C" {
   extern void Swig_symbol_cadd(const_String_or_char_ptr symname, Node *node);
   extern Node *Swig_symbol_clookup(const_String_or_char_ptr symname, Symtab *tab);
   extern Node *Swig_symbol_clookup_check(const_String_or_char_ptr symname, Symtab *tab, int (*check) (Node *));
-  extern Node *Swig_symbol_clookup_no_inherit(const_String_or_char_ptr name, Symtab *n);
   extern Symtab *Swig_symbol_cscope(const_String_or_char_ptr symname, Symtab *tab);
   extern Node *Swig_symbol_clookup_local(const_String_or_char_ptr symname, Symtab *tab);
   extern Node *Swig_symbol_clookup_local_check(const_String_or_char_ptr symname, Symtab *tab, int (*check) (Node *));
@@ -266,6 +265,7 @@ extern int        ParmList_is_compactdefargs(ParmList *p);
   extern String *Swig_name_mangle(const_String_or_char_ptr s);
   extern String *Swig_name_wrapper(const_String_or_char_ptr fname);
   extern String *Swig_name_member(const_String_or_char_ptr nspace, const_String_or_char_ptr classname, const_String_or_char_ptr membername);
+  extern String *Swig_name_proxy(const_String_or_char_ptr nspace, const_String_or_char_ptr fname);
   extern String *Swig_name_get(const_String_or_char_ptr nspace, const_String_or_char_ptr vname);
   extern String *Swig_name_set(const_String_or_char_ptr nspace, const_String_or_char_ptr vname);
   extern String *Swig_name_construct(const_String_or_char_ptr nspace, const_String_or_char_ptr classname);
