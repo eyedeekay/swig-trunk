@@ -1,5 +1,5 @@
 /* Small change to the standard carrays.i
-renaming the field to __getitem & __setitem
+renaming the field to __getitem__ & __setitem__ 
 for operator[] access
 */
 %rename(__getitem) *::getitem; // the v=X[i] (get operator)

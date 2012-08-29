@@ -1903,8 +1903,6 @@ int R::functionWrapper(Node *n) {
 	       "\n};\n",
 	       "if(is(", name, ", \"NativeSymbolInfo\")) {\n",
 	       name, " = ", name, "$address", ";\n}\n",
-	       "if(is(", name, ", \"ExternalReference\")) {\n",
-	       name, " = ", name, "@ref;\n}\n",
 	       "}; \n",
 	       NIL);
       } else {
@@ -2453,6 +2451,7 @@ int R::generateCopyRoutines(Node *n) {
     }
     String *elKind = Getattr(c, "kind");
     if (Strcmp(elKind, "variable") != 0) {
+      Delete(elKind);
       continue;
     }
 

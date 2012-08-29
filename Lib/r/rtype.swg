@@ -4,9 +4,24 @@
  */
 
 %typemap("rtype") int, int *, int &      "integer";
+%apply int {size_t}
+%apply int {std::size_t}
+%apply int {ptrdiff_t}
+%apply int {std::ptrdiff_t}
+%apply int {signed int}
+%apply int {unsigned int}
+%apply int {short}
+%apply int {unsigned short}
+
 %typemap("rtype") long, long *, long &      "integer";
-%typemap("rtype") float, float*, float & "numeric";
+%apply long {long long}
+%apply long {signed long long}
+%apply long {unsigned long long}
+%apply long {signed long}
+%apply long {unsigned long}
+
 %typemap("rtype") double, double*, double & "numeric";
+%typemap("rtype") float, float *, float &  "numeric";
 %typemap("rtype") char *, char ** "character";
 %typemap("rtype") char            "character";
 %typemap("rtype") string, string *, string & "character";
@@ -21,15 +36,16 @@
 %typemap("rtype") SWIGTYPE & "$R_class";
 %typemap("rtype") SWIGTYPE "$&R_class";
 
-%typemap("rtypecheck") int, int &, long, long &
+%typemap("rtypecheck") int, int &, long, long &,
+  unsigned char, unsigned char &
   %{ (is.integer($arg) || is.numeric($arg)) && length($arg) == 1 %}
-%typemap("rtypecheck") int *, long *
+%typemap("rtypecheck") int *, long *, unsigned char *
   %{ is.integer($arg) || is.numeric($arg) %}
 
 
-%typemap("rtypecheck") float, double
+%typemap("rtypecheck") double, double &, float, float &
   %{ is.numeric($arg) && length($arg) == 1 %}
-%typemap("rtypecheck") float *, double *
+%typemap("rtypecheck") double*, float *
   %{ is.numeric($arg) %}
 
 %typemap("rtypecheck") bool, bool &
@@ -72,8 +88,9 @@
   %{  $input = as.integer($input);     %}
 %typemap(scoercein) long, long *, long &
   %{  $input = as.integer($input);     %}
-%typemap(scoercein) float, float*, float &,
-  double, double *, double &
+%typemap(scoercein) double, double *, double &
+  %{ %}
+%typemap(scoercein) float, float *, float &
   %{ %}
 %typemap(scoercein) char, char *, char &
   %{  $input = as($input, "character");     %}
@@ -90,8 +107,9 @@
 %typemap(scoercein) enum SWIGTYPE *const
   %{  $input = enumToInteger($input, "$R_class"); %}
 
+
 %typemap(scoercein) SWIGTYPE, SWIGTYPE *, SWIGTYPE *const, SWIGTYPE &  
- %{ $input = slot($input,"ref") %}
+  %{ %}
 
 /*
 %typemap(scoercein) SWIGTYPE *, SWIGTYPE *const
@@ -118,10 +136,12 @@
 %typemap(scoercein) int, 
                     int *, 
 		    int &,
+                    int[ANY],
 		    long,
 		    long *,
-		    long &
-  "$input = as.integer($input);";
+		    long &,
+		    long[ANY]
+  "$input = as.integer($input); ";
 
 %typemap(scoercein) char *, string, std::string,
 string &, std::string &
@@ -139,41 +159,27 @@ string &, std::string &
 %typemap(scoerceout) enum SWIGTYPE *const
   %{  $result = enumToInteger($result, "$R_class"); %}
 
-#%typemap(scoerceout) SWIGTYPE 
-#  %{ class($result) <- "$&R_class"; %}
 
-#%typemap(scoerceout) SWIGTYPE & 
-#  %{ class($result) <- "$R_class"; %}
+%typemap(scoerceout) SWIGTYPE 
+  %{ class($result) <- "$&R_class"; %}
 
-#%typemap(scoerceout) SWIGTYPE * 
-#  %{ class($result) <- "$R_class"; %}
+%typemap(scoerceout) SWIGTYPE & 
+  %{ class($result) <- "$R_class"; %}
 
-#%typemap(scoerceout) SWIGTYPE *const
-#  %{ class($result) <- "$R_class"; %}
+%typemap(scoerceout) SWIGTYPE * 
+  %{ class($result) <- "$R_class"; %}
 
- %typemap(scoerceout) SWIGTYPE 
- %{ $result <- new("$&R_class", ref=$result); %}
- 
- %typemap(scoerceout) SWIGTYPE & 
- %{ $result <- new("$R_class", ref=$result) ; %}
- 
- %typemap(scoerceout) SWIGTYPE * 
- %{ $result <- new("$R_class", ref=$result) ; %}
- 
- %typemap(scoerceout) SWIGTYPE *const
- %{ $result <- new("$R_class", ref=$result) ; %}
-
+%typemap(scoerceout) SWIGTYPE *const
+  %{ class($result) <- "$R_class"; %}
 
 /* Override the SWIGTYPE * above. */
 %typemap(scoerceout) char,
 		     char *,
 		     char &,
-                     float,
-		     double,
-		     float*,
-		     double*,
-		     float &,
+		     double, 
 		     double &,
+                     float,
+		     float &,
                      int,
 		     int &,
 		     long,
@@ -202,93 +208,9 @@ string &, std::string &
 		     signed long &,		     
 		     unsigned long,
 		     unsigned long &,
-		     signed char,
-		     signed char &,
-		     unsigned char,
-		     unsigned char &
+		     unsigned char *,
+		     unsigned char &		     
  %{    %}
-
-%apply int {size_t,
-std::size_t,
-ptrdiff_t,
-std::ptrdiff_t,
-signed int,
-unsigned int,
-short,
-unsigned short,
-signed char,
-unsigned char}
-
-%apply int* {size_t[],
-std::size_t[],
-ptrdiff_t[],
-std::ptrdiff_t[],
-signed int[],
-unsigned int[],
-short[],
-unsigned short[],
-signed char[],
-unsigned char[]}
-
-%apply int* {size_t[ANY],
-std::size_t[ANY],
-ptrdiff_t[ANY],
-std::ptrdiff_t[ANY],
-signed int[ANY],
-unsigned int[ANY],
-short[ANY],
-unsigned short[ANY],
-signed char[ANY],
-unsigned char[ANY]}
-
-%apply int* {size_t*,
-std::size_t*,
-ptrdiff_t*,
-std::ptrdiff_t*,
-signed int*,
-unsigned int*,
-short*,
-unsigned short*,
-signed char*,
-unsigned char*}
-
-%apply long {
-       long long,
-       signed long long,
-       unsigned long long,
-       signed long,
-       unsigned long}
-
-%apply long* {
-       long long*,
-       signed long long*,
-       unsigned long long*,
-       signed long*,
-       unsigned long*,
-       long long[],
-       signed long long[],
-       unsigned long long[],
-       signed long[],
-       unsigned long[],
-       long long[ANY],
-       signed long long[ANY],
-       unsigned long long[ANY],
-       signed long[ANY],
-       unsigned long[ANY]}
-
-%apply float* {
-       float[],
-       float[ANY]
-}
-%apply double * {
-       double[],
-       double[ANY]
-}
-
-%apply bool* {
-       bool[],
-       bool[ANY]
-}
 
 #if 0
  Just examining the values for a SWIGTYPE.

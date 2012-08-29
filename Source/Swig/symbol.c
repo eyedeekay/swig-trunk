@@ -176,8 +176,6 @@ static Hash *current_symtab = 0;	/* Current symbol table node */
 static Hash *symtabs = 0;	/* Hash of all symbol tables by fully-qualified name */
 static Hash *global_scope = 0;	/* Global scope */
 
-static int use_inherit = 1;
-
 /* common attribute keys, to avoid calling find_key all the times */
 
 
@@ -224,7 +222,7 @@ static void symbol_print_symbols(const char *symboltabletype) {
       Iterator it = First(symtab);
       while (it.key) {
 	String *symname = it.key;
-	Printf(stdout, "  %s (%s)\n", symname, nodeType(it.item));
+	Printf(stdout, "  %s\n", symname);
 	/*
 	Printf(stdout, "  %s - %p (%s)\n", symname, it.item, Getattr(it.item, "name"));
 	*/
@@ -465,7 +463,6 @@ Symtab *Swig_symbol_current(void) {
  * Swig_symbol_alias()
  *
  * Makes an alias for a symbol in the global symbol table.
- * Primarily for namespace aliases such as 'namespace X = Y;'.
  * ----------------------------------------------------------------------------- */
 
 void Swig_symbol_alias(const_String_or_char_ptr aliasname, Symtab *s) {
@@ -484,9 +481,7 @@ void Swig_symbol_alias(const_String_or_char_ptr aliasname, Symtab *s) {
 /* -----------------------------------------------------------------------------
  * Swig_symbol_inherit()
  *
- * Inherit symbols from another scope. Primarily for C++ inheritance and
- * for using directives, such as 'using namespace X;'
- * but not for using declarations, such as 'using A;'.
+ * Inherit symbols from another scope.
  * ----------------------------------------------------------------------------- */
 
 void Swig_symbol_inherit(Symtab *s) {
@@ -540,7 +535,6 @@ void Swig_symbol_cadd(const_String_or_char_ptr name, Node *n) {
 
   if (!name)
     return;
-
   if (SwigType_istemplate(name)) {
     String *cname = NewString(name);
     String *dname = Swig_symbol_template_deftype(cname, 0);
@@ -551,7 +545,7 @@ void Swig_symbol_cadd(const_String_or_char_ptr name, Node *n) {
     Delete(cname);
   }
 #ifdef SWIG_DEBUG
-  Printf(stderr, "symbol_cadd %s %p\n", name, n);
+  Printf(stderr, "symbol_cadd %s %x\n", name, n);
 #endif
   cn = Getattr(ccurrent, name);
 
@@ -886,7 +880,7 @@ Node *Swig_symbol_add(const_String_or_char_ptr symname, Node *n) {
     /* Well, we made it this far.  Guess we can drop the symbol in place */
     Setattr(n, "sym:symtab", current_symtab);
     Setattr(n, "sym:name", symname);
-    /* Printf(stdout,"%s %p\n", Getattr(n,"sym:overname"), current_symtab); */
+    /* Printf(stdout,"%s %x\n", Getattr(n,"sym:overname"), current_symtab); */
     assert(!Getattr(n, "sym:overname"));
     overname = NewStringf("__SWIG_%d", pn);
     Setattr(n, "sym:overname", overname);
@@ -933,10 +927,11 @@ static Node *_symbol_lookup(const String *name, Symtab *symtab, int (*check) (No
     return 0;
   Setmark(symtab, 1);
 
+
   n = Getattr(sym, name);
 
 #ifdef SWIG_DEBUG
-  Printf(stderr, "symbol_look %s %p %p %s\n", name, n, symtab, Getattr(symtab, "name"));
+  Printf(stderr, "symbol_look %s %x %x %s\n", name, n, symtab, Getattr(symtab, "name"));
 #endif
 
   if (n) {
@@ -972,7 +967,7 @@ static Node *_symbol_lookup(const String *name, Symtab *symtab, int (*check) (No
   }
 
   inherit = Getattr(symtab, "inherit");
-  if (inherit && use_inherit) {
+  if (inherit) {
     int i, len;
     len = Len(inherit);
     for (i = 0; i < len; i++) {
@@ -1058,25 +1053,6 @@ static Node *symbol_lookup_qualified(const_String_or_char_ptr name, Symtab *symt
 	Node *pn = Getattr(symtab, "parentNode");
 	if (pn)
 	  n = symbol_lookup_qualified(name, pn, prefix, local, checkfunc);
-
-	/* Check inherited scopes */
-	if (!n) {
-	  List *inherit = Getattr(symtab, "inherit");
-	  if (inherit && use_inherit) {
-	    int i, len;
-	    len = Len(inherit);
-	    for (i = 0; i < len; i++) {
-	      Node *prefix_node = symbol_lookup(prefix, Getitem(inherit, i), checkfunc);
-	      if (prefix_node) {
-		Node *prefix_symtab = Getattr(prefix_node, "symtab");
-		if (prefix_symtab) {
-		  n = symbol_lookup(name, prefix_symtab, checkfunc);
-		  break;
-		}
-	      }
-	    }
-	  }
-	}
       } else {
 	n = 0;
       }
@@ -1089,9 +1065,8 @@ static Node *symbol_lookup_qualified(const_String_or_char_ptr name, Symtab *symt
  * Swig_symbol_clookup()
  *
  * Look up a symbol in the symbol table.   This uses the C name, not scripting
- * names.   Note: If we come across a using declaration, we follow it to
- * to get the real node. Any using directives are also followed (but this is
- * implemented in symbol_lookup()).
+ * names.   Note: If we come across a using a directive, we follow it to
+ * to get the real node.
  * ----------------------------------------------------------------------------- */
 
 Node *Swig_symbol_clookup(const_String_or_char_ptr name, Symtab *n) {
@@ -1232,9 +1207,6 @@ Node *Swig_symbol_clookup_check(const_String_or_char_ptr name, Symtab *n, int (*
 
 /* -----------------------------------------------------------------------------
  * Swig_symbol_clookup_local()
- *
- * Same as Swig_symbol_clookup but parent nodes are not searched, that is, just
- * this symbol table is searched.
  * ----------------------------------------------------------------------------- */
 
 Node *Swig_symbol_clookup_local(const_String_or_char_ptr name, Symtab *n) {
@@ -1329,20 +1301,6 @@ Node *Swig_symbol_clookup_local_check(const_String_or_char_ptr name, Symtab *n, 
   return s;
 }
 
-/* -----------------------------------------------------------------------------
- * Swig_symbol_clookup_no_inherit()
- *
- * Symbol lookup like Swig_symbol_clookup but does not follow using declarations.
- * ----------------------------------------------------------------------------- */
-
-Node *Swig_symbol_clookup_no_inherit(const_String_or_char_ptr name, Symtab *n) {
-  Node *s = 0;
-  assert(use_inherit==1);
-  use_inherit = 0;
-  s = Swig_symbol_clookup(name, n);
-  use_inherit = 1;
-  return s;
-}
 
 /* -----------------------------------------------------------------------------
  * Swig_symbol_cscope()
@@ -1453,7 +1411,7 @@ String *Swig_symbol_qualified(Node *n) {
   if (!symtab)
     return NewStringEmpty();
 #ifdef SWIG_DEBUG
-  Printf(stderr, "symbol_qscope %s %p %s\n", Getattr(n, "name"), symtab, Getattr(symtab, "name"));
+  Printf(stderr, "symbol_qscope %s %x %s\n", Getattr(n, "name"), symtab, Getattr(symtab, "name"));
 #endif
   return Swig_symbol_qualifiedscopename(symtab);
 }
@@ -1469,14 +1427,14 @@ Node *Swig_symbol_isoverloaded(Node *n) {
 }
 
 /* -----------------------------------------------------------------------------
- * symbol_template_qualify()
+ * Swig_symbol_type_qualify()
  *
- * Internal function to create a fully qualified type name for templates
+ * Create a fully qualified type name
  * ----------------------------------------------------------------------------- */
 
 /* This cache produces problems with OSS, don't active it */
 /* #define SWIG_TEMPLATE_QUALIFY_CACHE */
-static SwigType *symbol_template_qualify(const SwigType *e, Symtab *st) {
+static SwigType *Swig_symbol_template_qualify(const SwigType *e, Symtab *st) {
   String *tprefix, *tsuffix;
   SwigType *qprefix;
   List *targs;
@@ -1541,15 +1499,9 @@ static SwigType *symbol_template_qualify(const SwigType *e, Symtab *st) {
 }
 
 
-static int symbol_no_constructor(Node *n) {
+static int no_constructor(Node *n) {
   return !Checkattr(n, "nodeType", "constructor");
 }
-
-/* -----------------------------------------------------------------------------
- * Swig_symbol_type_qualify()
- *
- * Create a fully qualified type name
- * ----------------------------------------------------------------------------- */
 
 SwigType *Swig_symbol_type_qualify(const SwigType *t, Symtab *st) {
   List *elements;
@@ -1567,14 +1519,13 @@ SwigType *Swig_symbol_type_qualify(const SwigType *t, Symtab *st) {
   for (i = 0; i < len; i++) {
     String *e = Getitem(elements, i);
     if (SwigType_issimple(e)) {
-      /* Note: the unary scope operator (::) is being removed from the template parameters here. */
-      Node *n = Swig_symbol_clookup_check(e, st, symbol_no_constructor);
+      Node *n = Swig_symbol_clookup_check(e, st, no_constructor);
       if (n) {
 	String *name = Getattr(n, "name");
 	Clear(e);
 	Append(e, name);
 #ifdef SWIG_DEBUG
-	Printf(stderr, "symbol_qual_ei %d %s %s %p\n", i, name, e, st);
+	Printf(stderr, "symbol_qual_ei %d %s %s %x\n", i, name, e, st);
 #endif
 	if (!Swig_scopename_check(name)) {
 	  String *qname = Swig_symbol_qualified(n);
@@ -1583,12 +1534,12 @@ SwigType *Swig_symbol_type_qualify(const SwigType *t, Symtab *st) {
 	    Insert(e, 0, qname);
 	  }
 #ifdef SWIG_DEBUG
-	  Printf(stderr, "symbol_qual_sc %d %s %s %p\n", i, qname, e, st);
+	  Printf(stderr, "symbol_qual_sc %d %s %s %x\n", i, qname, e, st);
 #endif
 	  Delete(qname);
 	}
       } else if (SwigType_istemplate(e)) {
-	SwigType *ty = symbol_template_qualify(e, st);
+	SwigType *ty = Swig_symbol_template_qualify(e, st);
 	Clear(e);
 	Append(e, ty);
 	Delete(ty);
@@ -1621,7 +1572,7 @@ SwigType *Swig_symbol_type_qualify(const SwigType *t, Symtab *st) {
   }
   Delete(elements);
 #ifdef SWIG_DEBUG
-  Printf(stderr, "symbol_qualify %s %s %p %s\n", t, result, st, st ? Getattr(st, "name") : 0);
+  Printf(stderr, "symbol_qualify %s %s %x %s\n", t, result, st, st ? Getattr(st, "name") : 0);
 #endif
 
   return result;

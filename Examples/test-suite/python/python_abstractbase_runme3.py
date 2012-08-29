@@ -10,11 +10,3 @@ assert issubclass(IntSet, MutableSet)
 assert issubclass(IntMultiset, MutableSet)
 assert issubclass(IntVector, MutableSequence)
 assert issubclass(IntList, MutableSequence)
-
-mapii = Mapii()
-multimapii = Multimapii()
-intset = IntSet()
-intmultiset = IntMultiset()
-intvector = IntVector()
-intlist = IntList()
-

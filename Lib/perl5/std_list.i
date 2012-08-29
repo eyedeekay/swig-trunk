@@ -188,10 +188,6 @@ namespace std {
             }
         }
       public:
-        typedef size_t size_type;
-        typedef T value_type;
-        typedef const value_type& const_reference;
-
         list();
         list(const list<T> &);
 
@@ -341,10 +337,6 @@ namespace std {
             }
         }
       public:
-        typedef size_t size_type;
-        typedef T value_type;
-        typedef const value_type& const_reference;
-
         list();
         list(const list<T> &);
 
